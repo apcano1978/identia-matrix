@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "rails", "~> 8.0.4"
+gem "rails", "~> 8.1.3"
 # Pipeline de assets moderno [https://github.com/rails/propshaft]
 gem "propshaft"
 # Postgres como base de datos de Active Record
