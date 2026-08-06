@@ -9,6 +9,16 @@ Rails.application.configure do
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
 
+  # El log de test ROTA, y por una razón concreta: sin esto llegó a 100 MB en un
+  # solo día de trabajo —los tests de sistema escriben una barbaridad— y un
+  # `git add` descuidado se lo llevó por delante hasta que GitHub rechazó el
+  # push por tamaño de fichero.
+  #
+  # Dos ficheros de 8 MB: suficiente para leer el fallo que acabas de provocar, y
+  # con techo.
+  config.logger = ActiveSupport::Logger.new(
+    Rails.root.join("log/test.log"), 2, 8.megabytes)
+
   # Eager loading loads your entire application. When running a single test locally,
   # this is usually not necessary, and can slow down your test suite. However, it's
   # recommended that you enable it in continuous integration systems to ensure eager
