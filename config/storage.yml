@@ -1,0 +1,20 @@
+test:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+
+local:
+  service: Disk
+  root: <%= Rails.root.join("storage") %>
+
+# El bucket de artefactos. Es la única excepción de escritura de matrix:
+# markdown, claves inmutables, versionado, sin borrado. Se activa en F5;
+# hasta entonces solo está declarado.
+#
+# Bucket propio, no un prefijo del de identia-platform: la política de objeto
+# es distinta (deniega DeleteObject y exige versionado).
+artifacts:
+  service: S3
+  access_key_id:     <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  region:            <%= ENV.fetch("AWS_REGION", "eu-west-1") %>
+  bucket:            <%= ENV["AWS_ARTIFACTS_BUCKET"] %>

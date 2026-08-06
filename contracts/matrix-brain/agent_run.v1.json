@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://identiaconsulting.com/contracts/matrix-brain/agent_run.v1.json",
+  "title": "matrix → brain · petición de ejecución de agente",
+  "description": "Cuerpo de POST /v1/agents/{key}/run. El brain recibe config y context como diccionarios opacos y sin campo de versión; este esquema es de matrix, y matrix valida antes de enviar. La compatibilidad se mantiene de forma aditiva: todo campo nuevo llega con default.",
+
+  "type": "object",
+  "required": ["contract_version", "config", "context"],
+  "additionalProperties": false,
+
+  "properties": {
+    "contract_version": {
+      "const": 1,
+      "description": "Versión de ESTE contrato. El brain la ignora; matrix la usa para no enviar a un agente un payload que no entiende."
+    },
+
+    "config": {
+      "type": "object",
+      "description": "Parámetros del agente. El esquema real por agente lo publica el brain en GET /v1/agents como config_schema; aquí se declara lo común.",
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Alias lógico de models.yaml del brain, no un id de modelo.",
+          "default": "chat-default"
+        },
+        "max_tokens": { "type": "integer", "minimum": 1 },
+        "thinking": {
+          "enum": ["disabled", "adaptive"],
+          "description": "Omitirlo deja el default del modelo, que en Claude Sonnet 5 ya es adaptativo."
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "context": {
+      "type": "object",
+      "description": "El contexto del evolutivo. OJO: AgentContext del brain tiene cuatro campos (request_id, dedupe_seen_urls, agent_token, source) y no declara extra=forbid, asi que descarta en silencio cualquier otra clave. Ampliarlo de forma aditiva es trabajo de F9.",
+      "required": ["client", "initiative", "stage", "qa_cycle"],
+      "additionalProperties": false,
+
+      "properties": {
+        "client": {
+          "type": "object",
+          "description": "La frontera de cliente. Ningún agente puede leer ni citar material de otro cliente: es restricción del modelo, no filtro de la vista.",
+          "required": ["slug", "platform_id"],
+          "additionalProperties": false,
+          "properties": {
+            "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+            "platform_id": { "type": "integer", "minimum": 1 },
+            "name": { "type": "string" }
+          }
+        },
+
+        "initiative": {
+          "type": "object",
+          "required": ["code", "title"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "type": "string", "pattern": "^ev-\\d{3,}$" },
+            "title": { "type": "string" },
+            "platform_project_ref": { "type": ["string", "null"] }
+          }
+        },
+
+        "repositories": {
+          "type": "array",
+          "description": "Los repositorios que toca el evolutivo. Un evolutivo multi-repo obliga a secuencia de despliegue y a criterio de compatibilidad.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["name", "pinned_sha"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+              "pinned_sha": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+              "default_branch": { "type": "string", "default": "main" },
+              "indexed_files_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+
+        "stage": {
+          "enum": [
+            "need", "tank", "neo", "seraph_dod", "morfeo", "trinity",
+            "gate_1", "claude_code", "seraph_verification", "gate_2",
+            "link", "publication"
+          ]
+        },
+
+        "qa_cycle": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Ciclos de QA consumidos. Solo el veredicto ✕ los consume; ? y ⊗ no."
+        },
+
+        "sources": {
+          "type": "array",
+          "description": "Documentos y transcripciones en ámbito. El ámbito es un filtro, nunca una copia: un mismo documento puede servir a varios evolutivos.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["kind", "platform_id", "title"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "enum": ["document", "meeting"] },
+              "platform_id": { "type": "integer", "minimum": 1 },
+              "title": { "type": "string" },
+              "slug": { "type": "string" },
+              "occurred_on": { "type": ["string", "null"], "format": "date" },
+              "body": { "type": ["string", "null"] }
+            }
+          }
+        },
+
+        "prior_artifacts": {
+          "type": "array",
+          "description": "La memoria acumulada: specs, DoD, decisiones y cierres de los evolutivos anteriores sobre los mismos repositorios. Es lo que permite que el tercer evolutivo arranque sabiendo lo que decidieron los dos primeros.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["key", "kind", "code", "body"],
+            "additionalProperties": false,
+            "properties": {
+              "key": { "type": "string", "pattern": "^artifacts://" },
+              "kind": { "enum": ["dossier", "spec", "dod", "pkg", "verify", "guide", "close"] },
+              "code": { "type": "string" },
+              "version": { "type": "integer", "minimum": 1 },
+              "initiative_code": { "type": "string", "pattern": "^ev-\\d{3,}$" },
+              "body": { "type": "string" }
+            }
+          }
+        },
+
+        "human_notes": {
+          "type": "array",
+          "description": "Notas humanas. Son nivel ORIGEN: una nota de reinicio tras escalada entra al corpus con el mismo peso que un acta.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["code", "body"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}(-[a-z]{2,4})?$" },
+              "body": { "type": "string" },
+              "author": { "type": "string" }
+            }
+          }
+        },
+
+        "request_id": { "type": "string" }
+      }
+    }
+  }
+}

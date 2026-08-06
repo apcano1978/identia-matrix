@@ -1,0 +1,9 @@
+web: bin/rails server -p ${PORT:-3001}
+# `[always]` y no `tailwindcss:watch` a secas: sin él el vigilante termina en
+# cuanto no hay terminal interactiva, y foreman se lleva por delante al resto de
+# procesos. En una terminal funciona; lanzado de fondo o desde un script, no.
+css: bin/rails tailwindcss:watch[always]
+# El worker va aquí para que `bin/dev` deje el entorno ENTERO en pie: es lo que
+# mide la página de diagnóstico, y sin worker un job encolado se queda en la
+# cola sin que nada lo note.
+worker: bundle exec sidekiq -C config/sidekiq.yml

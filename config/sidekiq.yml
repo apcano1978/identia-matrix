@@ -1,0 +1,8 @@
+:concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+# Las ejecuciones de agente tardan minutos, pero cada job es fino: carga el
+# registro y delega. El timeout es el de apagado, no el de la llamada al modelo.
+:timeout: 25
+:queues:
+  - [default, 5]
+  - [agents, 5]
+  - [low, 1]

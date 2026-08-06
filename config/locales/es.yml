@@ -1,0 +1,31 @@
+# Lo mínimo para que un error de validación se pueda leer.
+#
+# Sin esto, `ActiveRecord::RecordInvalid` se anuncia como
+# «Translation missing: es.activerecord.errors.messages.record_invalid» y el
+# mensaje real —el que dice qué falló— desaparece del log y de la suite.
+#
+# NO es el catálogo de la interfaz: eso es F3, y probablemente con la gema
+# `rails-i18n`. Esto solo cubre lo que el modelo necesita para explicarse.
+es:
+  errors:
+    format: "%{attribute} %{message}"
+    messages:
+      blank: "no puede estar en blanco"
+      taken: "ya está en uso"
+      invalid: "no es válido"
+      inclusion: "no está incluido en la lista"
+      not_a_number: "no es un número"
+      greater_than_or_equal_to: "debe ser mayor o igual que %{count}"
+      in: "debe estar entre %{count}"
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "La validación falló: %{errors}"
+        restrict_dependent_destroy:
+          has_many: "No se puede eliminar: hay %{record} que dependen de esto"
+          has_one: "No se puede eliminar: hay un %{record} que depende de esto"
+  support:
+    array:
+      words_connector: ", "
+      two_words_connector: " y "
+      last_word_connector: " y "

@@ -1,0 +1,28 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Los defaults apuntan al contenedor de compose visto DESDE EL ANFITRIÓN, para
+  # que `bin/rails test` y `bin/dev` funcionen sin prefijar variables a mano.
+  # Dentro de compose, .env.development los sobrescribe con host `db` y 5432.
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  port: <%= ENV.fetch("DATABASE_PORT", 5435) %>
+  username: <%= ENV.fetch("DATABASE_USERNAME", "postgres") %>
+  # Prefijada por app: en el VPS conviven identia-platform, identia-brain y
+  # identia-matrix, cada una con su propia credencial. El default solo sirve
+  # en desarrollo; production lee la variable sin default y falla si falta.
+  password: <%= ENV.fetch("IDENTIA_MATRIX_DATABASE_PASSWORD", "devpassword") %>
+
+development:
+  <<: *default
+  database: identia_matrix_development
+
+test:
+  <<: *default
+  database: identia_matrix_test
+
+production:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_NAME", "identia_matrix_production") %>
+  username: <%= ENV.fetch("DATABASE_USERNAME", "identia_matrix") %>
+  password: <%= ENV["IDENTIA_MATRIX_DATABASE_PASSWORD"] %>

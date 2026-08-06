@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   identia-matrix · tokens
+   -----------------------------------------------------------------------------
+   Dos capas, deliberadamente separadas:
+
+   1. MARCA (Brand v0.5, mayo 2026) — los mismos valores que identia-platform.
+      Es la identidad de Identia y no se toca desde aquí.
+
+   2. TERMINAL — la superficie oscura y densa de matrix. La maqueta aprobada
+      pinta toda la aplicación con hex literales y una escala tipográfica más
+      apretada que la editorial. Esta capa la formaliza para que no vuelva a
+      haber colores sueltos en el marcado.
+
+   La capa terminal DERIVA de la de marca donde puede (el oro y el crema son
+   los de marca), pero añade superficies y grises que la marca no define.
+   ========================================================================== */
+
+@theme {
+  /* ── 1 · MARCA · Brand v0.5 ─────────────────────────────────────────── */
+
+  /* Verde bosque profundo — fondo institucional */
+  --color-forest-deep:       #122815;
+  --color-forest-deep-2:     #0D1E0E;
+  --color-forest-mid:        #1E3820;
+
+  /* Oro estratégico — acento de identidad */
+  --color-antique-gold:      #C49B5E;
+  --color-antique-gold-deep: #A8844A;
+
+  /* Marrón profundo editorial */
+  --color-earth-depth:       #442819;
+  --color-earth-depth-2:     #331E12;
+
+  /* Crema editorial */
+  --color-bone:              #F0E9D7;
+  --color-bone-2:            #E6DCC8;
+
+  /* Negro editorial */
+  --color-ink:               #282829;
+  --color-ink-2:             #1A1A1B;
+
+  /* Tipografía de marca. En matrix domina la mono: la aplicación entera es una
+     superficie de terminal. La sans aparece en rótulos del rail y titulares de
+     cliente; la serif, en los cuerpos narrativos de la guía de pruebas.
+     "Elm Sans" es comercial y todavía no está disponible: Outfit la sustituye. */
+  --font-sans:    "Outfit", "Avenir Next", system-ui, sans-serif;
+  --font-display: "Outfit", "Avenir Next", system-ui, sans-serif;
+  --font-serif:   "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-mono:    "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+
+  --tracking-eyebrow: 0.13em;
+  --tracking-section: 0.32em;
+  --tracking-tight:   0.04em;
+  --tracking-display: -0.02em;
+
+  /* ── 2 · TERMINAL · superficies ─────────────────────────────────────── */
+
+  /* Fondo base de la aplicación. */
+  --color-terminal-bg:       #0D1E0E;
+  /* Hundido: barras de vista, paneles laterales, cabeceras de tabla, tarjetas. */
+  --color-terminal-sunken:   #0A1A0B;
+  /* Rail de navegación y title bar. */
+  --color-terminal-rail:     #122815;
+  /* Celda vacía de la matriz evolutivo × repositorio: el punto casi invisible
+     que significa "este evolutivo NO toca este repositorio". */
+  --color-terminal-void:     #2A3A2B;
+
+  /* ── 2 · TERMINAL · texto ───────────────────────────────────────────── */
+
+  /* Primario: títulos de evolutivo, nombres de repositorio, valores destacados. */
+  --color-terminal-fg:       #F0E9D7;
+  /* Secundario. También es el color propio de GATE 2 / "espera validación". */
+  --color-terminal-fg-2:     #DDD5BF;
+  /* Terciario: detalle en tablas, labels de navegación inactivos. */
+  --color-terminal-fg-3:     #C6BEA8;
+  /* Gris cálido: sub-etiquetas, edades neutras, texto de citas derivadas. */
+  --color-terminal-fg-4:     #B5AC96;
+  /* Tenue: metadatos, rutas de repositorio. */
+  --color-terminal-muted:    #94A08F;
+  /* Separador "/" de breadcrumbs y timestamps del event stream. */
+  --color-terminal-sep:      #8A9488;
+  /* Deshabilitado: pestañas de un evolutivo que todavía no tiene artefactos. */
+  --color-terminal-disabled: #5F6B5F;
+
+  /* ── 2 · TERMINAL · glifos de estado ────────────────────────────────────
+     Un color por glifo del vocabulario. Nombrados por lo que SIGNIFICAN, no
+     por su tono: la interfaz razona en glifos, y así el marcado se lee solo.
+
+       ● hecho · » ejecutando · ✓ cumplido      → done
+       ◆ en curso · ▣ gate 1 · ? no concluyente → active
+       ▤ gate 2                                  → gate2
+       ✕ incumplido · ↺ ciclo QA · ⊘ escalado    → fail
+       ⊗ no soportado aún                        → unsupported
+       ○ pendiente                               → pending          ---- */
+  --color-glyph-done:        #4A7A3A;
+  --color-glyph-active:      #C49B5E;
+  --color-glyph-gate2:       #DDD5BF;
+  --color-glyph-fail:        #C98070;
+  --color-glyph-unsupported: #C6BEA8;
+  --color-glyph-pending:     #94A08F;
+
+  /* ── 2 · TERMINAL · bordes ──────────────────────────────────────────── */
+  --color-terminal-border:        rgba(240, 233, 215, 0.12);
+  --color-terminal-border-strong: rgba(240, 233, 215, 0.25);
+  --color-terminal-border-gold:   rgba(196, 155, 94, 0.40);
+  --color-terminal-border-fail:   rgba(201, 128, 112, 0.40);
+
+  /* ── 2 · TERMINAL · escala tipográfica ──────────────────────────────────
+     Paralela y más densa que la escala editorial de marca. Sale medida de la
+     maqueta, que usa px sueltos en estilos inline. Se nombra por tamaño porque
+     no hay jerarquía semántica estable detrás: la misma medida sirve de label
+     en un sitio y de dato en otro.                                       ---- */
+  --text-t7:    7.5px;   /* labels del rail de navegación */
+  --text-t9:    9px;     /* chips de marca de la guía */
+  --text-t95:   9.5px;   /* metadatos bajo una fila */
+  --text-t10:   10px;    /* ids de evolutivo en tabla */
+  --text-t105:  10.5px;  /* ids clicables, rótulos de sección */
+  --text-t11:   11px;    /* texto de detalle, glifos de pipeline */
+  --text-t115:  11.5px;  /* nombres de evolutivo */
+  --text-t12:   12px;    /* cuerpo de tabla */
+  --text-t125:  12.5px;  /* prosa de la guía de pruebas */
+  --text-t13:   13px;    /* nombres de repositorio, títulos de panel */
+  --text-t14:   14px;    /* titulares de sección */
+  --text-t15:   15px;    /* nombre de cliente en tarjeta */
+  --text-t27:   27px;    /* nombre de cliente en su ficha */
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    background-color: var(--color-terminal-bg);
+    color: var(--color-terminal-fg-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-t12);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-antique-gold);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-antique-gold-deep);
+  }
+
+  button {
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background: var(--color-antique-gold);
+    color: var(--color-ink);
+  }
+}
+
+/* Rótulo de sección con tracking amplio: "D E F I N I T I O N   O F   D O N E".
+   El word-spacing devuelve el hueco entre palabras que el letter-spacing se
+   come — sin él sale «DEFINITIONOFDONE». Mismo arreglo que en platform. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-t9);
+  font-weight: 500;
+  letter-spacing: var(--tracking-section);
+  word-spacing: 0.24em;
+  text-transform: uppercase;
+}

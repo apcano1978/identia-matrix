@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+if ! gem list foreman -i --silent; then
+  echo "Installing foreman..."
+  gem install foreman
+fi
+
+# Puerto propio de matrix: el 3000 es de identia-platform.
+#
+# Esto fija PORT ANTES de que foreman lea el Procfile.dev, así que el default
+# que hay allí nunca llega a aplicarse. Por eso se cambia aquí y no allí.
+export PORT="${PORT:-3001}"
+
+# Let the debug gem allow remote connections,
+# but avoid loading until `debugger` is called
+export RUBY_DEBUG_OPEN="true"
+export RUBY_DEBUG_LAZY="true"
+
+exec foreman start -f Procfile.dev "$@"

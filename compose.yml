@@ -1,0 +1,119 @@
+name: identia-matrix
+
+# Puertos elegidos para no chocar con los otros dos proyectos del workspace:
+#   identia-platform → web 3000 · postgres 5433 · redis 6380
+#   identia-brain    → api 8000 · postgres 5434
+#   identia-matrix   → web 3001 · postgres 5435 · redis 6381
+
+# Perfiles: `db` y `redis` no llevan ninguno, así que arrancan siempre. El resto
+# vive bajo `app`.
+#
+#   docker compose up -d              solo db + redis   → modo anfitrión, el diario
+#   docker compose --profile app up   todo              → paridad con producción
+
+services:
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      target: development
+    image: identia-matrix:dev
+    env_file: .env.development
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    # En Docker Desktop se resuelve solo; explicitarlo hace que la receta
+    # funcione igual en Linux, que es donde vive el VPS. Es la ruta hacia
+    # identia-brain (F9) e identia-platform (F8).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: bash -c "bundle check || bundle install && bin/rails db:prepare && bin/rails server -b 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      # El primer arranque instala gemas en el volumen y tarda.
+      start_period: 120s
+    tty: true
+    stdin_open: true
+
+  sidekiq:
+    profiles: ["app"]
+    image: identia-matrix:dev
+    build:
+      context: .
+      target: development
+    env_file: .env.development
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # Sano, no solo arrancado: si la app no levanta, un worker esperando
+      # jobs que nadie encola es un fallo que aparece tarde y confuso.
+      web:
+        condition: service_healthy
+    command: bash -c "bundle check || bundle install && bundle exec sidekiq -C config/sidekiq.yml"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${IDENTIA_MATRIX_DATABASE_PASSWORD:-devpassword}
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DATABASE_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6381:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  css:
+    profiles: ["app"]
+    image: identia-matrix:dev
+    build:
+      context: .
+      target: development
+    env_file: .env.development
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    depends_on:
+      web:
+        condition: service_healthy
+    command: bash -c "bundle check || bundle install && bin/rails tailwindcss:watch[always]"
+    tty: true
+    stdin_open: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  bundle_cache:

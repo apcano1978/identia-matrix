@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://identiaconsulting.com/contracts/matrix-platform/read.v1.json",
+  "title": "platform → matrix · lectura de clientes, proyectos y fuentes",
+  "description": "Lo que identia-platform sirve a matrix por /internal/v1. SOLO LECTURA: matrix nunca crea, edita ni borra un cliente, un documento ni una transcripción — ninguna ruta, ningún formulario, ningún job.\n\nAVISO DE ESTADO (agosto 2026): platform todavía NO sirve dos de estos recursos. No existe endpoint de meetings, y el endpoint /internal/v1/documents que sí existe sirve natasha_documents (memoria privada del agente), que NO es el modelo Document del CRM. Además el cuerpo de documentos y transcripciones no está en tabla: vive en content_versions y en adjuntos de Active Storage. Cerrar esos huecos es la fase F7, dentro del repositorio de platform.",
+
+  "type": "object",
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "description": "Cómo referencia matrix a una entidad de platform. Platform no tiene UUIDs ni slugs en estas tablas: el identificador es el id bigint que devuelve la API, y matrix lo guarda en su propia proyección.",
+      "required": ["platform_id"],
+      "properties": {
+        "platform_id": { "type": "integer", "minimum": 1 }
+      }
+    },
+
+    "client": {
+      "type": "object",
+      "description": "En platform el cliente es un Lead (y su registro Client 1:1 cuando se convierte). No hay tabla Customer.",
+      "required": ["platform_id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "platform_id": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string" },
+        "sector": { "type": ["string", "null"] },
+        "city": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "archived": { "type": "boolean", "default": false },
+        "primary_contact": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+
+    "platform_project": {
+      "type": "object",
+      "description": "Lo que platform llama proyecto, y que en matrix se corresponde con un evolutivo. NUNCA se le llama `project` a secas en el código de matrix.\n\nOJO con la cadena: en platform, Project no apunta al Lead. Va Lead → Budget → BudgetVersion → Project. El serializer debe exponer client_platform_id APLANADO para que matrix no replique esa navegación.",
+      "required": ["platform_id", "ref", "name", "client_platform_id"],
+      "additionalProperties": false,
+      "properties": {
+        "platform_id": { "type": "integer", "minimum": 1 },
+        "ref": {
+          "type": "string",
+          "pattern": "^PRJ-\\d{4}-\\d+$",
+          "description": "Referencia de negocio con secuencia anual e índice único: PRJ-2026-9001."
+        },
+        "name": { "type": "string" },
+        "client_platform_id": { "type": "integer", "minimum": 1 },
+        "status": { "type": ["string", "null"] },
+        "current_phase": { "type": ["string", "null"] },
+        "started_on": { "type": ["string", "null"], "format": "date" },
+        "estimated_end_on": { "type": ["string", "null"], "format": "date" },
+        "archived": { "type": "boolean", "default": false }
+      }
+    },
+
+    "document": {
+      "type": "object",
+      "description": "Documento de cliente del CRM. En platform es el modelo Document, NO natasha_documents.",
+      "required": ["platform_id", "title", "client_platform_id"],
+      "additionalProperties": false,
+      "properties": {
+        "platform_id": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string" },
+        "client_platform_id": { "type": "integer", "minimum": 1 },
+        "platform_project_id": { "type": ["integer", "null"] },
+        "body": {
+          "type": ["string", "null"],
+          "description": "Markdown de la versión actual (content_versions). Null si el documento solo tiene adjuntos binarios sin texto extraído."
+        },
+        "attachments": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["filename"],
+            "additionalProperties": false,
+            "properties": {
+              "filename": { "type": "string" },
+              "content_type": { "type": ["string", "null"] },
+              "byte_size": { "type": ["integer", "null"], "minimum": 0 },
+              "extracted_text": {
+                "type": ["string", "null"],
+                "description": "La extracción vive en platform, que es donde está el binario. Así matrix nunca toca un origen."
+              }
+            }
+          }
+        },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "meeting": {
+      "type": "object",
+      "description": "Transcripción de reunión. En platform es el modelo Meeting; hoy no tiene endpoint (F7).",
+      "required": ["platform_id", "title", "held_on", "client_platform_id"],
+      "additionalProperties": false,
+      "properties": {
+        "platform_id": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string" },
+        "held_on": { "type": "string", "format": "date" },
+        "client_platform_id": { "type": "integer", "minimum": 1 },
+        "platform_project_id": { "type": ["integer", "null"] },
+        "body": { "type": ["string", "null"] },
+        "duration_seconds": { "type": ["integer", "null"], "minimum": 0 },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "page": {
+      "type": "object",
+      "description": "Los índices de /internal/v1 tienen hoy un limit(200) duro. Para indexar un cliente entero hace falta paginación.",
+      "required": ["page", "pages", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "page": { "type": "integer", "minimum": 1 },
+        "pages": { "type": "integer", "minimum": 0 },
+        "count": { "type": "integer", "minimum": 0 },
+        "next_page": { "type": ["integer", "null"] }
+      }
+    }
+  },
+
+  "oneOf": [
+    {
+      "title": "GET /internal/v1/leads",
+      "type": "object",
+      "required": ["leads"],
+      "additionalProperties": false,
+      "properties": {
+        "leads": { "type": "array", "items": { "$ref": "#/$defs/client" } },
+        "pagination": { "$ref": "#/$defs/page" }
+      }
+    },
+    {
+      "title": "GET /internal/v1/projects",
+      "type": "object",
+      "required": ["projects"],
+      "additionalProperties": false,
+      "properties": {
+        "projects": { "type": "array", "items": { "$ref": "#/$defs/platform_project" } },
+        "pagination": { "$ref": "#/$defs/page" }
+      }
+    },
+    {
+      "title": "GET /internal/v1/client_documents · pendiente en platform (F7)",
+      "type": "object",
+      "required": ["client_documents"],
+      "additionalProperties": false,
+      "properties": {
+        "client_documents": { "type": "array", "items": { "$ref": "#/$defs/document" } },
+        "pagination": { "$ref": "#/$defs/page" }
+      }
+    },
+    {
+      "title": "GET /internal/v1/meetings · pendiente en platform (F7)",
+      "type": "object",
+      "required": ["meetings"],
+      "additionalProperties": false,
+      "properties": {
+        "meetings": { "type": "array", "items": { "$ref": "#/$defs/meeting" } },
+        "pagination": { "$ref": "#/$defs/page" }
+      }
+    }
+  ]
+}
