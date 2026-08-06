@@ -29,7 +29,23 @@ Rails.application.routes.draw do
   # inútil justo cuando hace falta. Si Postgres está caído no puedes entrar, y
   # entonces no puedes ver la página que te diría que Postgres está caído.
   #
-  # Solo en local para no dejarle una trampa a F3: cuando el dashboard ocupe `/`,
-  # no hay ninguna ruta pública que alguien tenga que acordarse de cerrar.
-  root "home#show" if Rails.env.local?
+  # Vive en `/diagnostics` y no en `/up`: el healthcheck que mira kamal-proxy
+  # tiene que ser un 200 barato. Uno que consulte Redis y Sidekiq tumba un
+  # despliegue cuando Redis parpadea, y deja de responder justo cuando hace falta.
+  get "diagnostics" => "diagnostics#show" if Rails.env.local?
+
+  # El eje de trabajo cuelga del cliente, y el de memoria también. Las rutas lo
+  # dicen: no hay ningún evolutivo ni ningún repositorio fuera de su cliente, que
+  # es la frontera dura del sistema.
+  resources :clients, only: %i[index show], param: :slug do
+    resources :initiatives, only: :show, param: :code
+    # Los nombres de repositorio admiten punto —`docs.site`—, y sin la
+    # restricción Rails se comería el sufijo tomándolo por un formato.
+    resources :repositories, only: :show, param: :name,
+                             constraints: { name: %r{[^/]+} }
+  end
+
+  resources :agents, only: %i[index show], param: :key
+
+  root "dashboard#show"
 end

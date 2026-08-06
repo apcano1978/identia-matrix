@@ -23,5 +23,7 @@ class Repository < ApplicationRecord
   # se dice en su ficha en vez de fingir que verifica. Lo consulta SERAPH (F10).
   def ci_configured? = ci_provider.present? && ci_repo_slug.present?
 
+  def to_param = name
+
   def to_s = name
 end

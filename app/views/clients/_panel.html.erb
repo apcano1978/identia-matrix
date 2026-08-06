@@ -1,0 +1,60 @@
+<%= side_panel(width: 258) do %>
+  <div class="px-4 pt-[18px] pb-5">
+    <h2 class="eyebrow text-terminal-fg-3">MODELO</h2>
+
+    <%# Literal de la maqueta, y a propósito: es la única frase de toda la
+        aplicación que explica por qué hay dos ejes. Reescribirla «mejor» sería
+        perder la que se aprobó. %>
+    <p class="mt-2.5 p-[11px_12px] border border-terminal-border
+              text-t105 leading-[1.65] text-terminal-fg-3">
+      <span class="text-antique-gold">evolutivos</span> y
+      <span class="text-terminal-fg">repositorios</span> son dos ejes que se
+      cruzan, no una jerarquía. Un evolutivo toca uno o varios repositorios; un
+      repositorio acumula los evolutivos que lo tocaron.
+    </p>
+
+    <h2 class="eyebrow text-terminal-fg-3 mt-[22px]">EQUIPO</h2>
+    <div class="flex flex-col gap-[11px] mt-[11px]">
+      <% Platform::User.with_access.order(:platform_id).each do |user| %>
+        <div class="flex items-center gap-2.5">
+          <div class="w-[26px] h-[26px] flex items-center justify-center
+                      font-sans text-[10px] font-semibold
+                      <%= user.superadmin? ? 'bg-antique-gold text-ink'
+                                           : 'bg-earth-depth text-terminal-fg' %>">
+            <%= user.name.split(/[\s.]/).first(2).map { |p| p[0]&.upcase }.join %>
+          </div>
+          <div>
+            <div class="text-t115 text-terminal-fg-2">
+              <%= user.email_address.split("@").first %>
+            </div>
+            <div class="text-t95 text-terminal-muted"><%= user.role %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <h2 class="eyebrow text-terminal-fg-3 mt-[22px]">OVERRIDES DE AGENTE</h2>
+    <% overrides = AgentConfig.where(platform_client_id: client.id).order(:agent) %>
+    <div class="mt-2.5 p-[11px_12px] border border-terminal-border
+                text-t11 leading-[1.7] text-terminal-fg-3">
+      <% if overrides.any? %>
+        <% overrides.each do |config| %>
+          <%# Aplanado: los ajustes van anidados por sección y aquí solo cabe
+              `agente.seccion.clave = valor`. %>
+          <% flatten_settings(config.settings).each do |path, value| %>
+            <div>
+              <span class="text-terminal-muted"><%= config.agent %>.<%= path %></span>
+              = <span class="text-antique-gold"><%= value %></span>
+            </div>
+          <% end %>
+        <% end %>
+      <% else %>
+        <div class="text-terminal-muted">sin overrides · hereda la global</div>
+      <% end %>
+
+      <%# En F3 la pantalla de agentes es de SOLO LECTURA: editar es F9. El
+          enlace dice «ver», no «editar». %>
+      <%= link_to "→ ver en AGENTES", agents_path, class: "inline-block mt-2.5 text-t105" %>
+    </div>
+  </div>
+<% end %>

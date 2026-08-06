@@ -1,0 +1,62 @@
+<% breadcrumb "agents", @agent %>
+<% content_for :title, "identia-matrix · agentes" %>
+
+<div class="h-[34px] flex-none flex items-center gap-3.5 px-3.5
+            bg-terminal-sunken border-b border-terminal-border text-t11">
+  <span class="text-terminal-muted">agents:</span>
+  <% AgentsController::AGENTS.each do |key| %>
+    <%= link_to key, agents_path(key: key, scope: params[:scope]),
+                class: "pb-0.5 #{key == @agent ?
+                  'text-antique-gold border-b border-antique-gold'
+                  : 'text-terminal-fg-4'}" %>
+  <% end %>
+
+  <div class="ml-auto flex items-center gap-2.5 text-t105 text-terminal-muted">
+    <span>scope</span>
+    <%= link_to "global", agents_path(key: @agent),
+                class: "px-2.5 py-0.5 #{@client.nil? ? 'bg-antique-gold text-ink'
+                                                     : 'border border-terminal-border'}" %>
+    <% @clients.each do |client| %>
+      <%= link_to client.slug, agents_path(key: @agent, scope: client.slug),
+                  class: "px-2.5 py-0.5 #{@client == client ?
+                    'bg-antique-gold text-ink' : 'border border-terminal-border'}" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[26px] pt-[22px] pb-6">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="text-[30px] font-sans font-semibold tracking-[.03em] text-terminal-fg">
+        <%= @agent.upcase %>
+      </h1>
+      <span class="text-t125 text-terminal-fg-4"><%= agent_role(@agent) %></span>
+      <span class="ml-auto text-t105 text-terminal-muted">
+        <%= agent_cadence(@agent) || pluralize(@runs.size, "ejecución reciente") %>
+      </span>
+    </div>
+
+    <%# SOLO LECTURA. Editar es F9: hoy no hay agentes de verdad a los que
+        configurar, y un formulario que guarda algo que nadie lee es peor que no
+        tenerlo. Ni un input en toda la pantalla. %>
+    <div class="mt-2 text-t105 text-terminal-disabled">
+      configuración en solo lectura · se edita en F9, cuando los agentes existan
+    </div>
+
+    <% if @effective.any? %>
+      <div class="grid grid-cols-2 gap-x-[34px] gap-y-[26px] mt-[22px]">
+        <% ordered_sections(@effective).each do |section, entries| %>
+          <%= render "agents/section", agent: @agent, section: section,
+                     entries: entries, override: @override[section] || {} %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="mt-6 text-t12 text-terminal-disabled">
+        <%= @agent.upcase %> todavía no tiene configuración sembrada.
+      </p>
+    <% end %>
+  </div>
+
+  <%= render "agents/panel", agent: @agent, client: @client, global: @global,
+             override: @override, runs: @runs %>
+</div>

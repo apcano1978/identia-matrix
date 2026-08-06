@@ -57,7 +57,16 @@ class Initiative < ApplicationRecord
   def qa_cycles_exhausted? = qa_cycles_consumed >= MAX_QA_CYCLES
 
   # La escalada abierta, si la hay. Un evolutivo detenido tiene exactamente una.
-  def open_escalation = escalations.find_by(resolved_at: nil)
+  def open_escalation = escalations.find { |e| e.resolved_at.nil? }
+
+  # Espera a una persona: está en una de las dos puertas o está detenido. Vive
+  # en el modelo y no en el dashboard porque lo preguntan tres pantallas, y tres
+  # copias de esta condición acabarían discrepando.
+  def awaiting_human?
+    at_gate_1? || at_gate_2? || open_escalation.present?
+  end
+
+  def to_param = code
 
   def to_s = "#{code} · #{title}"
 end

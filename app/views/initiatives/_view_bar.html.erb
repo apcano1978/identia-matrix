@@ -1,0 +1,52 @@
+<div class="h-[34px] flex-none flex items-center gap-[9px] px-3.5
+            bg-terminal-sunken border-b border-terminal-border">
+  <%= link_to "← #{client.slug}", client_path(client), class: "text-t105" %>
+  <span class="text-t11 text-terminal-sep">/</span>
+  <span class="text-t11 font-medium text-terminal-fg">
+    <%= initiative.code %> · <%= initiative.title %>
+  </span>
+
+  <%= status_chip situation(initiative).label, tone: :muted,
+                  glyph: stage_glyph(initiative.current_stage,
+                                     initiative.current_stage_status,
+                                     size: "text-t11") %>
+  <%= status_chip pluralize(initiative.repositories.size, "repo"), tone: :gold %>
+
+  <%# El nexo visible con el otro repositorio del workspace. Es un enlace de
+      salida a propósito: el proyecto se gestiona allí, no aquí. %>
+  <% if initiative.platform_project %>
+    <span class="text-t10 text-terminal-muted">
+      platform ↗
+      <span class="text-terminal-fg-3">
+        <%= initiative.platform_project.platform_project_ref %>
+      </span>
+    </span>
+  <% end %>
+
+  <div class="ml-auto flex items-center gap-3 text-t105 text-terminal-fg-3">
+    <%= link_to "workflow", client_initiative_path(client, initiative),
+                class: "pb-0.5 #{artifact.nil? || artifact == artifacts.first ?
+                  'text-antique-gold border-b border-antique-gold' : ''}" %>
+
+    <% artifact_tabs(initiative, artifacts, artifact).each do |tab| %>
+      <% if tab[:artifact] %>
+        <%= link_to tab[:label],
+                    client_initiative_path(client, initiative,
+                                           artifact: tab[:artifact].code),
+                    class: "pb-0.5 #{tab[:current] ?
+                      'text-antique-gold border-b border-antique-gold' : ''}" %>
+      <% else %>
+        <span class="text-terminal-disabled cursor-not-allowed"
+              title="<%= initiative.code %> todavía no tiene ese artefacto">
+          <%= tab[:label] %>
+        </span>
+      <% end %>
+    <% end %>
+
+    <%# `sources` es F4 y `config` es F9. Apagadas, y su título dice por qué. %>
+    <span class="text-terminal-disabled cursor-not-allowed"
+          title="la pantalla de fuentes llega en F4">sources</span>
+    <span class="text-terminal-disabled cursor-not-allowed"
+          title="la configuración de agentes se edita en F9">config</span>
+  </div>
+</div>

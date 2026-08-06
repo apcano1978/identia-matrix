@@ -32,7 +32,13 @@ class Artifact < ApplicationRecord
 
   scope :latest_first, -> { order(version: :desc) }
 
-  def body_markdown = body.attached? ? body.download : nil
+  # `download` devuelve bytes crudos —ASCII-8BIT—, y el cuerpo de un artefacto
+  # es markdown en UTF-8: sin esto, la primera tilde revienta el renderizado.
+  def body_markdown
+    return nil unless body.attached?
+
+    body.download.force_encoding(Encoding::UTF_8)
+  end
 
   def to_s = "#{code} v#{version}"
 

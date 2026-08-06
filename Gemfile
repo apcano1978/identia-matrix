@@ -52,7 +52,6 @@ gem "commonmarker", "~> 2.0"
 gem "pagy", "~> 9.0"
 
 # Contraseñas de usuario (has_secure_password).
-gem "bcrypt", "~> 3.1.7"
 
 # Active Storage sobre S3: el bucket de artefactos en producción (F4).
 # En desarrollo y test el servicio es :local.

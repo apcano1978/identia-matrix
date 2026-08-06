@@ -34,18 +34,31 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     assert_equal [ "booking-core" ], repositories.map { |r| r["name"] }
   end
 
-  test "la configuración efectiva del agente viaja en la petición" do
+  test "la configuración efectiva del agente viaja aparte, bajo `matrix`" do
     run = agent_run
-    AgentConfig.create!(agent: run.agent, settings: { "max_tokens" => 8000 })
+    AgentConfig.create!(agent: run.agent,
+                        settings: { "model" => { "engine" => "sonnet" } })
     AgentConfig.create!(agent: run.agent,
                         platform_client_id: run.initiative.platform_client_id,
-                        settings: { "thinking" => "adaptive" })
+                        settings: { "model" => { "spec_length" => "verbose" } })
 
     config = Runtime::Request.for(run).payload["config"]
 
-    assert_equal 8000, config["max_tokens"]
-    assert_equal "adaptive", config["thinking"]
-    assert_equal Runtime::Request::DEFAULT_MODEL, config["model"]
+    assert_equal({ "engine" => "sonnet", "spec_length" => "verbose" },
+                 config.dig("matrix", "model"))
+  end
+
+  # El vocabulario de matrix y el del contrato comparten la palabra `model` y
+  # significan cosas distintas. Cuando se mezclaban, una sección llamada así
+  # pisaba el alias y la petición dejaba de validar.
+  test "y no pisa el alias de modelo del contrato" do
+    run = agent_run
+    AgentConfig.create!(agent: run.agent,
+                        settings: { "model" => { "engine" => "sonnet" } })
+    envelope = Runtime::Request.for(run)
+
+    assert_equal Runtime::Request::DEFAULT_MODEL, envelope.payload.dig("config", "model")
+    assert_empty Contracts.errors(:matrix_brain_agent_run, envelope.payload)
   end
 
   private

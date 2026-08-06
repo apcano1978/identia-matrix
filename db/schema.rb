@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_05_170230) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_06_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -323,6 +323,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_05_170230) do
     t.datetime "first_linked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "decision_note"
     t.index ["initiative_id", "repository_id"], name: "idx_on_initiative_id_repository_id_686c4d07d1", unique: true
     t.index ["initiative_id"], name: "index_initiative_repositories_on_initiative_id"
     t.index ["repository_id"], name: "index_initiative_repositories_on_repository_id"

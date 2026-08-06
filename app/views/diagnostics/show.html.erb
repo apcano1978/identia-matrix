@@ -1,9 +1,8 @@
 <% content_for :title, "identia-matrix · diagnóstico" %>
 
-<%# Página de diagnóstico del entorno. Deliberadamente desechable: en F3 la
-    sustituye el dashboard. Ejercita la capa de tokens de F0 de punta a punta —
-    fuentes, superficies, glifos — para que no se descubra en F3 que algo de
-    aquello no se aplicaba. %>
+<%# Página de diagnóstico del entorno, en `/diagnostics` y solo en local. En F3
+    el dashboard le quitó la raíz pero no el sitio: sigue siendo lo único que se
+    puede mirar cuando la aplicación no arranca. %>
 
 <main class="min-h-screen bg-terminal-bg px-8 py-10 font-mono">
   <div class="mx-auto max-w-3xl">
@@ -31,7 +30,7 @@
       <ul class="mt-4">
         <% @checks.each do |check| %>
           <li class="grid grid-cols-[20px_180px_1fr] items-baseline gap-3 border-b border-terminal-border py-3">
-            <span class="text-t11"><%= glyph(check.status) %></span>
+            <span class="text-t11"><%= check_glyph(check.status) %></span>
             <span class="text-t12 text-terminal-fg"><%= check.label %></span>
             <span class="text-t115 <%= check.ok? ? "text-terminal-fg-4" : "text-glyph-fail" %>">
               <%= check.detail %>
@@ -42,9 +41,9 @@
     </section>
 
     <footer class="mt-8 flex items-baseline gap-4 text-t11 text-terminal-muted">
-      <span><%= glyph(:ok) %> responde</span>
-      <span><%= glyph(:failed) %> no responde</span>
-      <span><%= glyph(:pending) %> aún no aplica</span>
+      <span><%= check_glyph(:ok) %> responde</span>
+      <span><%= check_glyph(:failed) %> no responde</span>
+      <span><%= check_glyph(:pending) %> aún no aplica</span>
       <span class="ml-auto text-terminal-disabled">
         esta pantalla desaparece en F3
       </span>

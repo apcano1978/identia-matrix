@@ -1,0 +1,25 @@
+<%# El ámbito de NIVEL CLIENTE: lo que ven todos sus evolutivos salvo que uno
+    lo acote. Aquí solo el recuento — la pantalla de fuentes, con su filtro por
+    evolutivo, es F4. %>
+<%= section_header "FUENTES · NIVEL CLIENTE", tone: :gate2,
+                   gloss: "solo lectura · visibles para todos sus evolutivos" %>
+
+<div class="mt-[9px] flex flex-col gap-px">
+  <% { "docs" => client.platform_documents, "meetings" => client.platform_meetings }
+       .each do |label, collection| %>
+    <div class="grid grid-cols-[104px_1fr_118px] gap-3.5 items-center
+                px-3 py-2.5 bg-terminal-sunken text-t115">
+      <span class="text-antique-gold"><%= label %></span>
+      <span class="text-terminal-fg truncate">
+        <%= collection.size %><%= " · #{collection.map(&:slug).sort.join(' · ')}" if collection.any? %>
+      </span>
+      <span class="<%= collection.any? ? 'text-glyph-done' : 'text-terminal-fg-3' %>">
+        <% if (synced = collection.filter_map(&:synced_at).max) %>
+          sync <%= synced.strftime("%H:%M") %>
+        <% else %>
+          idle
+        <% end %>
+      </span>
+    </div>
+  <% end %>
+</div>

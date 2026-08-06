@@ -1,0 +1,35 @@
+<% initiative = row.initiative %>
+<div data-initiative="<%= initiative.code %>"
+     class="grid-dashboard items-center px-[11px] py-[7px]
+            border-b border-[rgba(240,233,215,.07)] last:border-b-0">
+  <%= stage_glyph initiative.current_stage, initiative.current_stage_status %>
+
+  <%= link_to initiative.code,
+              client_initiative_path(initiative.platform_client.slug, initiative.code),
+              class: "text-t105 border-b border-terminal-border-gold" %>
+
+  <span class="text-t115 text-terminal-fg truncate" title="<%= initiative.title %>">
+    <%= initiative.title %>
+  </span>
+
+  <%= stage_strip initiative, size: "text-t12" %>
+
+  <span class="min-w-0">
+    <span class="block text-t11 text-terminal-fg-3 truncate"><%= row.headline %></span>
+    <span class="block text-t95 text-terminal-muted truncate"
+          title="<%= row.sources.join(' · ') %>">
+      <%= row.sources.join(" · ").presence || "sin repositorios" %>
+    </span>
+  </span>
+
+  <%= age initiative.stage_changed_at || initiative.opened_at %>
+
+  <%# El botón NAVEGA, no ejecuta: firmar y validar son F6. El `↗` es la
+      convención de la propia maqueta para «esto te lleva a otro sitio». %>
+  <%= link_to "#{row.action} ↗",
+              client_initiative_path(initiative.platform_client.slug, initiative.code),
+              class: "py-[5px] text-center text-t10 font-medium #{
+                tone == :gold ? 'bg-antique-gold text-ink hover:text-ink'
+                              : 'border border-terminal-border-gold text-antique-gold'
+              }" %>
+</div>

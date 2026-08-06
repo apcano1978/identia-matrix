@@ -29,3 +29,23 @@ es:
       words_connector: ", "
       two_words_connector: " y "
       last_word_connector: " y "
+  date:
+    # `12 abr`. Es la forma que usa la maqueta en cuanto una espera pasa de una
+    # semana: «47d» no le dice nada a nadie, una fecha sí.
+    formats:
+      short: "%-d %b"
+      default: "%-d %b %Y"
+    abbr_month_names:
+      - ~
+      - ene
+      - feb
+      - mar
+      - abr
+      - may
+      - jun
+      - jul
+      - ago
+      - sep
+      - oct
+      - nov
+      - dic

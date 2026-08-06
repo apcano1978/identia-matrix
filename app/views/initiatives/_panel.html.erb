@@ -1,0 +1,83 @@
+<%# 330 px. En F3 solo META y LOG: la pestaña REFS es F4, y no es maquetación
+    sino procedencia — el panel de citas por repositorio, los chips por nivel y
+    el conflicto de nivel. Se pinta apagada para que se vea que viene. %>
+<aside class="w-[330px] flex-none bg-terminal-sunken flex flex-col"
+       data-controller="tabs" data-tabs-active-class="text-antique-gold">
+  <div class="h-[30px] flex-none flex border-b border-terminal-border">
+    <span class="px-3 flex items-center text-t10 text-terminal-disabled cursor-not-allowed"
+          title="el panel de procedencia llega en F4">REFS</span>
+    <button data-action="tabs#select" data-tabs-target="tab" data-tab="meta"
+            class="px-3 flex items-center text-t10 text-antique-gold
+                   border-b border-antique-gold">META</button>
+    <button data-action="tabs#select" data-tabs-target="tab" data-tab="log"
+            class="px-3 flex items-center text-t10 text-terminal-fg-3">LOG</button>
+  </div>
+
+  <div data-tabs-target="pane" data-pane="meta"
+       class="flex-1 min-h-0 overflow-y-auto">
+    <%= panel_block("EVOLUTIVO") do %>
+      <dl class="text-t105 leading-[1.8]">
+        <%= render "initiatives/fact", term: "cliente", value: initiative.platform_client.name %>
+        <%= render "initiatives/fact", term: "platform",
+                   value: initiative.platform_project&.platform_project_ref || "—" %>
+        <%= render "initiatives/fact", term: "abierto",
+                   value: l(initiative.opened_at.to_date, format: :default) %>
+        <%= render "initiatives/fact", term: "iteración", value: initiative.iteration %>
+        <%= render "initiatives/fact", term: "ciclos QA",
+                   value: "#{initiative.qa_cycles_consumed}/#{Initiative::MAX_QA_CYCLES}" %>
+      </dl>
+    <% end %>
+
+    <%= panel_block("REPOSITORIOS ANCLADOS") do %>
+      <div class="flex flex-col gap-2">
+        <% initiative.initiative_repositories.each do |link| %>
+          <div class="flex items-baseline gap-2 text-t105">
+            <%= link_to link.repository.name,
+                        client_repository_path(initiative.platform_client,
+                                               link.repository),
+                        class: "text-terminal-fg-2" %>
+            <span class="ml-auto text-antique-gold"><%= link.pinned_sha || "sin anclar" %></span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if artifact %>
+      <%= panel_block("ARTEFACTO") do %>
+        <dl class="text-t105 leading-[1.8]">
+          <%= render "initiatives/fact", term: "clave", value: artifact.storage_key %>
+          <%= render "initiatives/fact", term: "tipo", value: artifact.kind %>
+          <%= render "initiatives/fact", term: "versión", value: "v#{artifact.version}" %>
+          <%= render "initiatives/fact", term: "checksum", value: artifact.checksum %>
+        </dl>
+        <p class="mt-2 text-t95 text-terminal-muted">
+          inmutable · sin borrado · corregir es publicar la versión siguiente
+        </p>
+      <% end %>
+    <% end %>
+
+    <%= panel_block("ARTEFACTOS (#{initiative.artifacts.size})") do %>
+      <div class="flex flex-col gap-1.5">
+        <% initiative.artifacts.sort_by(&:code).each do |item| %>
+          <%= link_to client_initiative_path(initiative.platform_client, initiative,
+                                             artifact: item.code),
+                      class: "flex items-baseline gap-2 text-t105 #{
+                        item == artifact ? 'text-antique-gold' : 'text-terminal-fg-3'}" do %>
+            <span><%= item.code %></span>
+            <span class="ml-auto text-terminal-muted">v<%= item.version %></span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div data-tabs-target="pane" data-pane="log"
+       class="flex-1 min-h-0 overflow-y-auto px-3.5 py-3 hidden
+              flex-col gap-[9px] text-t105">
+    <% if events.any? %>
+      <%= render partial: "events/event", collection: events, as: :event %>
+    <% else %>
+      <p class="text-terminal-disabled">Sin actividad registrada.</p>
+    <% end %>
+  </div>
+</aside>

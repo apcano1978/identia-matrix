@@ -1,0 +1,25 @@
+<% breadcrumb "clients" %>
+<% content_for :title, "identia-matrix · clientes" %>
+
+<%= render "shared/view_bar",
+           notes: [ "#{@pagy.count} clientes",
+                    "#{Initiative.count} evolutivos",
+                    "alta y edición en identia-platform" ] do %>
+  <span class="text-t12 font-medium text-antique-gold">:</span>
+  <span class="text-t115 text-terminal-muted">buscar cliente…</span>
+<% end %>
+
+<div class="flex-1 min-h-0 overflow-y-auto px-5 pt-[18px] pb-5">
+  <%= section_header "CLIENTES", gloss: "cliente → evolutivos × repositorios",
+                     tone: :gate2 %>
+
+  <div class="grid grid-cols-3 items-start gap-[13px] mt-3">
+    <%= render partial: "clients/card", collection: @clients, as: :client %>
+  </div>
+
+  <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+
+  <p class="mt-4 text-t105 text-terminal-fg-3">
+    ↳ el evolutivo es el eje de trabajo; el repositorio, el eje de memoria
+  </p>
+</div>

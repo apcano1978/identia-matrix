@@ -1,0 +1,33 @@
+<% initiative = entry.initiative %>
+<div class="grid-repo-history items-baseline px-3 py-3
+            border-b border-[rgba(240,233,215,.07)] last:border-b-0">
+  <%= link_to initiative.code, client_initiative_path(client, initiative),
+              class: "text-t11" %>
+  <span class="text-t95 text-terminal-muted">
+    <%= age_label(initiative.stage_changed_at,
+                  Time.current - initiative.stage_changed_at) %>
+  </span>
+  <%= stage_glyph initiative.current_stage, initiative.current_stage_status %>
+
+  <div class="min-w-0">
+    <div class="text-t12 text-terminal-fg"><%= initiative.title %></div>
+
+    <%# El párrafo es el producto entero en una línea: lo que hace que el tercer
+        evolutivo sobre este repositorio arranque sabiendo lo que decidieron los
+        dos anteriores. En F9 lo escribe LINK al cerrar. %>
+    <p class="mt-1 text-t105 leading-[1.6] text-terminal-fg-3">
+      <%= entry.link.decision_note.presence ||
+          tag.span("sin cierre documental todavía", class: "text-terminal-disabled") %>
+    </p>
+
+    <div class="mt-1.5 flex items-baseline gap-2.5 text-t95 text-terminal-muted">
+      <span>base <span class="text-terminal-fg-4"><%= entry.base_sha || "—" %></span></span>
+      <span>→ ejecutado
+        <span class="<%= entry.executed_sha ? 'text-antique-gold' : 'text-terminal-disabled' %>">
+          <%= entry.executed_sha || "aún no" %>
+        </span>
+      </span>
+      <span class="ml-auto"><%= situation_tag(initiative, size: "text-t95") %></span>
+    </div>
+  </div>
+</div>

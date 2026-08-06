@@ -1,0 +1,29 @@
+<%# 360 px y el scroll dentro. Es la primera pieza VIVA de la aplicación: lo que
+    hace evidente que el runtime falso está trabajando. %>
+<aside class="w-[360px] flex-none bg-terminal-sunken border-l border-terminal-border
+              flex flex-col"
+       data-controller="event-stream"
+       data-event-stream-max-value="<%= Event::STREAM_SIZE * 4 %>"
+       data-action="mouseenter->event-stream#pause mouseleave->event-stream#resume">
+  <div class="h-[30px] flex-none flex items-center gap-[9px] px-3.5
+              border-b border-terminal-border">
+    <span class="w-1.5 h-1.5 bg-glyph-done block"></span>
+    <span class="text-t10 font-medium tracking-[.14em] text-terminal-fg-3">EVENT STREAM</span>
+    <span class="ml-auto text-t10 text-terminal-muted">tail -f</span>
+  </div>
+
+  <%= turbo_stream_from "events" %>
+
+  <div id="event-stream" data-event-stream-target="log"
+       class="flex-1 min-h-0 overflow-y-auto px-3.5 py-3 flex flex-col gap-[9px] text-t105">
+    <%= render partial: "events/event", collection: events, as: :event %>
+  </div>
+
+  <% runs = AgentRun.where(started_at: Time.current.all_day) %>
+  <div class="h-[30px] flex-none flex items-center gap-[9px] px-3.5
+              border-t border-terminal-border text-t10 text-terminal-muted">
+    <span>cost today</span>
+    <span class="text-antique-gold"><%= token_total(runs) %></span>
+    <span class="ml-auto">runs <%= runs.count %></span>
+  </div>
+</aside>

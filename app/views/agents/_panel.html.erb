@@ -1,0 +1,51 @@
+<%= side_panel(width: 392) do %>
+  <%= panel_block("EFFECTIVE CONFIG · DIFF") do %>
+    <p class="text-t105 text-terminal-fg-3">
+      global <span class="text-terminal-muted">vs</span>
+      <%= client&.slug || "sin cliente seleccionado" %>
+    </p>
+
+    <% diff = override_diff(override, global) %>
+    <div class="mt-2.5 flex flex-col gap-1.5 text-t105">
+      <% if client.nil? %>
+        <p class="text-terminal-disabled">
+          Elige un cliente arriba para ver qué le cambia.
+        </p>
+      <% elsif diff.empty? %>
+        <p class="text-terminal-disabled">
+          <%= client.slug %> hereda la global sin cambios.
+        </p>
+      <% else %>
+        <% diff.each do |change| %>
+          <div class="flex items-baseline gap-2">
+            <span class="text-terminal-muted"><%= change[:path] %></span>
+            <span class="ml-auto">
+              <span class="text-terminal-disabled line-through"><%= change[:before] %></span>
+              <span class="text-antique-gold"><%= change[:after] %></span>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= panel_block("EJECUCIONES RECIENTES") do %>
+    <div class="flex flex-col gap-2">
+      <% runs.each do |run| %>
+        <div class="flex items-baseline gap-2 text-t105">
+          <span class="text-terminal-fg-3"><%= run.purpose %></span>
+          <%= link_to run.initiative.code,
+                      client_initiative_path(run.initiative.platform_client,
+                                             run.initiative),
+                      class: "text-t95" %>
+          <span class="ml-auto text-terminal-muted">
+            <%= number_with_delimiter(run.total_tokens) %> tok
+          </span>
+        </div>
+      <% end %>
+      <% if runs.empty? %>
+        <p class="text-t105 text-terminal-disabled">Sin ejecuciones registradas.</p>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

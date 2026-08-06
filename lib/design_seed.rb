@@ -37,6 +37,8 @@ module DesignSeed
       seed_repositories
       Catalog::INITIATIVES.each { |data| seed_initiative(data) }
       seed_adrs
+      seed_agent_configs
+      Catalog::PACKAGES.each { |data| seed_gate_package(data) }
       seed_ev_031
       seed_events
 
@@ -88,8 +90,42 @@ module DesignSeed
 
     stage, status = StageCache.derive(initiative)
     initiative.update!(current_stage: stage, current_stage_status: status,
-                       stage_changed_at: initiative.stage_entries
-                                                   .maximum(:entered_at))
+                       stage_changed_at: entered_current_stage_at(data))
+  end
+
+  # La EDAD que el dashboard pinta sale de aquí. La maqueta la trae en la marca
+  # derecha del nodo activo —`3d`, `6h`, `25m`— y sin traducirla a una hora real
+  # el dashboard enseñaría la fecha de apertura del evolutivo, que es otra cosa.
+  DURATION = /\A(?<amount>\d+)(?<unit>[mhd])\z/
+
+  def entered_current_stage_at(data)
+    current = data[:pipe].find { |(status, _, _)| status == "act" } ||
+              data[:pipe].reject { |(status, _, _)| FINISHED.include?(status) }.last ||
+              data[:pipe].last
+    match = DURATION.match(current[2].to_s)
+    return Time.zone.parse(data[:opened_on]) if match.blank?
+
+    Time.current - match[:amount].to_i.public_send(
+      { "m" => :minutes, "h" => :hours, "d" => :days }.fetch(match[:unit]))
+  end
+
+  def seed_gate_package(data)
+    initiative = Initiative.find_by!(code: data[:initiative])
+    package = WorkPackage.find_or_initialize_by(code: data[:code])
+    package.update!(
+      initiative: initiative,
+      tasks_count: data[:tasks_count], new_files_count: data[:new_files_count],
+      modified_files_count: data[:modified_files_count],
+      migrations_count: data[:migrations_count],
+      sealed_at: initiative.stage_changed_at,
+      content_hash: "sha256:#{Digest::SHA256.hexdigest(data[:code])}")
+
+    WorkPackageRepository.find_or_initialize_by(
+      work_package: package,
+      repository: Repository.find_by!(
+        platform_client_id: initiative.platform_client_id,
+        name: data[:repository])
+    ).update!(deploy_order: 1, write_scope: data[:write_scope])
   end
 
   def link_repositories(initiative, data)
@@ -100,7 +136,8 @@ module DesignSeed
         initiative: initiative, repository: repository)
       link.update!(pinned_sha: data[:pinned][name],
                    indexed_files_count: repository.files_count,
-                   indexed_at: initiative.opened_at)
+                   indexed_at: initiative.opened_at,
+                   decision_note: Catalog::DECISIONS[[ data[:code], name ]])
     end
   end
 
@@ -172,6 +209,19 @@ module DesignSeed
     end
   end
 
+  def seed_agent_configs
+    Catalog::AGENT_CONFIGS.each do |agent, settings|
+      AgentConfig.find_or_initialize_by(agent: agent, platform_client_id: nil)
+                 .update!(settings: settings)
+    end
+
+    Catalog::AGENT_OVERRIDES.each do |data|
+      AgentConfig.find_or_initialize_by(
+        agent: data[:agent], platform_client_id: client_for(data[:client]).id
+      ).update!(settings: data[:settings])
+    end
+  end
+
   # ── ev-031, el caso completo ───────────────────────────────────────────────
 
   def seed_ev_031
@@ -205,8 +255,8 @@ module DesignSeed
         created.purpose = work[:purpose]
         created.status = :ok
         created.iteration = initiative.iteration
-        created.started_at = initiative.opened_at
-        created.finished_at = initiative.opened_at + 4.minutes
+        created.started_at = initiative.stage_changed_at || initiative.opened_at
+        created.finished_at = created.started_at + 4.minutes
         created.input_tokens = 18_400
         created.output_tokens = 3_120
       end

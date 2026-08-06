@@ -1,0 +1,27 @@
+<%# La barra de comando. El filtro FUNCIONA — es una consulta sobre
+    `current_stage`, que existe precisamente para esto. La paleta `⌘K` de la
+    maqueta no se pinta: un atajo que no hace nada se prueba una vez y no se
+    vuelve a mirar. %>
+<div class="h-[34px] flex-none flex items-center gap-2.5 px-3.5
+            bg-terminal-sunken border-b border-terminal-border">
+  <span class="text-t12 font-medium text-antique-gold">:</span>
+
+  <%= form_with url: root_path, method: :get, class: "flex-1 flex items-center gap-2" do |form| %>
+    <%= form.text_field :q, value: board.filter.raw,
+                        placeholder: "filter needs:human OR status:qa_cycle",
+                        autocomplete: "off",
+                        class: "flex-1 bg-transparent border-0 p-0 text-t115
+                                text-terminal-fg-2 placeholder:text-terminal-disabled
+                                focus:outline-none" %>
+    <% if board.filter.any? %>
+      <span class="text-t10 text-terminal-muted">
+        <%= board.visible_count %> de <%= board.summary.active %>
+      </span>
+      <%= link_to "limpiar", root_path, class: "text-t10" %>
+    <% end %>
+  <% end %>
+
+  <span class="ml-auto text-t95 text-terminal-muted">
+    <%= stage_chain %>
+  </span>
+</div>

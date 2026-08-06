@@ -1,0 +1,57 @@
+<%# 318 px. Los doce nodos de 44, con el arco de ciclo QA a la izquierda cuando
+    lo hubo. El activo lleva borde izquierdo en oro. %>
+<% nodes = pipeline_nodes(initiative) %>
+<% arc = qa_arc(initiative) %>
+
+<aside class="w-[318px] flex-none bg-terminal-sunken border-r border-terminal-border
+              flex flex-col">
+  <div class="h-7 flex-none flex items-center gap-[9px] px-3
+              border-b border-terminal-border">
+    <span class="eyebrow text-terminal-fg-3">PIPELINE</span>
+    <span class="ml-auto"><%= situation_tag(initiative, size: "text-t10") %></span>
+  </div>
+
+  <div class="flex-1 min-h-0 overflow-y-auto relative pt-1.5">
+    <% if arc %>
+      <%# Del nodo 9 (verificación) al nodo 3 (NEO): el camino que recorre un ✕.
+          Se pinta solo si hubo retorno — un arco siempre visible no diría nada. %>
+      <svg width="30" height="540" class="absolute left-0 top-1.5" aria-hidden="true">
+        <path d="M22,378 L11,378 L11,112 L22,112" fill="none"
+              stroke="<%= arc.colour %>" stroke-width="1.3" stroke-dasharray="4 3"></path>
+        <path d="M22,112 L15,108 L15,116 Z" fill="<%= arc.colour %>"></path>
+        <rect x="4" y="215" width="14" height="60" fill="#0A1A0B"></rect>
+        <text x="11" y="245" transform="rotate(-90 11 245)" text-anchor="middle"
+              font-family="JetBrains Mono, monospace" font-size="9"
+              fill="<%= arc.colour %>"><%= arc.label %></text>
+      </svg>
+    <% end %>
+
+    <div class="ml-[30px] flex flex-col">
+      <% nodes.each do |node| %>
+        <%# `flex-none`: sin él los doce nodos se encogen para caber en la
+            columna, y el arco —que tiene coordenadas fijas de 44 px por nodo—
+            deja de apuntar a NEO y a la verificación. %>
+        <div class="grid-pipeline-node flex-none h-11 px-3 border-l-2
+                    <%= node.current? ? 'border-antique-gold bg-[rgba(196,155,94,.10)]'
+                                      : 'border-transparent' %>">
+          <%= stage_glyph node.stage, node.status, size: "text-t14" %>
+          <span class="min-w-0">
+            <span class="block text-t12 font-medium truncate
+                         <%= node.status == 'pending' ? 'text-terminal-muted'
+                                                      : 'text-terminal-fg' %>">
+              <%= node.label %>
+            </span>
+            <span class="block text-t10 text-terminal-fg-4 truncate">
+              <%= node.summary || "—" %>
+            </span>
+          </span>
+          <span class="flex-none text-t10 text-terminal-muted"><%= node.metric || "—" %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="flex-none px-3 py-2.5 border-t border-terminal-border">
+    <%= glyph_legend %>
+  </div>
+</aside>

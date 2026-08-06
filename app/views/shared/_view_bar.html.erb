@@ -1,0 +1,20 @@
+<%# La sub-barra de vista: 34 px, hundida, con la vuelta atrás a la izquierda y
+    el estado de la vista a la derecha. La lleva cada pantalla salvo el
+    dashboard, que en su lugar pone la barra de comando. %>
+<div class="h-[34px] flex-none flex items-center gap-2.5 px-3.5
+            bg-terminal-sunken border-b border-terminal-border">
+  <% if local_assigns[:back] %>
+    <%= link_to "← #{back[:label]}", back[:path], class: "text-t105" %>
+    <span class="text-t11 text-terminal-sep">/</span>
+  <% end %>
+
+  <% if local_assigns[:title] %>
+    <span class="text-t11 font-medium text-terminal-fg"><%= title %></span>
+  <% end %>
+
+  <%= yield if block_given? %>
+
+  <div class="ml-auto flex items-center gap-3.5 text-t10 text-terminal-muted">
+    <% Array(local_assigns[:notes]).each do |note| %><span><%= note %></span><% end %>
+  </div>
+</div>

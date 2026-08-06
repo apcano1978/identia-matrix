@@ -1,0 +1,14 @@
+<%= section_header tray.title, count: tray.count, gloss: tray.gloss,
+                   tone: tray.tone %>
+
+<div class="mt-[7px] border <%= tray_border_class(tray.tone) %>">
+  <div class="grid-dashboard px-[11px] py-[5px] bg-terminal-sunken
+              border-b border-terminal-border text-t95 tracking-[.08em]
+              text-terminal-fg-4">
+    <span></span><span>ID</span><span>EVOLUTIVO</span><span>PIPELINE · 12</span>
+    <span>DETALLE · REPOSITORIOS</span><span>EDAD</span><span></span>
+  </div>
+
+  <%= render partial: "dashboard/row", collection: tray.rows, as: :row,
+             locals: { tone: tray.tone } %>
+</div>

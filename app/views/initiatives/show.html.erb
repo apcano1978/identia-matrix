@@ -1,0 +1,13 @@
+<% breadcrumb "clients", @client.slug, @initiative.code %>
+<% content_for :title, "identia-matrix · #{@initiative.code}" %>
+
+<%= render "initiatives/view_bar", client: @client, initiative: @initiative,
+           artifacts: @artifacts, artifact: @artifact %>
+
+<div class="flex-1 min-h-0 flex">
+  <%= render "initiatives/pipeline", initiative: @initiative %>
+  <%= render "initiatives/viewer", initiative: @initiative, artifact: @artifact,
+             report: @report %>
+  <%= render "initiatives/panel", initiative: @initiative, artifact: @artifact,
+             events: @events %>
+</div>

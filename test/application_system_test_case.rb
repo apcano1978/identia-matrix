@@ -21,4 +21,26 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
       options.add_argument("--no-sandbox")
     end
   end
+
+  include SystemSessionHelpers
+
+  # La suscripción al cable se establece DESPUÉS de cargar la página, y Turbo no
+  # reenvía lo que se emitió antes de que existiera: un test que publica nada
+  # más cargar pasa o falla según lo rápido que vaya la máquina.
+  #
+  # Esto emite eventos de prueba hasta que uno llega. Cuando el primero aparece,
+  # el canal está vivo y lo que se publique después es determinista.
+  def wait_for_turbo_stream(attempts: 10)
+    marker = "· cable listo ·"
+
+    attempts.times do
+      Event.create!(occurred_at: Time.current, actor: "TEST", kind: "probe",
+                    message: marker)
+      return true if page.has_text?(marker, wait: 0.5)
+    end
+
+    flunk "el canal de Turbo no se suscribió tras #{attempts} intentos"
+  ensure
+    Event.where(kind: "probe").delete_all
+  end
 end

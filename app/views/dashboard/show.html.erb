@@ -1,0 +1,26 @@
+<% breadcrumb "status" %>
+<% content_for :title, "identia-matrix · status" %>
+
+<div class="flex-1 min-h-0 flex flex-col">
+  <%= render "dashboard/command_bar", board: @board %>
+
+  <div class="flex-1 min-h-0 flex">
+    <%# La columna central es la única fluida; el event stream conserva sus 360
+        px. Y el scroll vive AQUÍ dentro, no en la página. %>
+    <div id="trays" class="flex-1 min-w-0 overflow-y-auto px-[18px] pt-[11px] pb-4">
+      <% if @board.trays.empty? %>
+        <p class="mt-10 text-center text-t12 text-terminal-disabled">
+          Nada que atender con este filtro.
+        </p>
+      <% else %>
+        <%= render partial: "dashboard/tray", collection: @board.trays, as: :tray %>
+      <% end %>
+
+      <div class="mt-[9px] pt-2 border-t border-terminal-border">
+        <%= glyph_legend %>
+      </div>
+    </div>
+
+    <%= render "dashboard/event_stream", events: @events %>
+  </div>
+</div>

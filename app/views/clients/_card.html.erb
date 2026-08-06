@@ -1,0 +1,49 @@
+<% initiatives = client.initiatives.sort_by(&:code) %>
+<% open = initiatives.reject(&:at_publication?) %>
+<% leading = open.min_by { |i| i.stage_changed_at || i.opened_at } %>
+
+<%# El borde en oro marca al cliente que tiene algo esperando a una persona. Es
+    la misma señal que el dashboard, vista desde el otro lado. %>
+<%= link_to client_path(client),
+            class: "flex flex-col p-[14px_15px] border #{
+              leading&.awaiting_human? ? 'border-antique-gold bg-[rgba(196,155,94,.09)]'
+                                       : 'border-terminal-border bg-terminal-sunken'}" do %>
+  <div class="flex items-baseline gap-2 w-full">
+    <span class="font-sans text-t15 font-semibold tracking-[.06em] text-terminal-fg">
+      <%= client.name %>
+    </span>
+    <span class="ml-auto"><%= situation_tag(leading, size: "text-t10", short: true) if leading %></span>
+  </div>
+
+  <div class="mt-1 text-t10 text-terminal-fg-3">
+    <%= [ client.sector, client.city&.downcase ].compact.join(" · ") %>
+  </div>
+
+  <div class="h-px bg-terminal-border my-[11px]"></div>
+
+  <div class="flex flex-col gap-[9px] w-full">
+    <% initiatives.each do |initiative| %>
+      <div class="w-full">
+        <div class="flex items-baseline gap-[7px]">
+          <span class="flex-none text-t10 text-antique-gold"><%= initiative.code %></span>
+          <span class="flex-1 min-w-0 truncate text-t115 text-terminal-fg-2">
+            <%= initiative.title %>
+          </span>
+          <%= stage_strip initiative, size: "text-t11" %>
+        </div>
+        <div class="mt-[3px] text-t95 text-terminal-muted">
+          <%= initiative.repositories.map(&:name).sort.join(" · ") %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center gap-[9px] w-full mt-[11px] text-t95 text-terminal-fg-3">
+    <span><%= pluralize initiatives.size, "evolutivo" %></span>
+    <span>·</span>
+    <span><%= pluralize client.repositories.size, "repositorio" %></span>
+    <span class="ml-auto">
+      <%= age(leading&.stage_changed_at || initiatives.last&.stage_changed_at) %>
+    </span>
+  </div>
+<% end %>

@@ -41,12 +41,20 @@ module Runtime::Request
                  payload: payload)
   end
 
+  # El `config` del contrato es lo que BRAIN entiende: un alias de modelo y
+  # parámetros de llamada. Los ajustes de `agent_configs` son otra cosa —las
+  # secciones que la pantalla de AGENTES enseña, con vocabulario de matrix— y
+  # viajan APARTE, bajo `matrix`.
+  #
+  # Mezclarlos era una bomba de relojería: en cuanto una sección se llamó
+  # `model`, pisó el alias del contrato con un hash y la petición dejó de
+  # validar. Qué parte de esto entiende brain lo decide F9.
   def config_for(agent_run)
     settings = AgentConfig.effective_for(
       agent: agent_run.agent,
       client: agent_run.initiative.platform_client_id)
 
-    { "model" => DEFAULT_MODEL }.merge(settings.stringify_keys)
+    { "model" => DEFAULT_MODEL, "matrix" => settings.deep_stringify_keys }
   end
 
   def client_of(initiative)

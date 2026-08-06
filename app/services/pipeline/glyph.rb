@@ -31,12 +31,20 @@ module Pipeline::Glyph
     end
   end
 
-  # La tira de doce de un evolutivo, en orden. Toma la ÚLTIMA iteración de cada
-  # etapa: lo que la maqueta pinta es dónde está ahora, no cada vuelta.
+  # La ÚLTIMA fila de cada etapa. Lo que se pinta es dónde está el evolutivo
+  # ahora, no cada vuelta que dio: el historial completo está en las filas y se
+  # consulta aparte.
+  #
+  # Una etapa sin fila es una etapa PENDIENTE — en este modelo, pendiente es la
+  # ausencia de fila. Por eso devuelve `nil` y no inventa una.
+  def latest_entries(initiative)
+    initiative.stage_entries.group_by(&:stage)
+              .transform_values { |entries| entries.max_by(&:iteration) }
+  end
+
+  # La tira de doce, en orden.
   def strip(initiative)
-    latest = initiative.stage_entries.group_by(&:stage).transform_values do |es|
-      es.max_by(&:iteration)
-    end
+    latest = latest_entries(initiative)
 
     Initiative::STAGES.map do |stage|
       entry = latest[stage]

@@ -1,0 +1,37 @@
+<% breadcrumb "clients", @client.slug %>
+<% content_for :title, "identia-matrix · #{@client.slug}" %>
+
+<%# El aviso de la sub-barra fija la relación con el otro repo, y no es un
+    detalle: es la razón por la que esta pantalla no tiene un solo formulario. %>
+<%= render "shared/view_bar", back: { label: "clientes", path: clients_path },
+           title: @client.slug,
+           notes: [ "ficha en solo lectura · se gestiona en identia-platform" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-[.03em] text-terminal-fg">
+        <%= @client.name %>
+      </h1>
+      <span class="text-t12 text-terminal-fg-4"><%= @client.sector %></span>
+      <span class="ml-auto text-t105 text-terminal-muted">
+        <%= client_contact(@client) %>
+      </span>
+    </div>
+
+    <%= render "clients/matrix", client: @client, repositories: @repositories,
+               initiatives: @initiatives, pagy: @pagy,
+               total: @initiatives_count, multi_repo: @multi_repo_count %>
+
+    <%= section_header "REPOSITORIOS", count: @repositories.size, tone: :gate2,
+                       gloss: "eje de memoria · qué se hizo antes ahí" %>
+    <div class="grid grid-cols-3 gap-3 mt-2.5">
+      <%= render partial: "clients/repository_card", collection: @repositories,
+                 as: :repository, locals: { client: @client } %>
+    </div>
+
+    <%= render "clients/client_sources", client: @client %>
+  </div>
+
+  <%= render "clients/panel", client: @client %>
+</div>

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head><%= render "layouts/document_head" %></head>
+
+  <%# Sin rail y sin barra de título: lo usan el login —donde todavía no hay
+      sesión que resumir— y la página de diagnóstico, que tiene que poder
+      pintarse aunque la base de datos no responda. %>
+  <body class="min-h-screen bg-terminal-bg"><%= yield %></body>
+</html>

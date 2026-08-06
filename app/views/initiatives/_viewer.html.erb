@@ -1,0 +1,57 @@
+<%# El visor. En F3 solo el modo `rendered`: `source` y `diff` llegan en F5, con
+    el bucket, porque necesitan los bytes originales y la versión anterior. Se
+    pintan apagados en vez de esconderse — la maqueta los promete y conviene que
+    se vea que llegan, no que se olvidaron. %>
+<section class="flex-1 min-w-0 flex flex-col border-r border-terminal-border">
+  <div class="h-[30px] flex-none flex items-center gap-2.5 px-4
+              bg-terminal-rail border-b border-terminal-border">
+    <% if artifact %>
+      <span class="text-t11 text-terminal-fg"><%= artifact.code %>.md</span>
+      <span class="text-t10 text-terminal-muted">· <%= artifact_run_label(artifact) %></span>
+    <% else %>
+      <span class="text-t11 text-terminal-disabled">sin artefactos todavía</span>
+    <% end %>
+
+    <div class="ml-auto flex gap-3 text-t10 text-terminal-muted">
+      <span class="text-terminal-disabled cursor-not-allowed"
+            title="el modo source llega en F5, con el bucket">source</span>
+      <span class="text-antique-gold">rendered</span>
+      <span class="text-terminal-disabled cursor-not-allowed"
+            title="el diff entre versiones llega en F5">diff</span>
+    </div>
+  </div>
+
+  <% if (banner = cycle_banner(initiative, report)) %>
+    <div class="flex-none flex items-center gap-2.5 px-4 py-2.5 border-b
+                <%= banner.tone == :ok ? 'bg-[rgba(240,233,215,.05)] border-terminal-border-strong'
+                                       : 'bg-[rgba(201,128,112,.09)] border-terminal-border-fail' %>">
+      <span class="text-t12 <%= banner.tone == :ok ? 'text-glyph-gate2' : 'text-glyph-fail' %>">
+        <%= banner.glyph %>
+      </span>
+      <span class="text-t115 text-terminal-fg"><%= banner.text %></span>
+      <span class="ml-auto text-t105 text-terminal-disabled cursor-not-allowed"
+            title="el informe de verificación tiene su propia pantalla en F6">
+        ver informe →
+      </span>
+    </div>
+  <% end %>
+
+  <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3.5">
+    <%= markdown artifact&.body_markdown %>
+  </div>
+
+  <div class="h-7 flex-none flex items-center gap-4 px-4 bg-terminal-rail
+              border-t border-terminal-border text-t10 text-terminal-fg-4">
+    <% state = situation(initiative) %>
+    <span class="px-2 py-0.5 font-medium text-terminal-bg
+                 <%= state.colour.sub('text-', 'bg-') %>">
+      <%= state.label.upcase %>
+    </span>
+    <% if artifact %>
+      <span><%= artifact.storage_key %></span>
+      <span><%= pluralize artifact.citations.size, "cita" %></span>
+    <% end %>
+    <span class="ml-auto">iteración <%= initiative.iteration %> ·
+      ciclo QA <%= initiative.qa_cycles_consumed %>/<%= Initiative::MAX_QA_CYCLES %></span>
+  </div>
+</section>

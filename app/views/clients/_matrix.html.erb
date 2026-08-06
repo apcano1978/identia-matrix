@@ -1,0 +1,50 @@
+<%# LA MATRIZ. Filas: evolutivos. Columnas: los repositorios del cliente, tantas
+    como tenga. Es la pantalla que explica que los dos ejes se cruzan y no se
+    contienen — y por eso el punto de «no lo toca» está casi apagado: si todas
+    las celdas pesaran igual, esto parecería una tabla de datos. %>
+<% columns = matrix_columns(repositories) %>
+
+<%= section_header "EVOLUTIVOS", count: total,
+                   gloss: "eje de trabajo · recorren el pipeline de 12 etapas" %>
+
+<div class="mt-[9px] border border-terminal-border-gold">
+  <div class="grid gap-2.5 px-3 py-[7px] bg-terminal-sunken
+              border-b border-terminal-border text-t95 tracking-[.08em]
+              text-terminal-fg-4" style="grid-template-columns: <%= columns %>">
+    <span></span><span>ID</span><span>EVOLUTIVO</span>
+    <% repositories.each do |repository| %>
+      <span data-matrix-column class="text-center text-terminal-fg-3">
+        <%= repository.name %>
+      </span>
+    <% end %>
+    <span>ETAPA</span><span class="text-right">EDAD</span>
+  </div>
+
+  <% initiatives.each do |initiative| %>
+    <%= link_to client_initiative_path(client.slug, initiative.code),
+                class: "grid gap-2.5 px-3 py-2.5 items-center border-b
+                        border-[rgba(240,233,215,.07)] last:border-b-0",
+                style: "grid-template-columns: #{columns}" do %>
+      <span class="text-t125"><%= situation(initiative).glyph %></span>
+      <span class="text-t11 text-antique-gold"><%= initiative.code %></span>
+      <span class="text-t12 text-terminal-fg truncate"><%= initiative.title %></span>
+
+      <% repositories.each do |repository| %>
+        <span class="text-center"><%= matrix_cell(initiative, repository) %></span>
+      <% end %>
+
+      <span><%= situation_tag(initiative) %></span>
+      <span class="text-right"><%= age initiative.stage_changed_at %></span>
+    <% end %>
+  <% end %>
+</div>
+
+<%== pagy_nav(pagy) if pagy.pages > 1 %>
+
+<div class="flex items-center gap-[9px] mt-[9px] text-t105 text-terminal-fg-4">
+  <span class="text-antique-gold">●</span>
+  <span>el evolutivo toca ese repositorio</span>
+  <span class="text-terminal-sep">·</span>
+  <span class="text-terminal-fg-3">abrir una fila entra en su flujo de agentes</span>
+  <span class="ml-auto text-terminal-fg-3"><%= multi_repo_note(multi_repo, total) %></span>
+</div>

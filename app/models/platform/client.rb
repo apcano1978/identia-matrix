@@ -34,5 +34,10 @@ class Platform::Client < Platform::Record
 
   scope :active, -> { where(archived: false) }
 
+  # La URL habla en slug, no en id: `param: :slug` en las rutas cambia el nombre
+  # del segmento pero NO lo que `client_path(client)` mete dentro. Sin esto, los
+  # enlaces salen con el id y el `find_by!(slug:)` no encuentra nada.
+  def to_param = slug
+
   def to_s = name
 end

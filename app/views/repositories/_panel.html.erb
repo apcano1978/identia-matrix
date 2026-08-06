@@ -1,0 +1,52 @@
+<%= side_panel(width: 352) do %>
+  <%= panel_block("ESTADO DEL ÍNDICE") do %>
+    <dl class="text-t105 leading-[1.8]">
+      <%= render "initiatives/fact", term: "head",
+                 value: "#{repository.head_sha || '—'} · #{repository.default_branch}" %>
+      <%= render "initiatives/fact", term: "indexado",
+                 value: repository.files_count ? "#{number_with_delimiter(repository.files_count)} ficheros" : "—" %>
+      <%= render "initiatives/fact", term: "sincronizado",
+                 value: repository.last_synced_at ? l(repository.last_synced_at.to_date, format: :short) : "—" %>
+      <%= render "initiatives/fact", term: "CI",
+                 value: repository.ci_configured? ? repository.ci_provider : "sin verificación automática" %>
+    </dl>
+    <p class="mt-2 text-t95 text-terminal-muted">
+      head = último commit ejecutado. Lo que cada evolutivo cita es su
+      <span class="text-terminal-fg-3">sha anclado</span>, no este.
+    </p>
+  <% end %>
+
+  <%= panel_block("DECISIONES VIGENTES") do %>
+    <div class="flex flex-col gap-2">
+      <% adrs.each do |adr| %>
+        <div class="border px-2.5 py-2 <%= adr.status_disputed? ?
+              'border-terminal-border-fail' : 'border-terminal-border' %>">
+          <div class="flex items-baseline gap-2 text-t105">
+            <span class="text-antique-gold"><%= adr.code %></span>
+            <span class="ml-auto <%= adr.status_disputed? ? 'text-glyph-fail'
+                                                          : 'text-terminal-muted' %>">
+              <%= adr.origin_initiative&.code %> · <%= adr.status_disputed? ? "en disputa" : "vigente" %>
+            </span>
+          </div>
+          <div class="mt-1 text-t105 text-terminal-fg-3"><%= adr.title %></div>
+        </div>
+      <% end %>
+      <% if adrs.empty? %>
+        <p class="text-t105 text-terminal-disabled">Ninguna registrada todavía.</p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= panel_block("CITAS DE CÓDIGO (#{citations.size})") do %>
+    <p class="text-t105 text-terminal-fg-3">
+      La forma canónica de citar código de este repositorio:
+    </p>
+    <code class="mt-2 block text-t105 text-antique-gold break-all">
+      [src:code/<%= repository.name %>:&lt;fichero&gt;#L&lt;línea&gt;@&lt;sha7&gt;]
+    </code>
+    <p class="mt-2 text-t95 text-terminal-muted">
+      El calificador de repositorio es obligatorio: sin él, una cita no dice de
+      cuál de los repositorios del cliente habla.
+    </p>
+  <% end %>
+<% end %>

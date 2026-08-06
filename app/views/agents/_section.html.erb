@@ -1,0 +1,25 @@
+<div data-section="<%= section %>">
+  <div class="text-t11 font-medium text-antique-gold pb-2
+              border-b border-terminal-border">## <%= humanize_key(section) %></div>
+
+  <div class="flex flex-col gap-2.5 mt-3 text-t115">
+    <% ordered_settings(entries).each do |key, value| %>
+      <div class="flex items-center gap-3">
+        <span class="w-[168px] flex-none text-terminal-muted"><%= humanize_key(key) %></span>
+        <span><%= setting_value(value) %></span>
+        <% if override.key?(key) %>
+          <span class="ml-auto text-t95 text-antique-gold"
+                title="sobrescrito para este cliente">override</span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if (note = agent_note(agent, section)) %>
+    <div class="mt-3 flex items-start gap-2.5 border border-terminal-border
+                px-2.5 py-2">
+      <span class="text-t12 <%= note[:tone] %>"><%= note[:glyph] %></span>
+      <p class="text-t105 leading-[1.6] text-terminal-fg-3"><%= note[:text] %></p>
+    </div>
+  <% end %>
+</div>

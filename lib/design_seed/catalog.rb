@@ -12,7 +12,7 @@
 module DesignSeed::Catalog
   CLIENTS = [
     { platform_id: 101, slug: "vivla", name: "VIVLA", sector: "proptech",
-      city: "Madrid" },
+      city: "Madrid", primary_contact_role: "cto" },
     { platform_id: 102, slug: "caser", name: "CASER", sector: "seguros",
       city: "Madrid" },
     { platform_id: 103, slug: "navantia", name: "NAVANTIA",
@@ -277,6 +277,109 @@ module DesignSeed::Catalog
         %w[done] + [ "", "01 ago" ],
         [ "act", "indexando · 1.204/3.900 fich.", "25m" ]
       ] }
+  ].freeze
+
+  # Lo que cada evolutivo DECIDIÓ en cada repositorio. Es el texto literal del
+  # panel de historia de la maqueta, y el producto entero en una línea: sin él,
+  # la ficha de repositorio es una lista de identificadores.
+  DECISIONS = {
+    [ "ev-014", "booking-core" ] =>
+      "Invalidación incremental por rango en lugar de reconstrucción anual. " \
+      "Techo de dieciséis copropietarios, fijado por nota humana contra el acta.",
+    [ "ev-031", "booking-core" ] =>
+      "Este repositorio deja de calcular tarifa: pricing-svc pasa a ser la única " \
+      "autoridad de precio. Verificado por repositorio; los dos criterios de " \
+      "integración quedaron ⊗.",
+    [ "ev-009", "booking-core" ] =>
+      "Se descartó validar el DNI en el alta: el proveedor no cubría extranjería. " \
+      "Decisión de dirección, registrada en el cierre.",
+    [ "ev-002", "booking-core" ] =>
+      "Origen de availability_cache. La reconstrucción anual se aceptó como deuda " \
+      "consciente con revisión a seis meses — vencida.",
+    [ "ev-027", "owner-web" ] =>
+      "Rediseño del panel de reservas del socio. LINK está redactando el cierre: " \
+      "dos desvíos frente al plan.",
+    [ "ev-031", "owner-web" ] =>
+      "Se retira el redondeo en cliente: el importe se pinta tal cual lo devuelve " \
+      "pricing-svc. Lo exigía una transcripción frente al criterio derivado del DoD.",
+    [ "ev-009", "owner-web" ] =>
+      "Alta guiada en tres pasos. Sin validación documental por decisión de cliente.",
+    [ "ev-031", "pricing-svc" ] =>
+      "Se crea quote() como única autoridad de precio, con reglas de festivo " \
+      "propias. p95 en 62 ms sobre 200 rps."
+  }.freeze
+
+  # La configuración de los seis agentes, tal como la enseña la pantalla de
+  # AGENTES. Los tres avisos —morfeo_loop, qa_cycle e independencia de LINK— van
+  # LITERALES: son reglas del sistema, no texto de relleno.
+  #
+  # La maqueta pinta en LINK un «permitir reemplazar una versión publicada». No
+  # se copia: un artefacto publicado es inmutable, y ofrecer el interruptor
+  # sugeriría que la regla se puede apagar.
+  AGENT_CONFIGS = {
+    tank: {
+      "contexto" => { "profundidad" => "repositorio + fuentes del cliente",
+                      "indexa_codigo" => true, "indexa_adr" => true }
+    },
+    neo: {
+      "model" => { "engine" => "claude-sonnet-4-6", "max_iterations" => 4,
+                   "spec_length" => "standard", "token_budget" => "180k / run" },
+      "sources" => { "code" => "read-only · no exec", "docs" => "consult + cite",
+                     "meetings" => "consult + cite", "web" => false },
+      "citation_rules" => { "require_citation_for_non_derivable" => true,
+                            "pin_commit_on_code_refs" => true,
+                            "allow_unsourced_inference" => false,
+                            "min_citations_per_spec" => 3 },
+      "morfeo_loop" => { "max_returns" => 2 }
+    },
+    morfeo: {
+      "revision" => { "bloquea_sin_criterio_multi_repo" => true,
+                      "clasifica_bloqueante" => "spec o DoD" }
+    },
+    trinity: {
+      "paquete" => { "exige_orden_de_despliegue" => true,
+                     "exige_write_scope" => true }
+    },
+    seraph: {
+      "dod_pass" => { "engine" => "claude-sonnet-4-6", "min_criteria" => 6,
+                      "cada_criterio_exige_una_cita" => true,
+                      "criterio_medible_o_rechaza_la_spec" => true },
+      "qa_cycle" => { "max_qa_cycles" => 2,
+                      "inconclusive_y_unsupported_no_consumen" => true },
+      "verificacion" => { "fuente" => "CI del repositorio",
+                          "sin_red_a_produccion" => true,
+                          "sin_credenciales_reales" => true,
+                          "runner_entre_servicios" => false },
+      "dictamen" => { "permitir_que_seraph_corrija" => false,
+                      "salida_de_pruebas_como_evidencia" => true,
+                      "emitir_guia_al_dar_conforme" => true }
+    },
+    link: {
+      "contenido_del_cierre" => { "que_se_pidio_y_que_se_construyo" => true,
+                                  "desvios_con_su_causa" => true,
+                                  "decisiones_y_quien_las_tomo" => true,
+                                  "ciclos_de_qa_y_escaladas" => true },
+      "publicacion" => { "destino" => "artifacts://<cliente>/<evolutivo>/close-nnn",
+                         "plantilla" => "identia/cierre-tecnico v3",
+                         "formato" => "markdown · clave inmutable" }
+    }
+  }.freeze
+
+  # El override que la maqueta enseña en la ficha de vivla.
+  AGENT_OVERRIDES = [
+    { agent: :neo, client: "vivla", settings: { "model" => { "spec_length" => "verbose" } } }
+  ].freeze
+
+  # Los paquetes de los otros dos evolutivos que esperan firma. La maqueta los
+  # describe en el dashboard y en su pantalla de GATE 1, así que sin ellos la
+  # fila diría «espera tu firma» en lugar de qué es lo que hay que firmar.
+  PACKAGES = [
+    { initiative: "ev-041", code: "pkg-031", repository: "triaje-core",
+      tasks_count: 14, new_files_count: 3, modified_files_count: 7,
+      migrations_count: 2, write_scope: "src/triage · src/api · migrations" },
+    { initiative: "ev-019", code: "pkg-029", repository: "plm-core",
+      tasks_count: 9, new_files_count: 3, modified_files_count: 6,
+      migrations_count: 0, write_scope: "src/plm · src/sync · config" }
   ].freeze
 
   # Los once criterios de dod-031 v2. Los cinco primeros y c5/c6 salen de la

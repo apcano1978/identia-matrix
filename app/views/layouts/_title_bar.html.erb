@@ -1,0 +1,15 @@
+<%# 38 px. A la izquierda la ruta, a la derecha el estado del conjunto y quién
+    está dentro. El resumen sale del mismo `Dashboard::Board` que pinta las
+    bandejas, así que la barra y el dashboard no pueden discrepar. %>
+<header class="h-[38px] flex-none flex items-center gap-[9px] px-3.5
+               bg-terminal-rail border-b border-terminal-border">
+  <%= link_to "identia-matrix", root_path,
+              class: "text-t11 font-medium text-terminal-fg hover:text-terminal-fg" %>
+  <span class="text-t11 text-terminal-sep">/</span>
+  <span class="text-t11 text-antique-gold"><%= yield :breadcrumb %></span>
+
+  <div class="ml-auto flex items-center gap-[18px] text-t105 text-terminal-fg-4">
+    <span><%= shell_summary %></span>
+    <span><%= current_user_handle %></span>
+  </div>
+</header>

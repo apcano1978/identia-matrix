@@ -16,3 +16,19 @@ ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "criterion", "criteria"
   inflect.irregular "dod_criterion", "dod_criteria"
 end
+
+# Y el español, que la aplicación usa en cada `pluralize` de una vista. Sin
+# reglas para `:es`, `pluralize(5, "evolutivo")` devuelve «5 evolutivo»: Rails no
+# encuentra ninguna y deja la palabra como está.
+#
+# Las reglas se comprueban de la última a la primera, así que van de lo general
+# a lo específico.
+ActiveSupport::Inflector.inflections(:es) do |inflect|
+  inflect.plural(/$/, "s")                              # vocal → +s
+  inflect.plural(/([^aeiouáéíóú])$/i, '\1es')           # consonante → +es
+  inflect.plural(/z$/i, "ces")                          # vez → veces
+
+  inflect.singular(/s$/i, "")
+  inflect.singular(/([^aeiouáéíóú])es$/i, '\1')
+  inflect.singular(/ces$/i, "z")
+end

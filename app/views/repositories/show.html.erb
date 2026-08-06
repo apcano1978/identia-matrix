@@ -1,0 +1,61 @@
+<% breadcrumb "clients", @client.slug, "repos", @repository.name %>
+<% content_for :title, "identia-matrix · #{@repository.name}" %>
+
+<%# «registro · nada que atender» no es decoración: un repositorio NO tiene
+    pipeline ni estado, y la sub-barra lo dice antes de que nadie busque un
+    botón que no existe. %>
+<%= render "shared/view_bar", back: { label: @client.slug, path: client_path(@client) },
+           title: @repository.name,
+           notes: [ "registro · nada que atender",
+                    "lo que TANK lee para no repetir decisiones ya tomadas" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="text-t27 font-sans font-semibold tracking-[.03em] text-terminal-fg">
+        <%= @repository.name %>
+      </h1>
+      <span class="text-t105 text-terminal-fg-4">
+        head <span class="text-antique-gold"><%= @repository.head_sha || "—" %></span>
+        · <%= @repository.default_branch %>
+        <% if @repository.files_count %>
+          · <%= number_with_delimiter(@repository.files_count) %> ficheros
+        <% end %>
+        · solo lectura
+      </span>
+    </div>
+
+    <%= section_header "EVOLUTIVOS QUE LO HAN TOCADO", count: @history.size,
+                       gloss: "del más reciente al más antiguo" %>
+
+    <div class="mt-[9px] flex flex-col">
+      <% @history.each do |entry| %>
+        <%= render "repositories/entry", entry: entry, client: @client %>
+      <% end %>
+    </div>
+
+    <% if (disputed = @adrs.select(&:status_disputed?)).any? %>
+      <%# La señal que TANK levanta al construir el contexto: alguien está
+          contradiciendo una decisión que sigue vigente. Se DERIVA de los ADR en
+          disputa, no es un texto guardado. %>
+      <div class="mt-4 flex items-start gap-2.5 border-l-2 border-terminal-border-fail
+                  bg-[rgba(201,128,112,.09)] px-3 py-2.5">
+        <span class="text-t12 text-glyph-fail">!</span>
+        <p class="text-t105 leading-[1.6] text-terminal-fg-3">
+          <% disputed.each do |adr| %>
+            <%= adr.origin_initiative&.code || "un evolutivo" %> disputa
+            <span class="text-terminal-fg"><%= adr.code %></span> «<%= adr.title %>».
+            La decisión sigue vigente hasta que alguien la revise.
+          <% end %>
+        </p>
+      </div>
+    <% end %>
+
+    <p class="mt-5 text-t105 text-terminal-muted">
+      Un repositorio no tiene pipeline ni estado. El trabajo vive en el evolutivo.
+    </p>
+  </div>
+
+  <%= render "repositories/panel", repository: @repository, adrs: @adrs,
+             citations: @citations %>
+</div>

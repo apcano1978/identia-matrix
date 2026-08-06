@@ -128,7 +128,16 @@
 }
 
 @layer base {
-  html,
+  /* El tamaño base va en `body`, NUNCA en `html`.
+     `rem` se mide contra el font-size de la RAÍZ, y toda la escala de espaciado
+     de Tailwind está en rem: con `html { font-size: 12px }` un `h-11` medía 33
+     px en lugar de 44, y con él todos los paddings, huecos y anchos de la
+     aplicación — un 25% más pequeños de lo escrito, en silencio. */
+  html {
+    margin: 0;
+    background-color: var(--color-terminal-bg);
+  }
+
   body {
     margin: 0;
     background-color: var(--color-terminal-bg);
@@ -167,4 +176,165 @@
   letter-spacing: var(--tracking-section);
   word-spacing: 0.24em;
   text-transform: uppercase;
+}
+
+/* =============================================================================
+   RETÍCULAS
+   -----------------------------------------------------------------------------
+   Salen medidas de la maqueta y se declaran AQUÍ, una sola vez. En el marcado no
+   hay ni un `grid-template-columns`: una retícula repetida en cuatro parciales
+   se desalinea en cuanto se toca uno.
+
+   La matriz evolutivo × repositorio no está: sus columnas de repositorio son
+   tantas como repositorios tenga el cliente, así que la compone
+   `MatrixHelper#matrix_columns` y viaja como estilo en línea. Es la única.
+   ========================================================================== */
+
+@utility grid-dashboard {
+  display: grid;
+  grid-template-columns: 22px 62px 190px 178px 1fr 68px 96px;
+  gap: 9px;
+}
+
+@utility grid-repo-history {
+  display: grid;
+  grid-template-columns: 62px 58px 20px 1fr;
+  gap: 10px;
+}
+
+/* Nodo del pipeline: glifo, cuerpo, marca derecha. */
+@utility grid-pipeline-node {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 9px;
+  align-items: center;
+}
+
+/* =============================================================================
+   PIEZAS DEL ARMAZÓN
+   ========================================================================== */
+
+/* Rótulo `## TÍTULO` de cabecera de sección. */
+@utility section-title {
+  font-size: var(--text-t11);
+  font-weight: 500;
+}
+
+/* Entrada del rail. El activo lo marca `.rail-entry-on`. */
+@utility rail-entry {
+  width: 100%;
+  padding: 13px 0 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+@utility rail-entry-on {
+  border-left-color: var(--color-antique-gold);
+  background: rgba(196, 155, 94, 0.12);
+}
+
+@utility rail-label {
+  font-family: var(--font-sans);
+  font-size: var(--text-t7);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--color-terminal-fg-3);
+}
+
+/* El campo de un formulario sobre fondo terminal. Solo lo usa el login: es la
+   única pantalla de la aplicación que pide algo escrito. */
+@utility terminal-field {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--color-terminal-sunken);
+  border: 1px solid var(--color-terminal-border);
+  color: var(--color-terminal-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-t12);
+}
+
+@utility terminal-field-focus {
+  outline: 0;
+  border-color: var(--color-antique-gold);
+}
+
+/* =============================================================================
+   EL CUERPO DE UN ARTEFACTO
+   -----------------------------------------------------------------------------
+   Markdown renderizado. Va aquí y no con clases en el marcado porque el HTML lo
+   genera commonmarker: no hay dónde colgarlas.
+
+   Los titulares en mono y en oro, como los rótulos `##` del resto de la
+   aplicación: un artefacto es un documento de terminal, no una página web.
+   ========================================================================== */
+
+@utility markdown-body {
+  font-size: var(--text-t125);
+  line-height: 1.75;
+  color: var(--color-terminal-fg-2);
+
+  & h1 {
+    font-size: var(--text-t14);
+    font-weight: 500;
+    color: var(--color-terminal-fg);
+    margin-bottom: 0.9rem;
+  }
+
+  & h2,
+  & h3 {
+    font-size: var(--text-t12);
+    font-weight: 500;
+    color: var(--color-antique-gold);
+    margin: 1.5rem 0 0.6rem;
+  }
+
+  & p,
+  & ul,
+  & ol {
+    margin-bottom: 0.9rem;
+  }
+
+  & ul,
+  & ol {
+    padding-left: 1.4rem;
+  }
+
+  & ul { list-style: none; }
+  & ul > li::before {
+    content: "·";
+    color: var(--color-antique-gold);
+    margin-left: -0.9rem;
+    margin-right: 0.55rem;
+  }
+  & ol { list-style: decimal; }
+
+  & strong { color: var(--color-terminal-fg); font-weight: 500; }
+  & em { color: var(--color-terminal-fg-3); }
+  & code { color: var(--color-antique-gold); }
+
+  & blockquote {
+    border-left: 2px solid var(--color-terminal-border-gold);
+    padding-left: 0.85rem;
+    color: var(--color-terminal-fg-3);
+  }
+
+  & hr {
+    border: 0;
+    border-top: 1px solid var(--color-terminal-border);
+    margin: 1.4rem 0;
+  }
+
+  & a { border-bottom: 1px solid var(--color-terminal-border-gold); }
+
+  /* commonmarker cuelga un ancla vacía de cada titular. Sirve para enlazar una
+     sección, pero pintada hereda el subrayado de los enlaces y deja una raya
+     suelta al final del título. */
+  & .anchor { display: none; }
 }

@@ -1,0 +1,9 @@
+<%# Dos líneas: quién y dónde arriba, qué pasó debajo. Es la forma de un log de
+    terminal, y es la que la maqueta enseña. %>
+<div class="leading-[1.45]">
+  <span class="text-terminal-sep"><%= event_time(event) %></span>
+  <span class="<%= event_tone_class(event) %>"><%= event.actor %></span>
+  <span class="text-terminal-fg-4"><%= event_scope(event) %></span>
+  <br>
+  <span class="<%= event_tone_class(event) %>"><%= event.message %></span>
+</div>

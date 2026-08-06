@@ -1,31 +1,47 @@
-<div class="mx-auto md:w-2/3 w-full">
-  <% if alert = flash[:alert] %>
-    <p class="py-2 px-3 bg-red-50 mb-5 text-red-500 font-medium rounded-lg inline-block" id="alert"><%= alert %></p>
-  <% end %>
+<% content_for :title, "identia-matrix · acceso" %>
 
-  <% if notice = flash[:notice] %>
-    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
-  <% end %>
+<%# La maqueta no tiene pantalla de login, así que esta se deriva de sus tokens
+    en vez de inventar un lenguaje nuevo: fondo terminal, isótipo y mono.
+    No hay registro, ni «recordarme», ni recuperar contraseña — matrix no tiene
+    usuarios propios y no puede restablecer una credencial que no es suya. %>
 
-  <h1 class="font-bold text-4xl">Sign in</h1>
+<div class="min-h-screen flex items-center justify-center px-6">
+  <div class="w-full max-w-[360px]">
 
-  <%= form_with url: session_url, class: "contents" do |form| %>
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "block shadow-sm rounded-md border border-gray-400 focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
+    <div class="flex flex-col items-center">
+      <%= render "shared/isotype", width: 30, height: 32 %>
+      <h1 class="eyebrow mt-4 text-terminal-fg">I D E N T I A - M A T R I X</h1>
+      <p class="mt-2 text-t105 text-terminal-muted">
+        acceso con tu cuenta de identia-platform
+      </p>
     </div>
 
-    <div class="my-5">
-      <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, class: "block shadow-sm rounded-md border border-gray-400 focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
-    </div>
+    <% if flash[:alert] %>
+      <p class="mt-6 border border-terminal-border-fail bg-[rgba(201,128,112,.09)]
+                px-3 py-2 text-t11 text-glyph-fail" id="alert">
+        <%= flash[:alert] %>
+      </p>
+    <% end %>
 
-    <div class="col-span-6 sm:flex sm:items-center sm:gap-4">
-      <div class="inline">
-        <%= form.submit "Sign in", class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
-      </div>
+    <%= form_with url: session_path, class: "mt-7 flex flex-col gap-px" do |form| %>
+      <%= form.email_field :email_address, required: true, autofocus: true,
+                           autocomplete: "username", placeholder: "correo",
+                           value: params[:email_address],
+                           class: "terminal-field focus:terminal-field-focus" %>
+      <%= form.password_field :password, required: true, maxlength: 72,
+                              autocomplete: "current-password",
+                              placeholder: "contraseña",
+                              class: "terminal-field focus:terminal-field-focus" %>
 
-      <div class="mt-4 text-sm text-gray-500 sm:mt-0">
-        <%= link_to "Forgot password?", new_password_path, class: "text-gray-700 underline hover:no-underline" %>
-      </div>
-    </div>
-  <% end %>
+      <%= form.submit "entrar ⏎",
+                      class: "mt-5 w-full cursor-pointer border border-terminal-border-gold
+                              bg-[rgba(196,155,94,.12)] px-3 py-2 text-t11
+                              text-antique-gold hover:bg-[rgba(196,155,94,.2)]" %>
+    <% end %>
+
+    <p class="mt-6 text-center text-t95 text-terminal-disabled">
+      solo entran las cuentas <span class="text-terminal-muted">admin</span> y
+      <span class="text-terminal-muted">superadmin</span> de platform
+    </p>
+  </div>
 </div>

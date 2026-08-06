@@ -1,0 +1,54 @@
+<%# 62 px, y ni uno más: es la medida de la maqueta y la referencia de todo lo
+    demás. Arriba el isótipo, tres entradas, y abajo engranaje y avatar. %>
+<nav class="w-[62px] flex-none bg-terminal-rail border-r border-terminal-border
+            flex flex-col items-center">
+  <div class="pt-[15px] pb-[13px]"><%= render "shared/isotype" %></div>
+  <div class="w-full h-px bg-[rgba(240,233,215,.10)]"></div>
+
+  <%= link_to root_path, class: rail_entry_class(:dashboard),
+              title: "Dashboard" do %>
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" fill="none" stroke="#C49B5E" stroke-width="1.8"></rect>
+      <path d="M8 10 V7 a4 4 0 0 1 8 0 v3" fill="none" stroke="#C49B5E" stroke-width="1.8"></path>
+    </svg>
+    <span class="<%= rail_label_class(:dashboard) %>">DASHBOARD</span>
+
+    <%# El badge cuenta EVOLUTIVOS que esperan a una persona, no acciones. La
+        maqueta pone 3 donde hay 4; es un desliz suyo y no se imita. %>
+    <% waiting = board.awaiting_human.size %>
+    <% if waiting.positive? %>
+      <span class="absolute top-[9px] right-[9px] px-1 text-[8.5px] font-medium
+                   bg-antique-gold text-ink"><%= waiting %></span>
+    <% end %>
+  <% end %>
+
+  <%= link_to clients_path, class: rail_entry_class(:clients), title: "Clientes" do %>
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="4" width="10" height="10" fill="none" stroke="#C6BEA8" stroke-width="1.6"></rect>
+      <path d="M16 8h5M16 12h5M8 18h13" stroke="#C6BEA8" stroke-width="1.6"></path>
+    </svg>
+    <span class="<%= rail_label_class(:clients) %>">CLIENTES</span>
+  <% end %>
+
+  <%= link_to agents_path, class: rail_entry_class(:agents), title: "Agentes" do %>
+    <%= render "shared/isotype", width: 17, height: 17, fill: "#C6BEA8" %>
+    <span class="<%= rail_label_class(:agents) %>">AGENTES</span>
+  <% end %>
+
+  <div class="mt-auto py-3.5 flex flex-col items-center gap-[11px]">
+    <%# El engranaje no lleva a ninguna parte todavía: la configuración de
+        agentes se edita en F9. Se pinta apagado en vez de mentir con un enlace. %>
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"
+         class="opacity-50" title="ajustes · F9">
+      <circle cx="12" cy="12" r="3.2" fill="none" stroke="#94A08F" stroke-width="1.6"></circle>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"
+            stroke="#94A08F" stroke-width="1.6"></path>
+    </svg>
+
+    <%= button_to session_path, method: :delete, title: "Cerrar sesión",
+                  class: "w-[26px] h-[26px] bg-antique-gold text-ink font-sans
+                          text-[10px] font-semibold cursor-pointer" do %>
+      <%= current_user_initials %>
+    <% end %>
+  </div>
+</nav>
