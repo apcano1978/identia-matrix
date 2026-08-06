@@ -25,14 +25,24 @@ module DesignSeed::Catalog
       city: "Terrassa" }
   ].freeze
 
-  # La maqueta llama «approver» y «observer» al papel en un evolutivo, no al rol
-  # de acceso. Matrix todavía no distingue ese papel: los dos son personal
-  # interno de platform y los dos entran. Ver F2 §1.3.
+  # LOS USUARIOS NO SON DE LA MAQUETA: reflejan la base de desarrollo de
+  # identia-platform, campo a campo.
+  #
+  # Es la única parte de esta proyección que no es ficción, y la frontera es
+  # deliberada. Los clientes, los evolutivos y las fuentes SÍ son la maqueta:
+  # nadie inicia sesión como `vivla`, así que un cliente de demostración no
+  # engaña a nadie. Con un usuario, en cambio, TE IDENTIFICAS — y tener dos
+  # correos para la misma persona según la pantalla se paga cada día.
+  #
+  # La maqueta inventaba `antonio.perez@…` y una compañera que platform no tiene.
+  # Cuando F8 traiga la sincronización de verdad, esta lista desaparece: la
+  # llenará `Platform::Sync` con lo que platform diga en cada momento.
+  #
+  # (La maqueta llama «approver» y «observer» al papel en un evolutivo, no al rol
+  # de acceso. Matrix todavía no distingue ese papel. Ver F2 §1.3.)
   USERS = [
-    { platform_id: 1, email_address: "antonio.perez@identiaconsulting.com",
-      name: "Antonio Pérez", role: :superadmin, cargo: "CTO" },
-    { platform_id: 2, email_address: "matilde.armentano@identiaconsulting.com",
-      name: "Matilde Armentano", role: :admin }
+    { platform_id: 1, email_address: "antonio@identiaconsulting.com",
+      name: "Antonio Pérez", role: :admin, cargo: "CIO · Founder" }
   ].freeze
 
   PROJECTS = [

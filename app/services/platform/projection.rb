@@ -35,6 +35,7 @@ module Platform::Projection
   def upsert(model, records, source_name)
     created = 0
     updated = 0
+    seen = []
 
     records.each do |attributes|
       attributes = resolve_references(model, attributes)
@@ -52,9 +53,24 @@ module Platform::Projection
       row.sync_source = source_name
       row.missing_since = nil
       row.save!
+      seen << row.platform_id
     end
 
-    Report.new(created: created, updated: updated, missing: 0)
+    Report.new(created: created, updated: updated,
+               missing: mark_missing(model, seen))
+  end
+
+  # Lo que ya no viene del origen se MARCA, no se borra. Es el invariante 1 por
+  # su lado menos obvio: una cita ya emitida tiene que seguir resolviendo dentro
+  # de un artefacto que nadie puede reescribir, y para eso la fila tiene que
+  # seguir existiendo aunque el documento haya desaparecido de platform.
+  #
+  # Estaba escrito en el comentario de esta clase desde F2 y no estaba hecho: el
+  # informe devolvía siempre `missing: 0`.
+  def mark_missing(model, seen)
+    gone = model.where.not(platform_id: seen).where(missing_since: nil)
+
+    gone.count.tap { gone.update_all(missing_since: Time.current) }
   end
 
   # La fuente habla en platform_id, que es lo único estable entre los dos

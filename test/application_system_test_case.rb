@@ -22,6 +22,13 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     end
   end
 
+  # Los dos segundos de Capybara se quedan cortos cuando el anfitrión tiene los
+  # doce contenedores del workspace en marcha: una navegación de Turbo llega a
+  # tardar más, el clic siguiente cae sobre la página vieja y el test falla una
+  # vez de cada cuatro. Esperar más no oculta nada — lo que falla de verdad
+  # sigue fallando, solo que sin ruido de fondo.
+  Capybara.default_max_wait_time = 8
+
   include SystemSessionHelpers
 
   # La suscripción al cable se establece DESPUÉS de cargar la página, y Turbo no

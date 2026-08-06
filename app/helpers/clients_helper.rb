@@ -7,8 +7,11 @@ module ClientsHelper
   # retícula que no puede vivir en el CSS: sus columnas centrales son tantas
   # como repositorios tenga el cliente, y eso solo se sabe en tiempo de render.
   def matrix_columns(repositories)
+    # ETAPA a 172 y no a los 150 de la maqueta: «▤ espera validación» son
+    # diecinueve caracteres, y con la escala subida un 15% ya no caben. Un texto
+    # que se corta no desaparece — parece que el dato es así de corto.
     ([ "20px", "62px", "1fr" ] + ([ "108px" ] * repositories.size) +
-      [ "150px", "84px" ]).join(" ")
+      [ "172px", "84px" ]).join(" ")
   end
 
   # La regla de color de la celda, que es sutil y se pierde sola:

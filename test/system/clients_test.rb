@@ -70,7 +70,7 @@ class ClientsTest < ApplicationSystemTestCase
     open_vivla
 
     assert_text "son dos ejes que se cruzan, no una jerarquía"
-    assert_text "antonio.perez"
+    assert_text "antonio"
     assert_text "neo.model.spec_length"
     assert_text "verbose"
   end

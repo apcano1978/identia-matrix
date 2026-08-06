@@ -29,7 +29,8 @@
         <%= banner.glyph %>
       </span>
       <span class="text-t115 text-terminal-fg"><%= banner.text %></span>
-      <span class="ml-auto text-t105 text-terminal-disabled cursor-not-allowed"
+      <span class="ml-auto flex-none whitespace-nowrap text-t105
+                   text-terminal-disabled cursor-not-allowed"
             title="el informe de verificación tiene su propia pantalla en F6">
         ver informe →
       </span>
@@ -40,18 +41,22 @@
     <%= markdown artifact&.body_markdown %>
   </div>
 
+  <%# `whitespace-nowrap` y `truncate`: es una barra de 28 px de alto y su
+      contenido tiene que caber en una línea. Sin esto, la clave del artefacto
+      —que es larga y no se puede acortar— parte la barra en dos y la corta. %>
   <div class="h-7 flex-none flex items-center gap-4 px-4 bg-terminal-rail
-              border-t border-terminal-border text-t10 text-terminal-fg-4">
+              border-t border-terminal-border text-t10 text-terminal-fg-4
+              whitespace-nowrap overflow-hidden">
     <% state = situation(initiative) %>
     <span class="px-2 py-0.5 font-medium text-terminal-bg
                  <%= state.colour.sub('text-', 'bg-') %>">
       <%= state.label.upcase %>
     </span>
     <% if artifact %>
-      <span><%= artifact.storage_key %></span>
+      <span class="truncate"><%= artifact.storage_key %></span>
       <span><%= pluralize artifact.citations.size, "cita" %></span>
     <% end %>
-    <span class="ml-auto">iteración <%= initiative.iteration %> ·
+    <span class="ml-auto flex-none">iteración <%= initiative.iteration %> ·
       ciclo QA <%= initiative.qa_cycles_consumed %>/<%= Initiative::MAX_QA_CYCLES %></span>
   </div>
 </section>

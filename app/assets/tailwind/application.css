@@ -108,23 +108,34 @@
   --color-terminal-border-fail:   rgba(201, 128, 112, 0.40);
 
   /* ── 2 · TERMINAL · escala tipográfica ──────────────────────────────────
-     Paralela y más densa que la escala editorial de marca. Sale medida de la
-     maqueta, que usa px sueltos en estilos inline. Se nombra por tamaño porque
-     no hay jerarquía semántica estable detrás: la misma medida sirve de label
-     en un sitio y de dato en otro.                                       ---- */
-  --text-t7:    7.5px;   /* labels del rail de navegación */
-  --text-t9:    9px;     /* chips de marca de la guía */
-  --text-t95:   9.5px;   /* metadatos bajo una fila */
-  --text-t10:   10px;    /* ids de evolutivo en tabla */
-  --text-t105:  10.5px;  /* ids clicables, rótulos de sección */
-  --text-t11:   11px;    /* texto de detalle, glifos de pipeline */
-  --text-t115:  11.5px;  /* nombres de evolutivo */
-  --text-t12:   12px;    /* cuerpo de tabla */
-  --text-t125:  12.5px;  /* prosa de la guía de pruebas */
-  --text-t13:   13px;    /* nombres de repositorio, títulos de panel */
-  --text-t14:   14px;    /* titulares de sección */
-  --text-t15:   15px;    /* nombre de cliente en tarjeta */
-  --text-t27:   27px;    /* nombre de cliente en su ficha */
+     Paralela y más densa que la escala editorial de marca. Se nombra por
+     tamaño porque no hay jerarquía semántica estable detrás: la misma medida
+     sirve de label en un sitio y de dato en otro.
+
+     SALE MEDIDA DE LA MAQUETA Y SUBIDA UN 15%. La maqueta es un lienzo fijo de
+     1440×900 pensado para verse entero de un vistazo; en una pantalla real y a
+     distancia de trabajo, esos tamaños se leen pequeños. La divergencia es
+     deliberada y está aquí escrita para que nadie la "corrija" comparando con
+     el original.
+
+     Proporcional, no uniforme: los rótulos minúsculos suben menos en absoluto
+     porque son los que viven en cajas estrechas — «DASHBOARD» tiene que seguir
+     cabiendo en los 62 px del rail.
+
+     Entre paréntesis, la medida original.                                ---- */
+  --text-t7:    8.5px;   /* (7.5)  labels del rail de navegación */
+  --text-t9:    10px;    /* (9)    eyebrows de sección */
+  --text-t95:   11px;    /* (9.5)  metadatos bajo una fila */
+  --text-t10:   11.5px;  /* (10)   ids de evolutivo en tabla, botones */
+  --text-t105:  12px;    /* (10.5) ids clicables, rótulos, edades */
+  --text-t11:   12.5px;  /* (11)   texto de detalle, glifos de pipeline */
+  --text-t115:  13px;    /* (11.5) nombres de evolutivo */
+  --text-t12:   14px;    /* (12)   cuerpo de tabla */
+  --text-t125:  14.5px;  /* (12.5) prosa del artefacto */
+  --text-t13:   15px;    /* (13)   nombres de repositorio, títulos de panel */
+  --text-t14:   16px;    /* (14)   titulares de sección */
+  --text-t15:   17px;    /* (15)   nombre de cliente en tarjeta */
+  --text-t27:   30px;    /* (27)   nombre de cliente en su ficha */
 }
 
 @layer base {
@@ -190,9 +201,13 @@
    `MatrixHelper#matrix_columns` y viaja como estilo en línea. Es la única.
    ========================================================================== */
 
+/* Reequilibrada al subir la escala: PIPELINE tenía 178 px para doce glifos que
+   ocupan 134, y EDAD 68 para «18h». Ese aire sobrante se le dio a EVOLUTIVO
+   —que ahora cabe «Unificar precios y calendario» entero— y a DETALLE, que es
+   la columna fluida y era la que se comía el recorte. */
 @utility grid-dashboard {
   display: grid;
-  grid-template-columns: 22px 62px 190px 178px 1fr 68px 96px;
+  grid-template-columns: 22px 52px 228px 140px 1fr 48px 84px;
   gap: 9px;
 }
 

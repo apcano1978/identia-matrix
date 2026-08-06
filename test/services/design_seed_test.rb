@@ -87,7 +87,12 @@ class DesignSeedTest < ActiveSupport::TestCase
     signature = GateSignature.find_by!(package_hash: WorkPackage
                                          .find_by!(code: "pkg-045").content_hash)
 
-    assert_equal "Antonio Pérez · CTO", signature.identity
+    # Contra el usuario proyectado, no contra una cadena escrita a mano: lo que
+    # aquí se comprueba es que el seed firmó con la persona correcta. Que la
+    # identidad quede CONGELADA aunque el usuario cambie después tiene su propio
+    # test en gate_1_is_irreversible_gate_2_is_not_test.rb.
+    assert_equal Platform::User.find_by!(platform_id: 1).identity_snapshot,
+                 signature.identity
     assert_equal %w[pricing-svc booking-core owner-web],
                  signature.commits_in_deploy_order.map { |c| c.repository.name }
     assert_predicate signature, :fully_executed?

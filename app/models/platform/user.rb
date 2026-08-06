@@ -17,7 +17,12 @@ class Platform::User < Platform::Record
   validates :email_address, presence: true, uniqueness: true
   validates :platform_id, presence: true, uniqueness: true
 
-  scope :with_access, -> { where(role: ROLES_WITH_ACCESS, disabled: false) }
+  # Las tres condiciones, las mismas que `may_access_matrix?`. Cuando el scope y
+  # el predicado no coinciden, una pantalla acaba listando a alguien que no
+  # puede entrar.
+  scope :with_access, lambda {
+    where(role: ROLES_WITH_ACCESS, disabled: false, missing_since: nil)
+  }
 
   # Lo que decide si esta persona puede entrar en matrix. Tres condiciones, y
   # las tres se comprueban aquí para que no haya una segunda respuesta en otro

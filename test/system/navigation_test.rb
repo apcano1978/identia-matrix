@@ -12,33 +12,36 @@ class NavigationTest < ApplicationSystemTestCase
   end
 
   test "de ida" do
-    assert_crumb "status"
+    assert_arrived_at root_path, crumb: "status"
 
     click_on "CLIENTES"
-    assert_crumb "clients"
+    assert_arrived_at clients_path, crumb: "clients"
 
     click_on "VIVLA"
-    assert_crumb "clients/vivla"
+    assert_arrived_at client_path("vivla"), crumb: "clients/vivla"
 
     click_on "Unificar precios y calendario"
-    assert_crumb "clients/vivla/ev-031"
+    assert_arrived_at client_initiative_path("vivla", "ev-031"),
+                      crumb: "clients/vivla/ev-031"
 
     click_on "booking-core"
-    assert_crumb "clients/vivla/repos/booking-core"
+    assert_arrived_at client_repository_path("vivla", "booking-core"),
+                      crumb: "clients/vivla/repos/booking-core"
   end
 
   test "y de vuelta" do
     visit client_repository_path("vivla", "booking-core")
-    assert_crumb "clients/vivla/repos/booking-core"
+    assert_arrived_at client_repository_path("vivla", "booking-core"),
+                      crumb: "clients/vivla/repos/booking-core"
 
     click_on "← vivla"
-    assert_crumb "clients/vivla"
+    assert_arrived_at client_path("vivla"), crumb: "clients/vivla"
 
     click_on "← clientes"
-    assert_crumb "clients"
+    assert_arrived_at clients_path, crumb: "clients"
 
     click_on "identia-matrix"
-    assert_crumb "status"
+    assert_arrived_at root_path, crumb: "status"
   end
 
   test "la raiz es el dashboard y pide sesion" do
@@ -63,13 +66,22 @@ class NavigationTest < ApplicationSystemTestCase
     visit client_initiative_path("vivla", "ev-031")
 
     click_on "AGENTES"
-    assert_crumb "agents/tank"
+    assert_arrived_at agents_path, crumb: "agents/tank"
 
     click_on "DASHBOARD"
-    assert_crumb "status"
+    assert_arrived_at root_path, crumb: "status"
   end
 
   private
+    # La URL primero, el breadcrumb después. Esperar solo al breadcrumb hacía el
+    # test intermitente: `assert_selector` con filtro de texto reintenta, pero da
+    # por buena la pantalla anterior si su rótulo coincide un instante. El path
+    # cambia de golpe con la navegación y no admite ambigüedad.
+    def assert_arrived_at(path, crumb:)
+      assert_current_path path
+      assert_selector "header span.text-antique-gold", text: crumb, exact_text: true
+    end
+
     def assert_crumb(text)
       assert_selector "header span.text-antique-gold", text: text, exact_text: true
     end
