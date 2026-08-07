@@ -166,7 +166,8 @@ module PipelineWalk
         artifact.body.attach(io: StringIO.new(result.body),
                              filename: "v#{version}.md",
                              content_type: "text/markdown")
-        attach_citations(artifact, result.body)
+        Citations::Attach.body(citable: artifact, body: result.body,
+                               client: @client.id)
         say "  #{run.code} → #{key}"
 
         artifact
@@ -178,20 +179,6 @@ module PipelineWalk
       }.freeze
 
       def artifact_kind(run) = ARTIFACT_KINDS[run.purpose]
-
-      def attach_citations(artifact, body)
-        references, = Citations::Parse.scan(body)
-
-        references.each_with_index do |reference, position|
-          next if artifact.citations.exists?(raw: reference.raw)
-
-          artifact.citations.create!(
-            raw: reference.raw, source_kind: reference.kind,
-            locator: reference.locator, fragment: reference.anchor,
-            commit_sha: reference.commit_sha, position: position,
-            repository: @client.repositories.find_by(name: reference.repository))
-        end
-      end
 
       def write_dod(initiative, result)
         version = @passes["seraph_dod"]

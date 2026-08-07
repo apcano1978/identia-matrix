@@ -107,6 +107,24 @@
   --color-terminal-border-gold:   rgba(196, 155, 94, 0.40);
   --color-terminal-border-fail:   rgba(201, 128, 112, 0.40);
 
+  /* ── 2 · TERMINAL · procedencia (F4) ────────────────────────────────────
+     Una cita se pinta según su NIVEL, no según lo que diga. Medido de la
+     maqueta.
+
+       ◆ ORIGEN · documento, reunión, nota   oro, borde continuo
+       ◆ ORIGEN · código                     verde, borde continuo
+       ↳ DERIVADO                            apagado, borde DISCONTINUO
+
+     El discontinuo no es decoración: es lo que hace que, de un vistazo sobre
+     una spec, se vea cuánto del texto se apoya en el trabajo del propio
+     sistema y cuánto en material de origen. El trazo lo pone `border-dashed`,
+     que es utilidad de Tailwind; aquí solo van los colores. -------------- */
+  --color-cite-origin-doc:  rgba(196, 155, 94, 0.55);
+  --color-cite-origin-code: rgba(74, 122, 58, 0.60);
+  --color-cite-derived:     rgba(196, 155, 94, 0.45);
+  --color-cite-fill-doc:    rgba(196, 155, 94, 0.14);
+  --color-cite-fill-code:   rgba(74, 122, 58, 0.14);
+
   /* ── 2 · TERMINAL · escala tipográfica ──────────────────────────────────
      Paralela y más densa que la escala editorial de marca. Se nombra por
      tamaño porque no hay jerarquía semántica estable detrás: la misma medida
@@ -215,6 +233,15 @@
   display: grid;
   grid-template-columns: 62px 58px 20px 1fr;
   gap: 10px;
+}
+
+/* Pantalla de fuentes: repositorio, commit fijado, indexado, prefijo de cita.
+   La última columna es didáctica a propósito —enseña la forma exacta que hay
+   que escribir para citar ese repositorio— y por eso se lleva el 1fr. */
+@utility grid-source-repos {
+  display: grid;
+  grid-template-columns: 190px 130px 120px 1fr;
+  gap: 13px;
 }
 
 /* Nodo del pipeline: glifo, cuerpo, marca derecha. */

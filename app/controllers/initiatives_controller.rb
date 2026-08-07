@@ -16,6 +16,7 @@ class InitiativesController < ApplicationController
                             .sort_by { |a| Artifacts::Key::KINDS.index(a.kind.to_sym) }
                             .reverse
     @artifact = selected_artifact
+    @refs = Citations::Panel.for(@artifact)
     @report = @initiative.verification_reports.order(:id).last
     @events = @initiative.events.recent.limit(Event::STREAM_SIZE * 2)
   end

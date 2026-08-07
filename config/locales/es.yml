@@ -7,6 +7,14 @@
 # NO es el catálogo de la interfaz: eso es F3, y probablemente con la gema
 # `rails-i18n`. Esto solo cubre lo que el modelo necesita para explicarse.
 es:
+  # El separador de miles. Sin esto `number_with_delimiter(3412)` devuelve
+  # «3,412», que en español es tres coma cuatro uno dos — el número equivocado,
+  # no solo la puntuación equivocada.
+  number:
+    format:
+      delimiter: "."
+      separator: ","
+
   errors:
     format: "%{attribute} %{message}"
     messages:

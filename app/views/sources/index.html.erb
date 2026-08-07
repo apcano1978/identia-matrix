@@ -1,0 +1,97 @@
+<% breadcrumb "clients", @client.slug, @initiative.code, "sources" %>
+<% content_for :title, "identia-matrix · fuentes de #{@initiative.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code,
+                   path: client_initiative_path(@client, @initiative) },
+           title: "fuentes",
+           notes: [ pluralize(@links.size, "repo") ] %>
+
+<div class="flex-1 min-h-0 overflow-y-auto px-[22px] pt-[18px] pb-6">
+  <div class="flex items-baseline gap-3.5">
+    <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+      Fuentes en ámbito
+    </h1>
+    <span class="text-t105 text-terminal-fg-3">
+      lo que TANK puede leer y citar para <%= @initiative.code %>
+    </span>
+    <span class="ml-auto">
+      <%= status_chip "write access: none", tone: :fail %>
+    </span>
+  </div>
+
+  <%# ── CÓDIGO ────────────────────────────────────────────────────────────
+      El commit FIJADO, no la cabeza del repositorio: un evolutivo trabaja
+      contra un punto concreto de la historia, y las citas que emita se anclan
+      ahí. %>
+  <%= section_header "CÓDIGO · #{pluralize(@links.size, 'REPOSITORIO').upcase}",
+                     gloss: "cada cita lleva su calificador de repositorio" %>
+
+  <div class="mt-[9px] border border-terminal-border-gold text-t10">
+    <div class="grid-source-repos px-3 py-1.5 bg-terminal-bg text-t9
+                tracking-[.08em] text-terminal-fg-4
+                border-b border-terminal-border-gold">
+      <span>REPOSITORIO</span>
+      <span>COMMIT FIJADO</span>
+      <span>INDEXADO</span>
+      <span>PREFIJO DE CITA</span>
+    </div>
+
+    <% @links.each do |link| %>
+      <div class="grid-source-repos items-center px-3 py-2.5
+                  border-b border-terminal-border last:border-b-0">
+        <%= link_to link.repository.name,
+                    client_repository_path(@client, link.repository),
+                    class: "text-terminal-fg" %>
+        <span class="text-antique-gold"><%= link.pinned_sha || "sin anclar" %></span>
+        <span class="text-terminal-fg-3"><%= indexed_files(link.repository) %></span>
+        <%# Didáctico: es la forma exacta que hay que escribir para citarlo. %>
+        <span class="text-terminal-fg-3"><%= citation_prefix(link.repository) %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── EN ÁMBITO ─────────────────────────────────────────────────────────%>
+  <%= section_header "EN EL ÁMBITO DE ESTE EVOLUTIVO",
+                     count: @scoped.values.sum(&:size),
+                     gloss: "ámbito es un filtro, no posesión · " \
+                            "un documento puede servir a varios evolutivos" %>
+
+  <div class="mt-[9px] grid grid-cols-2 gap-3">
+    <%= render "sources/card", label: "DOCS", group: @scoped[:documents],
+               shared: @shared, scoped: true %>
+    <%= render "sources/card", label: "REUNIONES", group: @scoped[:meetings],
+               shared: @shared, scoped: true %>
+  </div>
+
+  <%# ── HEREDADAS ─────────────────────────────────────────────────────────
+      Lo que NO está acotado a este evolutivo. El borde discontinuo es el mismo
+      idioma que el chip de cita derivada: lo que no se declaró explícitamente. %>
+  <%= section_header "HEREDADAS DE #{@client.slug.upcase}",
+                     count: @inherited.values.sum(&:size), tone: :gate2,
+                     gloss: "documentación general del cliente" %>
+
+  <div class="mt-[9px] grid grid-cols-2 gap-3">
+    <%= render "sources/card", label: "DOCS · CLIENTE",
+               group: @inherited[:documents], shared: @shared, scoped: false %>
+    <%= render "sources/card", label: "REUNIONES · CLIENTE",
+               group: @inherited[:meetings], shared: @shared, scoped: false %>
+  </div>
+
+  <%# ── La caja de cierre ──────────────────────────────────────────────────
+      UNA excepción, no dos. La maqueta enumeraba también los clones efímeros
+      de SERAPH; al decidirse en F10 que SERAPH lee el CI del repositorio en vez
+      de ejecutar nada, esa excepción desapareció. Es lo único de la maqueta que
+      se cae por haberse simplificado el sistema, y no por un desliz suyo. %>
+  <div class="mt-4 border-l-2 border-terminal-border-fail
+              bg-[rgba(201,128,112,.08)] px-3.5 py-2.5
+              text-t11 leading-[1.55] text-terminal-fg-3">
+    <span class="text-terminal-fg">
+      Matrix nunca modifica un origen, y no ejecuta código ajeno.
+    </span>
+    Una sola excepción, acotada:
+    <span class="text-antique-gold">·</span>
+    Matrix escribe en <span class="text-antique-gold">artifacts://</span> —
+    markdown versionado, claves inmutables, sin borrado.
+  </div>
+</div>

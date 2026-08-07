@@ -14,7 +14,14 @@ class Artifact < ApplicationRecord
   # Los bytes del markdown. En F1/F2 van a disco local; el bucket es F5.
   has_one_attached :body
 
+  # Las citas que ESTE artefacto hace.
   has_many :citations, as: :citable, dependent: :destroy
+
+  # Y las que apuntan a él: las de tipo spec/dod/pkg/close que lo nombran por su
+  # `code`. Son las dos direcciones de la procedencia y por eso no se llaman
+  # igual — confundirlas es exactamente el error que F4 vino a cerrar.
+  has_many :inbound_citations, as: :target, class_name: "Citation",
+                               dependent: :nullify
 
   enum :kind, Artifacts::Key::KINDS.each_with_index.to_h, prefix: true,
        validate: true

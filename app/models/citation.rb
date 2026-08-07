@@ -29,6 +29,16 @@ class Citation < ApplicationRecord
   def derived? = Citations::Grammar.derived?(source_kind)
   def level = Citations::Grammar.level(source_kind)
 
+  # La cita parseada. Se deriva de `raw`, que es lo que se escribió: las
+  # columnas son una descomposición para poder consultarlas, no la fuente de
+  # verdad. Recomponer el texto desde ellas es cómo aparecen las divergencias.
+  def reference = @reference ||= Citations::Parse.call(raw)
+
+  # La cita sin `[src:` `]`, que es como se enseña en una columna estrecha.
+  def compact = reference&.compact || raw
+
+  def glyph = reference&.glyph || "↳"
+
   # Rellena los campos desde el texto de la cita. La gramática es la única
   # autoridad sobre qué significa cada trozo.
   def self.from_raw(raw, **attributes)

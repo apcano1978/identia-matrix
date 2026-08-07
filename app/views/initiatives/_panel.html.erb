@@ -1,16 +1,27 @@
-<%# 330 px. En F3 solo META y LOG: la pestaña REFS es F4, y no es maquetación
-    sino procedencia — el panel de citas por repositorio, los chips por nivel y
-    el conflicto de nivel. Se pinta apagada para que se vea que viene. %>
+<%# 330 px, tres pestañas. REFS es la procedencia: de qué se apoya lo que
+    afirma el artefacto que se está viendo.
+
+    META sigue siendo la pestaña por defecto aunque REFS vaya primera, como en
+    la maqueta: al abrir un evolutivo lo primero que se busca es de qué va, no
+    de dónde salió. %>
 <aside class="w-[330px] flex-none bg-terminal-sunken flex flex-col"
        data-controller="tabs" data-tabs-active-class="text-antique-gold">
   <div class="h-[30px] flex-none flex border-b border-terminal-border">
-    <span class="px-3 flex items-center text-t10 text-terminal-disabled cursor-not-allowed"
-          title="el panel de procedencia llega en F4">REFS</span>
+    <button data-action="tabs#select" data-tabs-target="tab" data-tab="refs"
+            class="px-3 flex items-center text-t10 text-terminal-fg-3">REFS</button>
     <button data-action="tabs#select" data-tabs-target="tab" data-tab="meta"
             class="px-3 flex items-center text-t10 text-antique-gold
                    border-b border-antique-gold">META</button>
     <button data-action="tabs#select" data-tabs-target="tab" data-tab="log"
             class="px-3 flex items-center text-t10 text-terminal-fg-3">LOG</button>
+  </div>
+
+  <div data-tabs-target="pane" data-pane="refs"
+       class="flex-1 min-h-0 overflow-y-auto hidden">
+    <%= render "initiatives/refs", initiative: initiative, artifact: artifact,
+               citations: refs.citations, ratio: refs.ratio,
+               code_groups: refs.code_groups, excerpt: refs.excerpt,
+               conflicts: refs.conflicts %>
   </div>
 
   <div data-tabs-target="pane" data-pane="meta"

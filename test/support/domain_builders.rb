@@ -30,6 +30,26 @@ module DomainBuilders
     end
   end
 
+  def build_document(client: nil, slug: nil, **attributes)
+    Platform::Record.writing do
+      Platform::Document.create!(
+        platform_id: next_platform_id,
+        platform_client: client || build_client,
+        slug: slug || "doc-#{next_platform_id}",
+        title: "Un documento", **attributes)
+    end
+  end
+
+  def build_meeting(client: nil, slug: nil, held_on: Date.new(2026, 5, 2), **attributes)
+    Platform::Record.writing do
+      Platform::Meeting.create!(
+        platform_id: next_platform_id,
+        platform_client: client || build_client,
+        slug: slug || "reunion-#{next_platform_id}",
+        title: "Una reunión", held_on: held_on, **attributes)
+    end
+  end
+
   def build_repository(client: nil, name: "identia-platform", **attributes)
     Repository.create!(platform_client: client || build_client, name: name,
                        **attributes)

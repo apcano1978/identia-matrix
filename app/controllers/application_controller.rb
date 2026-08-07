@@ -19,6 +19,11 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # Pundit busca `current_user` por defecto, y matrix no tiene ese método: la
+  # sesión vive en `Current`, que es de donde sale el usuario proyectado de
+  # platform.
+  def pundit_user = Current.user
+
   def user_not_authorized
     flash[:alert] = "No tienes permisos para esta acción."
     redirect_back fallback_location: "/"

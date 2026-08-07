@@ -40,6 +40,12 @@ module DesignSeed
       seed_agent_configs
       Catalog::PACKAGES.each { |data| seed_gate_package(data) }
       seed_ev_031
+      seed_closures
+      seed_initiative_sources
+      seed_quotes
+      # Las citas que apuntaban a artefactos aún no publicados cuando se
+      # escribieron. Es el caso normal, no una excepción del seed.
+      Citations::Attach.resolve_pending
       seed_events
 
       report
@@ -239,8 +245,7 @@ module DesignSeed
     signature = seed_signature(initiative, package)
     seed_test_guide(initiative, dod, report, runs)
     attach_verdicts(report, dod)
-    seed_conflict(dossier, artifact_for(initiative, kind: :pkg,
-                                        run: runs[:trinity]))
+    seed_conflict(dossier, package_artifact(initiative, runs))
 
     signature
   end
@@ -326,7 +331,7 @@ module DesignSeed
     package = WorkPackage.find_or_initialize_by(code: data[:code])
     package.update!(
       initiative: initiative, agent_run: runs[:trinity],
-      artifact: artifact_for(initiative, kind: :pkg, run: runs[:trinity]),
+      artifact: package_artifact(initiative, runs),
       tasks_count: data[:tasks_count], new_files_count: data[:new_files_count],
       modified_files_count: data[:modified_files_count],
       migrations_count: data[:migrations_count],
@@ -414,17 +419,33 @@ module DesignSeed
 
   # ── Artefactos y citas ─────────────────────────────────────────────────────
 
+  # `number:` existe porque NO todos los artefactos llevan el número de su
+  # evolutivo: el paquete tiene secuencia propia (ev-031 → PKG-045), como
+  # documenta Artifacts::Key. Componerlo siempre con `initiative.number` dejaba
+  # un `pkg-031` contra el que la cita `[src:pkg/pkg-045#deploy]` —la traza del
+  # c0 del DoD— no resolvía. Se vio al escribir Citations::Resolve.
   def artifact_for(initiative, kind:, run:, version: 1, round: nil,
-                   derives_from: nil)
-    code = Artifacts::Key.code(kind: kind, number: initiative.number,
+                   derives_from: nil, number: nil)
+    code = Artifacts::Key.code(kind: kind, number: number || initiative.number,
                                round: round)
     key = Artifacts::Key.build(client: initiative.platform_client.slug,
                                initiative: initiative.code, code: code,
                                version: version)
-    existing = Artifact.find_by(storage_key: key)
-    return existing if existing
-
     body = body_for(kind, initiative)
+
+    # Un artefacto ya sembrado no se reescribe —es inmutable— pero SÍ se le
+    # vuelven a atar las citas. El cuerpo es el mismo, así que las citas son las
+    # mismas; lo que cambia es contra qué resuelven, porque una fuente que no
+    # existía en la pasada anterior puede existir ahora. Sin esto, una base de
+    # desarrollo se queda con `target` nulo para siempre y ningún test se entera:
+    # los tests arrancan limpios.
+    existing = Artifact.find_by(storage_key: key)
+    if existing
+      Citations::Attach.body(citable: existing, body: body,
+                             client: initiative.platform_client_id)
+      return existing
+    end
+
     artifact = Artifact.create!(
       initiative: initiative, platform_client: initiative.platform_client,
       kind: kind, code: code, version: version, storage_key: key,
@@ -434,7 +455,8 @@ module DesignSeed
                                  body, derives_from))
     artifact.body.attach(io: StringIO.new(body), filename: "v#{version}.md",
                          content_type: "text/markdown")
-    attach_citations(artifact, body)
+    Citations::Attach.body(citable: artifact, body: body,
+                           client: initiative.platform_client_id)
 
     artifact
   end
@@ -449,6 +471,8 @@ module DesignSeed
   end
 
   def body_for(kind, initiative)
+    return closure_body(initiative) if kind.to_sym == :close
+
     agent, purpose = BODIES[kind.to_sym]
     return guide_body if agent.blank?
 
@@ -466,61 +490,91 @@ module DesignSeed
     "# Guía de pruebas manuales · ev-031\n\n#{steps.join("\n\n")}\n"
   end
 
+  # La frase que cada cita afirma estar citando. Va en una pasada aparte porque
+  # las citas nacen de PARSEAR el cuerpo, y el cuerpo no dice qué frase de la
+  # fuente se está citando — solo qué párrafo. En F9 la declara el agente.
+  def seed_quotes
+    Catalog::QUOTES.each do |raw, quote|
+      Citation.where(raw: raw).update_all(quote: quote)
+    end
+  end
+
+  # El ámbito documental de cada evolutivo. Es un FILTRO: lo que NO está aquí
+  # no desaparece, se hereda del cliente. Por eso `acta-precios` aparece en dos
+  # evolutivos sin duplicarse en ninguno — un documento vive una sola vez.
+  def seed_initiative_sources
+    Catalog::INITIATIVE_SOURCES.each do |data|
+      initiative = Initiative.find_by(code: data[:initiative])
+      source = if data[:doc]
+        Platform::Document.find_by(slug: data[:doc])
+      else
+        Platform::Meeting.find_by(slug: data[:meet])
+      end
+      next if initiative.blank? || source.blank?
+
+      row = InitiativeSource.find_or_initialize_by(initiative: initiative,
+                                                   source: source)
+      row.update!(refs_count: data[:refs])
+    end
+  end
+
+  # Los cierres de los evolutivos publicados. Es lo que convierte la memoria
+  # entre evolutivos en algo que se puede citar: sin `close-002` en el bucket,
+  # `[src:close/close-002#§3]` no resuelve contra nada y la afirmación de que
+  # ev-031 revierte una decisión de ev-002 no es comprobable.
+  def seed_closures
+    Catalog::CLOSURES.each do |data|
+      initiative = Initiative.find_by(code: data[:initiative])
+      next if initiative.blank?
+
+      artifact_for(initiative, kind: :close, run: seed_runs(initiative)[:publication])
+    end
+  end
+
+  def closure_body(initiative)
+    data = Catalog::CLOSURES.find { |row| row[:initiative] == initiative.code }
+    return "# Cierre · #{initiative.code}\n" if data.blank?
+
+    code = "[src:code/#{data[:repository]}:src/index.ts#L1@#{data[:sha]}]"
+
+    <<~MARKDOWN
+      # Cierre · #{initiative.code} · #{initiative.title}
+
+      ## §1 · Qué se pidió y qué se construyó
+
+      #{data[:what]} #{code}
+
+      ## §2 · Decisiones y quién las tomó
+
+      #{data[:decision]}
+
+      ## §3 · Lo que este evolutivo dejó fuera
+
+      #{data[:price]}
+    MARKDOWN
+  end
+
+  # El artefacto del paquete, con el número de la secuencia de paquetes y no el
+  # del evolutivo. Se pide desde dos sitios y `artifact_for` es idempotente por
+  # `storage_key`, así que la segunda llamada devuelve el mismo.
+  def package_artifact(initiative, runs)
+    artifact_for(initiative, kind: :pkg, run: runs[:trinity],
+                 number: Catalog::PKG_045[:number])
+  end
+
   def guide_artifact(initiative, runs)
     artifact_for(initiative, kind: :guide, run: runs[:seraph_verification])
   end
 
-  # Las citas se sacan PARSEANDO el cuerpo, no de una lista aparte. Es lo que
-  # hará el sistema de verdad, y hacerlo aquí prueba el parser contra los
-  # artefactos que el visor de F3 va a enseñar.
-  def attach_citations(artifact, body)
-    references, = Citations::Parse.scan(body)
+  # Las citas salen de PARSEAR el cuerpo, no de una lista aparte, y de eso se
+  # encarga Citations::Attach — el único sitio del sistema donde se crea una
+  # cita. Hasta F4 esta lógica vivía aquí duplicada y en pipeline_walk.rb, y ya
+  # había divergido.
+  def citation_for(artifact, raw, initiative, quote: nil)
+    return nil if artifact.blank?
 
-    references.each_with_index do |reference, position|
-      next if artifact.citations.exists?(raw: reference.raw)
-
-      artifact.citations.create!(
-        raw: reference.raw, source_kind: reference.kind,
-        locator: reference.locator, fragment: reference.anchor,
-        commit_sha: reference.commit_sha, position: position,
-        repository: repository_named(reference.repository,
-                                     artifact.initiative),
-        target: resolve_target(reference, artifact.initiative))
-    end
-  end
-
-  def citation_for(artifact, raw, initiative)
-    return nil if artifact.blank? || raw.blank?
-
-    existing = artifact.citations.find_by(raw: raw)
-    return existing if existing
-
-    reference = Citations::Parse.call(raw)
-    return nil if reference.blank?
-
-    artifact.citations.create!(
-      raw: raw, source_kind: reference.kind, locator: reference.locator,
-      fragment: reference.anchor, commit_sha: reference.commit_sha,
-      position: artifact.citations.count,
-      repository: repository_named(reference.repository, initiative),
-      target: resolve_target(reference, initiative))
-  end
-
-  # Una cita resuelve contra la FUENTE, nunca contra un índice: así, el día que
-  # el índice se rehaga, ninguna cita ya emitida se rompe.
-  def resolve_target(reference, initiative)
-    case reference.kind
-    when "code", "verify"
-      repository_named(reference.repository, initiative)
-    when "doc"
-      Platform::Document.find_by(slug: reference.locator)
-    when "meet"
-      Platform::Meeting.find_by(held_on: Date.parse(reference.locator[0, 10]))
-    when "note"
-      HumanNote.find_by(code: reference.locator)
-    end
-  rescue Date::Error
-    nil
+    Citations::Attach.one(citable: artifact, raw: raw, quote: quote,
+                          client: initiative.platform_client_id)
   end
 
   # ── El event stream ────────────────────────────────────────────────────────
@@ -533,16 +587,27 @@ module DesignSeed
       [ "TRINITY", "caser", "ev-041", "PKG-031 sellado · espera firma" ],
       [ "SERAPH", "mango", "ev-024", "?3 · entorno inestable · escalado" ],
       [ "TANK", "cirsa", "ev-038", "indexando · 1.204/3.900 ficheros" ],
-      [ "SYNC", "vivla", nil, "14 documentos · 2 transcripciones" ]
+      [ "SYNC", "vivla", nil, sync_message("vivla") ]
     ].each_with_index do |(actor, client, code, message), index|
-      next if Event.exists?(actor: actor, message: message)
+      # Se deduplica por QUIÉN y SOBRE QUÉ, no por el texto. Con la clave en el
+      # mensaje, cambiarlo AÑADE un evento en vez de sustituirlo: la base de
+      # desarrollo acumula las dos versiones y en CI no se ve, porque los tests
+      # arrancan limpios.
+      event = Event.find_or_initialize_by(
+        actor: actor, platform_client: client_for(client),
+        initiative: code && Initiative.find_by(code: code))
 
-      Event.create!(
-        occurred_at: Time.current - (index + 1).hours, actor: actor,
-        platform_client: client_for(client),
-        initiative: code && Initiative.find_by(code: code),
-        kind: "activity", message: message)
+      event.occurred_at ||= Time.current - (index + 1).hours
+      event.update!(kind: "activity", message: message)
     end
+  end
+
+  def sync_message(slug)
+    client = client_for(slug)
+    documents = Platform::Document.where(platform_client_id: client.id).count
+    meetings = Platform::Meeting.where(platform_client_id: client.id).count
+
+    "#{documents} documentos · #{meetings} transcripciones"
   end
 
   # ── Utilidades ─────────────────────────────────────────────────────────────

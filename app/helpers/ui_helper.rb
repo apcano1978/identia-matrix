@@ -34,7 +34,14 @@ module UiHelper
     gate2: "text-glyph-gate2 border-terminal-border-strong",
     fail: "text-glyph-fail border-terminal-border-fail",
     done: "text-glyph-done border-terminal-border-strong",
-    muted: "text-terminal-fg-3 border-terminal-border"
+    muted: "text-terminal-fg-3 border-terminal-border",
+
+    # Los tres niveles de procedencia (F4). Las cadenas van COMPLETAS y
+    # literales: Tailwind 4 solo genera el CSS de las clases que ve escritas,
+    # y una compuesta por trozos en Ruby no la ve nadie.
+    origin_doc: "text-antique-gold border-cite-origin-doc bg-cite-fill-doc",
+    origin_code: "text-glyph-done border-cite-origin-code bg-cite-fill-code",
+    derived: "text-terminal-fg-4 border-dashed border-cite-derived"
   }.freeze
 
   def status_chip(text, tone: :muted, glyph: nil)

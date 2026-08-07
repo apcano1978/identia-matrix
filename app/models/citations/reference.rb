@@ -20,6 +20,16 @@ module Citations
     # prohíbe.
     def pinned? = commit_sha.present?
 
+    # La cita sin su envoltorio, para enseñarla en una tabla estrecha:
+    #
+    #   [src:doc/acta-precios#p2]  →  doc/acta-precios#p2
+    #
+    # Se DERIVA de `raw`, quitándole los extremos. No se recompone a partir de
+    # las piezas: recomponer es cómo aparecen las divergencias, y la maqueta ya
+    # trae dos —`trinity/pkg-045#deploy` en vez de `pkg/…`, y `spec-031#§7` sin
+    # su prefijo—. Con una sola cadena en el sistema no hay forma de discrepar.
+    def compact = raw.delete_prefix("[src:").delete_suffix("]")
+
     def to_s = raw
   end
 end

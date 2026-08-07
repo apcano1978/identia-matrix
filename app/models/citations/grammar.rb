@@ -56,6 +56,13 @@ module Citations
     # Los tipos cuyo locator es una fecha.
     DATED_KINDS = %w[meet note].freeze
 
+    # Los tipos cuyo locator es el `code` de un artefacto. NO es lo mismo que
+    # DERIVED_KINDS: `verify` también es derivado, pero su locator es
+    # <repo>:<run> y su destino es una línea de un log de CI, no un documento.
+    # Esa diferencia estaba escondida y se hizo visible al escribir la
+    # resolución en F4.
+    ARTIFACT_KINDS = (DERIVED_KINDS - REPOSITORY_QUALIFIED_KINDS).freeze
+
     # Las piezas se declaran como CADENAS, no como Regexp, porque de ellas se
     # construyen dos cosas que no pueden divergir: los patrones de Ruby y el
     # `pattern` del contrato JSON Schema. Ver SCHEMA_PATTERN.

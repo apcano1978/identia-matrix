@@ -43,9 +43,10 @@
       <% end %>
     <% end %>
 
-    <%# `sources` es F4 y `config` es F9. Apagadas, y su título dice por qué. %>
-    <span class="text-terminal-disabled cursor-not-allowed"
-          title="la pantalla de fuentes llega en F4">sources</span>
+    <%= link_to "sources", client_initiative_sources_path(client, initiative),
+                class: "pb-0.5" %>
+
+    <%# `config` es F9. Apagada, y su título dice por qué. %>
     <span class="text-terminal-disabled cursor-not-allowed"
           title="la configuración de agentes se edita en F9">config</span>
   </div>

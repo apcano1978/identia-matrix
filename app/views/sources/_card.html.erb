@@ -1,0 +1,55 @@
+<%# Una tarjeta de fuentes. El borde dice de qué tipo de ámbito se trata:
+    continuo y oro lo acotado a este evolutivo, DISCONTINUO lo heredado del
+    cliente — el mismo idioma que el chip de cita derivada.
+
+    Se enseña el SLUG, no un nombre de fichero: es lo que va dentro de la cita,
+    y por tanto lo único que sirve para escribirla. La maqueta los pinta con
+    extensión (`acta-precios.pdf`) y eso no se copia. %>
+<div data-card="<%= label.parameterize %>" class="px-3.5 py-3 <%= scoped ?
+     'border border-terminal-border-gold bg-[rgba(196,155,94,.06)]' :
+     'border border-dashed border-terminal-border-strong' %>">
+  <div class="flex items-baseline gap-2">
+    <span class="eyebrow <%= scoped ? 'text-antique-gold' : 'text-terminal-fg-3' %>">
+      <%= label %>
+    </span>
+    <% if scoped %>
+      <span class="ml-auto text-t10 <%= group.synced_at ? 'text-glyph-done' : 'text-terminal-fg-3' %>">
+        <%= group.synced_at ? "sync #{group.synced_at.strftime('%H:%M')}" : "idle" %>
+      </span>
+    <% end %>
+  </div>
+
+  <% if group.size.zero? %>
+    <p class="mt-2 text-t105 text-terminal-disabled">Ninguna.</p>
+  <% else %>
+    <ul class="mt-2 flex flex-col gap-0.5 text-t105 leading-[1.7]">
+      <% group.sources.each do |source| %>
+        <li class="<%= scoped ? 'text-terminal-fg' : 'text-terminal-fg-2' %>">
+          <%= source.slug %>
+          <% if source.try(:held_on) %>
+            <span class="text-terminal-muted">
+              · <%= l(source.held_on, format: :default) %>
+            </span>
+          <% end %>
+
+          <% if scoped %>
+            <span class="text-terminal-muted">
+              <%# «refs», no `pluralize`: es una abreviatura, y la regla del
+                  español le añadiría -es («7 refes»). %>
+              <%= group.refs_for(source) %> refs
+              <%# «También en ev-014»: la prueba en pantalla de que un
+                  documento sirve a varios evolutivos sin duplicarse. %>
+              <% also_in(shared, source).each do |other| %>
+                · también en <%= other.code %>
+              <% end %>
+            </span>
+          <% end %>
+
+          <% if source.missing_in_platform? %>
+            <span class="text-glyph-fail">· ausente en platform</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

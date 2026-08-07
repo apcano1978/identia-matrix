@@ -1,0 +1,43 @@
+<%# CONFLICTO DE NIVEL · el invariante 8 hecho pantalla.
+    Una cita derivada contradice a una de origen. Gana el ORIGEN, siempre: no
+    hay un botón para lo contrario porque no es una decisión que el sistema
+    ofrezca. Resolver no corrige nada — marca el artefacto derivado para
+    revisión, y lo corrige el siguiente ciclo. %>
+<div class="mx-3.5 my-3 border-l-2 border-terminal-border-fail
+            bg-[rgba(201,128,112,.09)] px-3 py-2.5">
+  <p class="text-t95 text-glyph-fail">CONFLICTO DE NIVEL</p>
+
+  <p class="mt-1.5 text-t105 leading-[1.6] text-terminal-fg-3">
+    <span class="text-terminal-fg-4">
+      <%= citation_compact(conflict.derived_citation) %>
+    </span>
+    <% if conflict.derived_citation.quote.present? %>
+      «<%= conflict.derived_citation.quote %>»
+    <% end %>
+    &nbsp;↔&nbsp;
+    <span class="text-glyph-done">
+      <%= citation_compact(conflict.origin_citation) %>
+    </span>
+    <% if conflict.origin_citation.quote.present? %>
+      «<%= conflict.origin_citation.quote %>»
+    <% end %>
+  </p>
+
+  <p class="mt-1.5 text-t105 leading-[1.6] text-terminal-fg-3">
+    <span class="text-terminal-fg">gana el ORIGEN</span> ·
+    <% if conflict.resolved? %>
+      resuelto el <%= l(conflict.updated_at.to_date, format: :default) %> ·
+      <%= conflict.flagged_artifact&.code || "el artefacto derivado" %>
+      marcado para revisión
+    <% else %>
+      el criterio derivado quedará marcado para revisión
+    <% end %>
+  </p>
+
+  <% unless conflict.resolved? %>
+    <%= button_to "resolver · gana el origen",
+                  citation_conflict_resolution_path(conflict),
+                  class: "mt-2 border border-terminal-border-fail px-2 py-[3px] " \
+                         "text-t10 text-glyph-fail" %>
+  <% end %>
+</div>

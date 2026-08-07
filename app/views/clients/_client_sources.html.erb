@@ -1,6 +1,10 @@
 <%# El ámbito de NIVEL CLIENTE: lo que ven todos sus evolutivos salvo que uno
-    lo acote. Aquí solo el recuento — la pantalla de fuentes, con su filtro por
-    evolutivo, es F4. %>
+    lo acote. Aquí solo el recuento y una muestra; el detalle, con su filtro por
+    evolutivo y lo heredado frente a lo acotado, está en la pantalla de fuentes
+    de cada evolutivo.
+
+    Se enseñan TRES slugs y el resto se cuenta: concatenarlos todos cabía con un
+    documento y ya no cabe con once. %>
 <%= section_header "FUENTES · NIVEL CLIENTE", tone: :gate2,
                    gloss: "solo lectura · visibles para todos sus evolutivos" %>
 
@@ -11,7 +15,14 @@
                 px-3 py-2.5 bg-terminal-sunken text-t115">
       <span class="text-antique-gold"><%= label %></span>
       <span class="text-terminal-fg truncate">
-        <%= collection.size %><%= " · #{collection.map(&:slug).sort.join(' · ')}" if collection.any? %>
+        <% slugs = collection.map(&:slug).sort %>
+        <%= collection.size %>
+        <% if slugs.any? %>
+          · <%= slugs.first(3).join(" · ") %>
+          <% if slugs.size > 3 %>
+            <span class="text-terminal-fg-3">+ <%= slugs.size - 3 %> más</span>
+          <% end %>
+        <% end %>
       </span>
       <span class="<%= collection.any? ? 'text-glyph-done' : 'text-terminal-fg-3' %>">
         <% if (synced = collection.filter_map(&:synced_at).max) %>

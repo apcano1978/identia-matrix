@@ -10,8 +10,10 @@ class Platform::ProjectionTest < ActiveSupport::TestCase
     # que hay que realinear el catálogo, hasta que F8 traiga la sincronización.
     assert_equal 1, Platform::User.count
     assert_equal 10, Platform::Project.count
-    assert_equal 1, Platform::Document.count
-    assert_equal 2, Platform::Meeting.count
+    # Las fuentes de vivla: nueve en el ámbito de ev-031 y nueve heredadas del
+    # cliente, que son las dos cifras que enseña la pantalla de fuentes.
+    assert_equal 11, Platform::Document.count
+    assert_equal 7, Platform::Meeting.count
   end
 
   test "y solo se puede escribir desde ahí" do

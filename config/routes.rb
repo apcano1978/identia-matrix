@@ -4,7 +4,11 @@ Rails.application.routes.draw do
   # Matrix no tiene usuarios propios ni contraseñas: el login va contra los de
   # identia-platform. Por eso hay sesión pero no restablecimiento de contraseña
   # — no se puede restablecer una credencial que no es tuya. Ver F2 §1.7.
-  resource :session
+  #
+  # `only:` explícito: `resource :session` a secas declara también un `update`
+  # que ningún controlador implementa. Una ruta de escritura sin acción detrás
+  # es una puerta pintada, y la lista blanca de escrituras la delató.
+  resource :session, only: %i[new create destroy]
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
@@ -37,8 +41,22 @@ Rails.application.routes.draw do
   # El eje de trabajo cuelga del cliente, y el de memoria también. Las rutas lo
   # dicen: no hay ningún evolutivo ni ningún repositorio fuera de su cliente, que
   # es la frontera dura del sistema.
+  # INVARIANTE 8, escrito en la forma de la ruta: ante un conflicto de
+  # procedencia gana el ORIGEN, y lo único que se puede crear es la RESOLUCIÓN.
+  # No hay `update`, no hay `destroy`, y no existe ningún parámetro que diga a
+  # favor de quién. Que no haya forma de resolverlo al revés se lee en
+  # `bin/rails routes`, sin abrir el controlador.
+  resources :citation_conflicts, only: [] do
+    resource :resolution, only: :create,
+                          controller: "citation_conflict_resolutions"
+  end
+
   resources :clients, only: %i[index show], param: :slug do
-    resources :initiatives, only: :show, param: :code
+    resources :initiatives, only: :show, param: :code do
+      # Lo que un agente puede leer y citar para este evolutivo. Cuelga del
+      # evolutivo porque el ámbito documental es suyo; las fuentes, no.
+      resources :sources, only: :index
+    end
     # Los nombres de repositorio admiten punto —`docs.site`—, y sin la
     # restricción Rails se comería el sufijo tomándolo por un formato.
     resources :repositories, only: :show, param: :name,

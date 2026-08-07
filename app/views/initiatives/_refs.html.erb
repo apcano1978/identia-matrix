@@ -1,0 +1,105 @@
+<%# El panel de procedencia: de qué se apoya lo que afirma este artefacto.
+    Cinco bloques, y el orden importa — los contadores primero porque son la
+    lectura de un vistazo, y el conflicto al final porque es lo que hay que
+    atender. %>
+<% if artifact.blank? || citations.empty? %>
+  <p class="px-3.5 py-3 text-t105 text-terminal-disabled">
+    <%= artifact.blank? ? "Sin artefacto seleccionado." : "Sin citas todavía." %>
+  </p>
+<% else %>
+  <%# ── Los dos niveles, contados ──────────────────────────────────────── %>
+  <div class="flex items-center gap-2 px-3.5 py-2.5 text-t95
+              border-b border-terminal-border text-terminal-muted">
+    <span class="text-glyph-done"><%= citation_level_label(:origin) %></span>
+    <span class="text-terminal-fg-4"><%= ratio.origin %></span>
+    <span class="ml-auto text-terminal-fg-4"><%= citation_level_label(:derived) %></span>
+    <span class="text-terminal-fg-4"><%= ratio.derived %></span>
+  </div>
+
+  <%# ── El aviso de deriva ─────────────────────────────────────────────────
+      No dice que algo esté mal: dice que el corpus empieza a alimentarse de sí
+      mismo. Por eso es un aviso y no un bloqueo. %>
+  <% if ratio.over? %>
+    <div class="mx-3.5 my-3 flex items-start gap-2.5 border-l-2 border-terminal-border-gold
+                bg-[rgba(196,155,94,.09)] px-3 py-2.5">
+      <span class="text-t12 text-antique-gold">!</span>
+      <p class="text-t105 leading-[1.6] text-terminal-fg-3"><%= ratio.notice %></p>
+    </div>
+  <% end %>
+
+  <%# ── El código, agrupado por repositorio ───────────────────────────────
+      Es el bloque que justifica que el calificador de repositorio sea
+      obligatorio. El commit va una vez por repositorio: todas las citas de
+      código de un artefacto apuntan al mismo. %>
+  <% if code_groups.any? %>
+    <%= panel_block("CÓDIGO · AGRUPADO POR REPOSITORIO") do %>
+      <div class="flex flex-col gap-2">
+        <% code_groups.each do |group| %>
+          <div class="border border-l-2 border-cite-origin-code px-2.5 py-2">
+            <div class="flex items-baseline gap-2">
+              <%= link_to group.name,
+                          client_repository_path(initiative.platform_client,
+                                                 group.repository),
+                          class: "text-t95 text-antique-gold" %>
+              <span class="ml-auto text-t9 text-terminal-muted">
+                <% if group.divergent? %>
+                  <%= pluralize(group.size, "cita") %>
+                <% else %>
+                  @<%= group.commit_sha %> · <%= pluralize(group.size, "cita") %>
+                <% end %>
+              </span>
+            </div>
+
+            <p class="mt-1.5 text-t10 leading-[1.7] text-terminal-fg-3">
+              <%= group.citations.map { |c| c.compact.split("/", 2).last }
+                       .join(" · ") %>
+            </p>
+
+            <%# Dos commits distintos para el mismo repositorio es una
+                contradicción dentro del artefacto, no algo que promediar. %>
+            <% if group.divergent? %>
+              <p class="mt-1.5 text-t10 text-glyph-fail">
+                ! dos commits para el mismo repositorio:
+                <%= group.commits.map { |sha| "@#{sha}" }.join(" y ") %>
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ── El extracto de origen ──────────────────────────────────────────────
+      Sin cuerpo no hay extracto: el bloque se omite entero en vez de enseñar
+      un hueco con la cita dentro. %>
+  <% if excerpt %>
+    <%= panel_block("EXTRACTO DE ORIGEN") do %>
+      <div class="border border-terminal-border-gold px-2.5 py-2">
+        <p class="text-t95 text-antique-gold">
+          <%= citation_level_label(:origin) %> ·
+          <%= excerpt.target.model_name.human.downcase %>
+        </p>
+        <p class="mt-1.5 text-t10 text-antique-gold"><%= excerpt.raw %></p>
+        <p class="mt-1.5 text-t11 leading-[1.5] text-terminal-fg-2">
+          «<%= citation_excerpt(excerpt) %>»
+        </p>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ── El conflicto de nivel ─────────────────────────────────────────────
+      El invariante 8 hecho pantalla. %>
+  <% conflicts.each do |conflict| %>
+    <%= render "initiatives/conflict", conflict: conflict,
+               initiative: initiative %>
+  <% end %>
+
+  <%# ── Todas las citas ────────────────────────────────────────────────────%>
+  <%= panel_block("TODAS (#{citations.size})") do %>
+    <div class="flex flex-wrap gap-1.5">
+      <% citations.each do |citation| %>
+        <%= citation_chip(citation) %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

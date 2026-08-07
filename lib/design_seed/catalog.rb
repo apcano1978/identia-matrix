@@ -68,28 +68,170 @@ module DesignSeed::Catalog
       name: "BI de sala", client_platform_id: 106 }
   ].freeze
 
-  # Las fuentes de ORIGEN que las citas de la maqueta resuelven. Sin ellas,
-  # `[src:doc/acta-precios#p2]` apuntaría a nada.
+  # Las fuentes de ORIGEN. Once documentos y siete reuniones de vivla: nueve en
+  # el ámbito de ev-031 y nueve heredadas del cliente, que son las dos cifras
+  # que enseña la pantalla de fuentes.
+  #
+  # Ojo con dos cosas que la maqueta escribe y aquí no se copian:
+  #
+  #  · La maqueta los nombra con extensión —`acta-precios.pdf`,
+  #    `tarifario-2026.xlsx`—. `Platform::Document` no tiene columna de fichero
+  #    ni de tipo, y lo que hay que enseñar es el SLUG: es lo que va dentro de
+  #    la cita, y por tanto lo único que sirve para escribirla.
+  #  · Los documentos heredados van SIN cuerpo a propósito. Es el caso real del
+  #    PDF del que nadie extrajo texto: se listan, se pueden citar, pero el
+  #    bloque de extracto se omite en vez de enseñar un hueco.
   DOCUMENTS = [
+    # En el ámbito de ev-031 · el precio de festivos
     { platform_id: 5001, slug: "acta-precios",
       title: "Acta · unificación del precio de festivos",
       client_platform_id: 101, project_platform_id: 2291,
       body: "El precio mostrado al propietario y el de reserva divergen en " \
-            "festivos. Se acuerda una sola fuente." }
+            "festivos. Se acuerda una única autoridad de precio, consultada " \
+            "por el resto." },
+    { platform_id: 5002, slug: "tarifario-2026",
+      title: "Tarifario 2026 · temporada y festivos",
+      client_platform_id: 101, project_platform_id: 2291,
+      body: "El recargo de festivo se aplica sobre la tarifa base, nunca " \
+            "sobre el precio ya recargado." },
+    { platform_id: 5003, slug: "contrato-sla-precio",
+      title: "SLA · disponibilidad del servicio de precio",
+      client_platform_id: 101, project_platform_id: 2291,
+      body: "El servicio de precio responde en menos de 300 ms el 99 % de " \
+            "las peticiones." },
+    { platform_id: 5004, slug: "matriz-de-casos-de-precio",
+      title: "Matriz de casos · festivo, puente y temporada",
+      client_platform_id: 101, project_platform_id: 2291 },
+    { platform_id: 5005, slug: "informe-incidencias-precio-q1",
+      title: "Incidencias de precio · primer trimestre",
+      client_platform_id: 101, project_platform_id: 2291 },
+
+    # Heredados del cliente · documentación general, visible por defecto
+    { platform_id: 5006, slug: "marco-contractual-ddb",
+      title: "Marco contractual", client_platform_id: 101 },
+    { platform_id: 5007, slug: "glosario-negocio",
+      title: "Glosario de negocio", client_platform_id: 101,
+      body: "Propietario: quien cede la vivienda. Reserva: la estancia " \
+            "contratada. Tarifa: el precio por noche antes de recargos." },
+    { platform_id: 5008, slug: "arquitectura-corporativa",
+      title: "Arquitectura corporativa", client_platform_id: 101 },
+    { platform_id: 5009, slug: "politica-de-datos",
+      title: "Política de datos y retención", client_platform_id: 101 },
+    { platform_id: 5010, slug: "plan-de-continuidad",
+      title: "Plan de continuidad", client_platform_id: 101 },
+    { platform_id: 5011, slug: "manual-de-marca",
+      title: "Manual de marca", client_platform_id: 101 }
   ].freeze
 
+  # `duration_seconds` de la primera: 1:12:40, que es lo que dice la maqueta.
+  # Estaba en 81.600 —22h40m— por haber leído la duración del `@22:40` de la
+  # cita, que no es una duración sino una marca de tiempo dentro de la
+  # transcripción.
   MEETINGS = [
+    # En el ámbito de ev-031
     { platform_id: 6001, slug: "unificacion-precio",
       title: "Unificación del precio", held_on: Date.new(2026, 5, 2),
       client_platform_id: 101, project_platform_id: 2291,
-      duration_seconds: 81_600,
+      duration_seconds: 4_360,
       body: "La tarifa de reserva es la fuente única. El importe se muestra " \
             "tal cual llega del servicio, sin redondeo en cliente." },
     { platform_id: 6002, slug: "festivos-y-tarifa",
       title: "Festivos y tarifa base", held_on: Date.new(2026, 5, 14),
       client_platform_id: 101, project_platform_id: 2291,
+      duration_seconds: 2_282,
       body: "El recargo de festivo aparece una sola vez. Durante el " \
-            "despliegue conviven dos versiones del contrato de precio." }
+            "despliegue conviven dos versiones del contrato de precio." },
+    { platform_id: 6003, slug: "repaso-de-convivencia",
+      title: "Repaso de la ventana de convivencia",
+      held_on: Date.new(2026, 5, 21), client_platform_id: 101,
+      project_platform_id: 2291, duration_seconds: 1_845,
+      body: "Mientras convivan las dos versiones, el contrato viejo tiene " \
+            "que seguir sirviéndose sin cambios." },
+    { platform_id: 6004, slug: "cierre-de-alcance",
+      title: "Cierre de alcance", held_on: Date.new(2026, 5, 26),
+      client_platform_id: 101, project_platform_id: 2291,
+      duration_seconds: 1_510,
+      body: "El precio de temporada alta queda fuera de este evolutivo." },
+
+    # Heredadas del cliente
+    { platform_id: 6005, slug: "comite-de-direccion",
+      title: "Comité de dirección", held_on: Date.new(2026, 3, 4),
+      client_platform_id: 101, duration_seconds: 5_400 },
+    { platform_id: 6006, slug: "revision-trimestral",
+      title: "Revisión trimestral", held_on: Date.new(2026, 4, 9),
+      client_platform_id: 101, duration_seconds: 3_720 },
+    { platform_id: 6007, slug: "onboarding-marca",
+      title: "Onboarding de marca", held_on: Date.new(2026, 2, 14),
+      client_platform_id: 101, duration_seconds: 2_940 }
+  ].freeze
+
+  # La FRASE que cada cita afirma estar citando, dentro del párrafo que su
+  # ancla selecciona. El ancla `#p2` señala un párrafo; esto señala la frase.
+  #
+  # Lo sabe quien emite la cita, no quien la lee: aquí lo siembra el catálogo y
+  # desde F9 lo traerá el agente en su respuesta. Sin declararla habría que
+  # adivinarla, y un resaltado adivinado es peor que ninguno.
+  QUOTES = {
+    "[src:doc/acta-precios#p2]" => "una única autoridad de precio",
+    "[src:meet/2026-05-02@22:40]" =>
+      "El importe se muestra tal cual llega del servicio",
+    "[src:meet/2026-05-02-unificacion-precio@22:40]" =>
+      "La tarifa de reserva es la fuente única",
+    "[src:dod/dod-031#c3]" => "redondeo en cliente"
+  }.freeze
+
+  # Los cierres de los evolutivos ya publicados.
+  #
+  # Existen porque la MEMORIA entre evolutivos es el valor central del sistema y
+  # sin ellos era decorativa: `[src:close/close-002#§3]` se cita en tres sitios
+  # del corpus y no resolvía contra nada. Un cierre publicado es lo que permite
+  # que un evolutivo posterior afirme «esto ya se decidió, y así».
+  #
+  # No se usa la fixture de LINK: la escribió TANK para ev-031 y cita su
+  # paquete y su DoD, que en febrero no existían. Un cierre que cita el futuro
+  # se lee como imposible.
+  CLOSURES = [
+    { initiative: "ev-002", repository: "booking-core", sha: "3e81f5c",
+      what: "El calendario de disponibilidad pasó a resolverse en una sola " \
+            "consulta, con la ocupación ya agregada.",
+      decision: "Se aceptó deuda a seis meses en el cálculo de solapes: el " \
+                "caso de la reserva partida queda sin cubrir.",
+      price: "El calendario NO decide precio. Devuelve disponibilidad y " \
+             "nada más; quien quiera el importe, que pregunte al servicio " \
+             "de precio." },
+    { initiative: "ev-009", repository: "owner-web", sha: "71ff230",
+      what: "El alta de socio dejó de pasar por soporte: el propietario " \
+            "completa sus datos y firma en el mismo paso.",
+      decision: "La verificación documental se mantuvo manual. " \
+                "Automatizarla exigía un proveedor que no está contratado.",
+      price: "El alta no muestra tarifas. Enseñar precio antes de la firma " \
+             "obligaba a resolver festivos, y eso es otro evolutivo." }
+  ].freeze
+
+  # El ÁMBITO de cada evolutivo: qué fuentes se le acotan explícitamente.
+  #
+  # Es un FILTRO, no una copia. Su ausencia significa «heredada del cliente»,
+  # que es lo visible por defecto: un documento vive una sola vez, en platform,
+  # y aparece en tantos evolutivos como haga falta. Por eso `acta-precios` está
+  # en ev-031 y en ev-014 — y por eso la pantalla lo marca «también en ev-014».
+  #
+  # `refs` es el número de referencias en el corpus del cliente, no el de citas
+  # dentro de artefactos de matrix: son cosas distintas y la segunda no se
+  # deriva de la primera. En F8 lo mantiene el indexador.
+  INITIATIVE_SOURCES = [
+    { initiative: "ev-031", doc: "acta-precios",                 refs: 7 },
+    { initiative: "ev-031", doc: "tarifario-2026",               refs: 4 },
+    { initiative: "ev-031", doc: "contrato-sla-precio",          refs: 2 },
+    { initiative: "ev-031", doc: "matriz-de-casos-de-precio",    refs: 2 },
+    { initiative: "ev-031", doc: "informe-incidencias-precio-q1", refs: 1 },
+    { initiative: "ev-031", meet: "unificacion-precio",          refs: 5 },
+    { initiative: "ev-031", meet: "festivos-y-tarifa",           refs: 3 },
+    { initiative: "ev-031", meet: "repaso-de-convivencia",       refs: 1 },
+    { initiative: "ev-031", meet: "cierre-de-alcance",           refs: 1 },
+
+    # El mismo documento, en el ámbito de otro evolutivo. Sin esta fila el
+    # concepto entero —ámbito es un filtro, no posesión— no se ve en pantalla.
+    { initiative: "ev-014", doc: "acta-precios",                 refs: 3 }
   ].freeze
 
   REPOSITORIES = [
@@ -343,8 +485,12 @@ module DesignSeed::Catalog
       "morfeo_loop" => { "max_returns" => 2 }
     },
     morfeo: {
+      # `derived_ratio_threshold` vive aquí, y no suelto, porque es una política
+      # de revisión: así hereda el override por cliente como el resto de la
+      # configuración. Ver Citations::DerivedRatio.
       "revision" => { "bloquea_sin_criterio_multi_repo" => true,
-                      "clasifica_bloqueante" => "spec o DoD" }
+                      "clasifica_bloqueante" => "spec o DoD",
+                      "derived_ratio_threshold" => 0.25 }
     },
     trinity: {
       "paquete" => { "exige_orden_de_despliegue" => true,
@@ -486,8 +632,10 @@ module DesignSeed::Catalog
   ].freeze
 
   # pkg-045: tres pasos, ventana de ~40 min. El orden es el dato.
+  # `number: 45` y no el 31 del evolutivo: el paquete tiene secuencia propia,
+  # como documenta Artifacts::Key. De ahí que ev-031 produzca PKG-045.
   PKG_045 = {
-    code: "pkg-045", tasks_count: 19, new_files_count: 5,
+    code: "pkg-045", number: 45, tasks_count: 19, new_files_count: 5,
     modified_files_count: 11, migrations_count: 1,
     signed_at: Time.zone.parse("2026-05-29 17:04"),
     statement: "Firmé la entrega de PKG-045 a Claude Code sobre tres " \

@@ -124,6 +124,83 @@ class DesignSeedTest < ActiveSupport::TestCase
     assert code_citations.all? { |c| c.repository.present? }
   end
 
+  # ── F4 · procedencia ──────────────────────────────────────────────────────
+
+  # La cifra que enseña el panel REFS de la maqueta, y la que hace saltar el
+  # aviso de deriva: 3 de 12 es el 25 % justo.
+  test "la spec de ev-031 da 9 citas de origen y 3 derivadas" do
+    ratio = Citations::DerivedRatio.for(Artifact.find_by!(code: "spec-031"))
+
+    assert_equal 9, ratio.origin
+    assert_equal 3, ratio.derived
+    assert_equal 12, ratio.total
+    assert ratio.over?, "el aviso de deriva tiene que saltar con 3 de 12"
+  end
+
+  # El test que habría cazado el `pkg-031`: una cita que no resuelve es una
+  # afirmación que no se puede comprobar, que es justo lo que el sistema existe
+  # para impedir.
+  test "todas las citas del seed resuelven contra su fuente" do
+    unresolved = Citation.where(target_id: nil)
+
+    assert_empty unresolved.pluck(:raw).uniq,
+                 "hay citas sin fuente: o falta sembrarla, o el locator no casa"
+  end
+
+  test "el paquete se llama pkg-045, y la traza del DoD resuelve contra él" do
+    package = Artifact.kind_pkg.sole
+
+    assert_equal "pkg-045", package.code,
+                 "el paquete tiene secuencia propia: ev-031 produce PKG-045"
+    assert_equal package,
+                 Citation.find_by!(raw: "[src:pkg/pkg-045#deploy]").target
+  end
+
+  test "los cierres publicados existen y se pueden citar" do
+    closure = Artifact.find_by!(code: "close-002")
+
+    assert_equal closure,
+                 Citation.find_by!(raw: "[src:close/close-002#§3]").target
+    assert_includes closure.body_markdown, "## §3"
+  end
+
+  # El ámbito es un FILTRO, no posesión: el mismo documento sirve a dos
+  # evolutivos sin duplicarse en ninguno.
+  test "ev-031 tiene nueve fuentes en ámbito, y acta-precios también está en ev-014" do
+    assert_equal 9, Initiative.find_by!(code: "ev-031").initiative_sources.count
+
+    acta = Platform::Document.find_by!(slug: "acta-precios")
+
+    assert_equal %w[ev-014 ev-031],
+                 acta.initiative_sources.map { |row| row.initiative.code }.sort
+  end
+
+  test "las fuentes de vivla son nueve en ámbito y nueve heredadas" do
+    vivla = Platform::Client.find_by!(slug: "vivla")
+    scoped = Initiative.find_by!(code: "ev-031").initiative_sources.map(&:source)
+    total = Platform::Document.where(platform_client: vivla).count +
+            Platform::Meeting.where(platform_client: vivla).count
+
+    assert_equal 9, scoped.size
+    assert_equal 9, total - scoped.size
+  end
+
+  test "la frase citada se guarda, porque el ancla solo señala el párrafo" do
+    acta = Citation.where(raw: "[src:doc/acta-precios#p2]").first
+
+    assert_equal "una única autoridad de precio", acta.quote
+    assert_includes acta.target.body, acta.quote,
+                    "la frase declarada tiene que estar en el documento"
+  end
+
+  # La duración salía de leer el `@22:40` de la cita como si fuera una duración.
+  # No lo es: es una marca de tiempo dentro de la transcripción.
+  test "la reunión de unificación dura 1:12:40, no 22 horas" do
+    assert_equal 4_360,
+                 Platform::Meeting.find_by!(slug: "unificacion-precio")
+                                  .duration_seconds
+  end
+
   # ── Los cuatro restos de la maqueta que no se copian ─────────────────────
 
   test "la spec va por v4 en todas partes" do
