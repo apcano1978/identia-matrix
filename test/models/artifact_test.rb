@@ -55,4 +55,54 @@ class ArtifactTest < ActiveSupport::TestCase
 
     assert_includes artifact.errors.attribute_names, :storage_key
   end
+
+  # ── F5 · el documento y el cuerpo son dos cosas ───────────────────────────
+
+  test "el documento lleva la cabecera y el cuerpo no" do
+    artifact = publish_artifact(body: "# Un DoD\n\n## c0 · algo\n")
+
+    assert artifact.document.start_with?("---\n")
+    assert_equal "# Un DoD\n\n## c0 · algo\n", artifact.body_markdown
+    assert_equal artifact.storage_key, artifact.stored_front_matter[:key]
+  end
+
+  # `FrontMatter.parse` reconoce CUALQUIER bloque `---…---` inicial, no solo el
+  # suyo. Sin el guard, un cuerpo que empiece por una regla horizontal perdería
+  # su primera sección en silencio.
+  test "un cuerpo que empieza por una regla horizontal no pierde texto" do
+    body = "---\nkind: no soy un front-matter\n---\n\n# El cuerpo de verdad\n"
+    artifact = publish_artifact(body: body)
+
+    assert_equal body, artifact.body_markdown
+    assert_includes artifact.body_markdown, "# El cuerpo de verdad"
+  end
+
+  # Un artefacto anterior a F5 no lleva cabecera. Sigue leyéndose entero: no
+  # hace falta migrar nada, los bytes viejos y los nuevos conviven.
+  test "un artefacto sin cabecera devuelve su cuerpo entero" do
+    artifact = build_artifact
+    artifact.body.attach(io: StringIO.new("# Sin cabecera\n"), filename: "v1.md",
+                         content_type: "text/markdown")
+
+    assert_equal "# Sin cabecera\n", artifact.body_markdown
+    assert_empty artifact.stored_front_matter
+  end
+
+  test "y una cabecera que no es la suya tampoco se reclama" do
+    ajeno = publish_artifact(body: "# Del otro\n")
+    artifact = build_artifact(initiative: ajeno.initiative, version: 9)
+    artifact.body.attach(io: StringIO.new(ajeno.document), filename: "v9.md",
+                         content_type: "text/markdown")
+
+    assert_equal ajeno.document, artifact.body_markdown,
+                 "si la cabecera dice ser de otro artefacto, se enseña entera"
+  end
+
+  test "sin bytes no hay ni documento ni cuerpo" do
+    artifact = build_artifact
+
+    assert_nil artifact.document
+    assert_nil artifact.body_markdown
+    assert_empty artifact.stored_front_matter
+  end
 end

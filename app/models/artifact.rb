@@ -39,12 +39,48 @@ class Artifact < ApplicationRecord
 
   scope :latest_first, -> { order(version: :desc) }
 
-  # `download` devuelve bytes crudos —ASCII-8BIT—, y el cuerpo de un artefacto
-  # es markdown en UTF-8: sin esto, la primera tilde revienta el renderizado.
-  def body_markdown
+  # ── Los bytes, y las dos formas de leerlos ─────────────────────────────────
+  #
+  # Desde F5 lo que se almacena es el DOCUMENTO: el front-matter y, debajo, el
+  # cuerpo. Son dos cosas distintas y hay que poder pedir cada una:
+  #
+  #   document             lo que hay en el bucket, tal cual
+  #   body_markdown        solo el cuerpo — lo que el visor renderiza
+  #   stored_front_matter  la cabecera leída de los bytes, no de la columna
+  #
+  # `download` devuelve bytes crudos —ASCII-8BIT—, y el markdown es UTF-8: sin
+  # el `force_encoding`, la primera tilde revienta el renderizado.
+  def document
     return nil unless body.attached?
 
     body.download.force_encoding(Encoding::UTF_8)
+  end
+
+  # El cuerpo, sin la cabecera.
+  #
+  # NO parsea a ciegas, y el porqué importa: `FrontMatter.parse` reconoce
+  # cualquier bloque `---…---` inicial, no solo el suyo. Sobre un cuerpo que
+  # empiece por una regla horizontal se comería la primera sección. Se acepta la
+  # cabecera solo si dice ser la de ESTE artefacto.
+  #
+  # De regalo, un artefacto anterior a F5 —sin cabecera— sigue funcionando: no
+  # hace falta migrar nada, los bytes viejos y los nuevos conviven.
+  def body_markdown
+    raw = document
+    return nil if raw.nil?
+
+    attributes, body_only = Artifacts::FrontMatter.parse(raw)
+    attributes[:key] == storage_key ? body_only : raw
+  end
+
+  # La cabecera tal y como viaja dentro del fichero. Distinta de la columna
+  # `front_matter`, que es la que matrix guardó al publicar: compararlas es la
+  # mitad del trabajo de `Artifacts::Verify`.
+  def stored_front_matter
+    raw = document
+    return {} if raw.nil?
+
+    Artifacts::FrontMatter.parse(raw).first
   end
 
   def to_s = "#{code} v#{version}"

@@ -83,6 +83,20 @@ module DomainBuilders
       outcome: outcome, **attributes)
   end
 
+  def build_run(initiative: nil, agent: :seraph, purpose: "dod_pass", **attributes)
+    initiative ||= build_initiative
+
+    AgentRun.create!(initiative: initiative, agent: agent, purpose: purpose,
+                     code: "#{agent}/run-#{next_platform_id}", status: :ok,
+                     **attributes)
+  end
+
+  # Una fila de artefacto SIN BYTES, a propósito: casi ningún test los quiere, y
+  # meter una escritura de disco en cada uno encarece la suite sin comprar nada.
+  # Además hay tests que necesitan justo esto —una fila sin objeto es la primera
+  # divergencia que busca Artifacts::Verify—.
+  #
+  # Para un artefacto con bytes de verdad, `publish_artifact`.
   def build_artifact(initiative: nil, kind: :dod, version: 1, **attributes)
     initiative ||= build_initiative
     code = Artifacts::Key.code(kind: kind, number: initiative.number)
@@ -94,6 +108,19 @@ module DomainBuilders
         client: initiative.platform_client.slug,
         initiative: initiative.code, code: code, version: version),
       checksum: "sha256:#{SecureRandom.hex(8)}", **attributes)
+  end
+
+  # Un artefacto de verdad: por el único camino que hay, con sus bytes y su
+  # front-matter. Para lo que no necesite bytes, `build_artifact`.
+  def publish_artifact(initiative: nil, kind: :dod, body: "# Un artefacto\n", **options)
+    initiative ||= build_initiative
+
+    Artifacts::Publish.call(
+      initiative: initiative, kind: kind, body: body,
+      produced_at: Time.zone.parse("2026-05-02 10:00"),
+      produced_by_run: options.delete(:produced_by_run) ||
+                       build_run(initiative: initiative),
+      **options).artifact
   end
 
   # Coloca un evolutivo en una etapa sin recorrer el pipeline entero, con su

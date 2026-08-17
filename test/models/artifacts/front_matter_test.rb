@@ -79,6 +79,39 @@ class Artifacts::FrontMatterTest < ActiveSupport::TestCase
     assert_equal BODY, body
   end
 
+  # `parse` reconoce cualquier bloque `---…---` inicial y se queda solo con los
+  # diez campos que conoce: sobre una cabecera ajena devuelve `{}` y **se lleva
+  # el bloque por delante**. No es un fallo —el formato no permite distinguirlo—
+  # pero sí la razón por la que `Artifact#body_markdown` no puede llamar a esto
+  # a ciegas: comprueba que la cabecera dice ser la suya antes de descartarla.
+  test "parse no reclama como suya la cabecera de una fixture de agente" do
+    fixture = <<~MARKDOWN
+      ---
+      citations:
+        - "[src:doc/acta-precios#p2]"
+      findings: []
+      ---
+
+      # El cuerpo
+    MARKDOWN
+
+    attributes, = Artifacts::FrontMatter.parse(fixture)
+
+    assert_empty attributes, "ninguno de sus campos es de artefacto"
+  end
+
+  # En la dirección contraria el sistema tiene suerte, y conviene dejarlo
+  # escrito: `Runtime::Fixture.split` usa `YAML.safe_load`, que se niega a
+  # construir el `Time` de `produced_at`. Pasarle un documento de artefacto
+  # **revienta**, en vez de comerse la cabecera en silencio y devolver un cuerpo
+  # mutilado. Si algún día `produced_at` dejara de ser una fecha, este test cae
+  # y avisa de que la protección era accidental.
+  test "y pasarle un documento de artefacto a Runtime::Fixture falla ruidosamente" do
+    document = Artifacts::FrontMatter.render(attributes, BODY)
+
+    assert_raises(Psych::DisallowedClass) { Runtime::Fixture.split(document) }
+  end
+
   test "el checksum cambia si cambia un solo caracter del cuerpo" do
     original = Artifacts::FrontMatter.checksum_for(BODY)
     altered  = Artifacts::FrontMatter.checksum_for(BODY.sub("SERAPH", "MORFEO"))

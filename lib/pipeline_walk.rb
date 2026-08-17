@@ -144,8 +144,13 @@ module PipelineWalk
         result
       end
 
-      # El artefacto va al bucket con su clave inmutable, y las citas salen de
-      # PARSEAR el cuerpo: es lo que hará el sistema real.
+      # El artefacto va al bucket por `Artifacts::Publish`, igual que en el
+      # sistema real: con su clave inmutable, su front-matter y sus citas
+      # parseadas del cuerpo.
+      #
+      # Hasta F5 este método publicaba por su cuenta y **no rellenaba la columna
+      # `front_matter`**: los artefactos del paseo salían con `{}` dentro, y no
+      # lo miraba nadie.
       def store(initiative, run, result, version)
         kind = artifact_kind(run)
         return nil if kind.blank?
@@ -158,16 +163,10 @@ module PipelineWalk
                                    version: version)
         return Artifact.find_by(storage_key: key) if Artifact.exists?(storage_key: key)
 
-        artifact = Artifact.create!(
-          initiative: initiative, platform_client: @client, kind: kind,
-          code: code, version: version, storage_key: key,
-          checksum: Artifacts::FrontMatter.checksum_for(result.body),
-          produced_by_run: run)
-        artifact.body.attach(io: StringIO.new(result.body),
-                             filename: "v#{version}.md",
-                             content_type: "text/markdown")
-        Citations::Attach.body(citable: artifact, body: result.body,
-                               client: @client.id)
+        artifact = Artifacts::Publish.call(
+          initiative: initiative, kind: kind, body: result.body,
+          version: version, round: round, produced_by_run: run,
+          produced_at: run.started_at || initiative.opened_at).artifact
         say "  #{run.code} → #{key}"
 
         artifact

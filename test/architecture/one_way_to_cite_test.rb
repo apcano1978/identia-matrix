@@ -30,14 +30,25 @@ class OneWayToCiteTest < ActiveSupport::TestCase
     end
   end
 
-  test "los llamantes crean citas a través del servicio, no a mano" do
+  test "los llamantes no crean citas a mano" do
     CALLERS.each do |path|
       source = Rails.root.join(path).read
 
-      assert_match(/Citations::Attach\./, source,
-                   "#{path} tiene que atar sus citas con Citations::Attach")
       assert_no_match(/citations\.create!/, source,
                       "#{path} crea una cita a mano, saltándose la resolución")
+    end
+  end
+
+  # Desde F5 hay dos formas legítimas de atar citas, y las dos acaban en el
+  # mismo sitio: llamar a `Citations::Attach` directamente, o publicar por
+  # `Artifacts::Publish`, que lo hace por ti con el cuerpo pelado. El paseo del
+  # pipeline dejó de hacerlo a mano precisamente porque ahora publica.
+  test "y las atan por el servicio, directamente o publicando" do
+    CALLERS.each do |path|
+      source = Rails.root.join(path).read
+
+      assert_match(/Citations::Attach\.|Artifacts::Publish\./, source,
+                   "#{path} no ata sus citas por ningún camino conocido")
     end
   end
 

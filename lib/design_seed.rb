@@ -424,14 +424,22 @@ module DesignSeed
   # documenta Artifacts::Key. Componerlo siempre con `initiative.number` dejaba
   # un `pkg-031` contra el que la cita `[src:pkg/pkg-045#deploy]` —la traza del
   # c0 del DoD— no resolvía. Se vio al escribir Citations::Resolve.
+  # Publicar es siempre por `Artifacts::Publish`. Lo que este método añade es
+  # la IDEMPOTENCIA, que es propia del seed y no del sistema: en producción
+  # publicar dos veces la misma clave es un error, y aquí es lo normal.
+  #
+  # `produced_at: initiative.opened_at` y no `Time.current`: el cuerpo del
+  # artefacto lleva la fecha dentro, así que con la hora actual cada resiembra
+  # produciría bytes distintos para la misma clave y cualquier comparación de
+  # documentos se volvería intermitente.
   def artifact_for(initiative, kind:, run:, version: 1, round: nil,
-                   derives_from: nil, number: nil)
+                   derives_from: nil, number: nil, body: nil)
     code = Artifacts::Key.code(kind: kind, number: number || initiative.number,
                                round: round)
     key = Artifacts::Key.build(client: initiative.platform_client.slug,
                                initiative: initiative.code, code: code,
                                version: version)
-    body = body_for(kind, initiative)
+    body ||= body_for(kind, initiative)
 
     # Un artefacto ya sembrado no se reescribe —es inmutable— pero SÍ se le
     # vuelven a atar las citas. El cuerpo es el mismo, así que las citas son las
@@ -446,28 +454,10 @@ module DesignSeed
       return existing
     end
 
-    artifact = Artifact.create!(
-      initiative: initiative, platform_client: initiative.platform_client,
-      kind: kind, code: code, version: version, storage_key: key,
-      checksum: Artifacts::FrontMatter.checksum_for(body),
-      produced_by_run: run,
-      front_matter: front_matter(initiative, kind, code, version, key, run,
-                                 body, derives_from))
-    artifact.body.attach(io: StringIO.new(body), filename: "v#{version}.md",
-                         content_type: "text/markdown")
-    Citations::Attach.body(citable: artifact, body: body,
-                           client: initiative.platform_client_id)
-
-    artifact
-  end
-
-  def front_matter(initiative, kind, code, version, key, run, body, derives_from)
-    Artifacts::FrontMatter.build(
-      key: key, kind: kind, code: code, version: version,
-      initiative: initiative.code, client: initiative.platform_client.slug,
-      produced_by: run&.code, produced_at: initiative.opened_at,
-      checksum: Artifacts::FrontMatter.checksum_for(body),
-      derives_from: derives_from&.storage_key)
+    Artifacts::Publish.call(
+      initiative: initiative, kind: kind, body: body, version: version,
+      round: round, number: number, derives_from: derives_from,
+      produced_by_run: run, produced_at: initiative.opened_at).artifact
   end
 
   def body_for(kind, initiative)
@@ -527,7 +517,12 @@ module DesignSeed
       initiative = Initiative.find_by(code: data[:initiative])
       next if initiative.blank?
 
-      artifact_for(initiative, kind: :close, run: seed_runs(initiative)[:publication])
+      # LINK, que es quien redacta el cierre. `Pipeline::STAGE_WORK` no tiene
+      # entrada para `publication` —la etapa 12 no ejecuta ningún agente, solo
+      # deja constancia—, así que pedir ahí un run devolvía nil y los cierres
+      # nacían sin productor. No se veía porque el front-matter nunca se
+      # renderizaba; `Artifacts::Publish` lo destapó al validarlo.
+      artifact_for(initiative, kind: :close, run: seed_runs(initiative)[:link])
     end
   end
 
