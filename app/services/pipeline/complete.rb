@@ -28,13 +28,25 @@ class Pipeline::Complete
     initiative.with_lock do
       entry = current_entry
       entry.update!(status: :done, exited_at: Time.current,
-                    summary: @summary || entry.summary)
+                    summary: @summary || entry.summary || prefix)
       initiative.update!(current_stage_status: :done)
       record_event(kind: "published",
-                   message: "PUBLICATION · artefactos en el bucket",
+                   message: "PUBLICATION · artefactos en #{prefix}",
                    iteration: initiative.iteration)
 
       Result.new(initiative: initiative, stage_entry: entry)
     end
   end
+
+  private
+    # La raíz del evolutivo en el bucket: `artifacts://vivla/ev-009`.
+    #
+    # Hasta F5 la etapa 12 era un nodo que no hacía nada. Dejar constancia de
+    # dónde quedó publicado es lo mínimo que puede hacer la última etapa del
+    # pipeline, y es lo que la maqueta enseña en el nodo 12 de ev-009 y ev-002.
+    # `Artifacts::Key.prefix_for` existía desde F0 sin que lo usara nadie.
+    def prefix
+      Artifacts::Key.prefix_for(client: initiative.platform_client.slug,
+                                initiative: initiative.code)
+    end
 end

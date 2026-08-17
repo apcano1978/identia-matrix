@@ -1,15 +1,20 @@
 # Tareas periódicas (sidekiq-cron). Cargado en config/initializers/sidekiq.rb.
 #
-# En F0 no hay ninguna. Las que llegarán:
-#   · sincronización de la proyección de platform (F8)
-#   · reconciliación de checksums del bucket de artefactos (F5)
-#
 # Convención heredada de identia-platform: el cron es un "heartbeat" a
 # frecuencia fija que consulta la BD para decidir qué toca hacer. La frecuencia
 # real de cada cosa se configura en la aplicación, no en este fichero.
+#
+# Pendiente: la sincronización de la proyección de platform (F8).
+#
+# OJO si esto se vacía alguna vez: `sidekiq-cron` lee el fichero por su cuenta
+# al arrancar el worker —con su propio hook, no con el initializer— y un YAML
+# que parsea a `nil` lo hace levantar «Not supported schedule format». El worker
+# muere antes de coger un solo job. Vacío se escribe `{}`, no comentarios.
 
-# Un hash vacío, y no un fichero solo de comentarios: `sidekiq-cron` lee este
-# fichero por su cuenta al arrancar el worker —con su propio hook, no con el
-# initializer— y un YAML que parsea a `nil` lo hace levantar «Not supported
-# schedule format». El worker muere antes de coger un solo job.
-{}
+# De madrugada y a una hora rara: no compite con nada y, si deja rastro en el
+# log, se distingue de la actividad del día. No escribe en la base de datos.
+artifact_reconciliation:
+  cron: "17 4 * * *"
+  class: Artifacts::VerifyJob
+  queue: low
+  description: Reconcilia el registro de artefactos con el bucket (F5 §5)

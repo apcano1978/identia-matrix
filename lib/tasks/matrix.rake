@@ -64,4 +64,30 @@ namespace :matrix do
   task walk_variants: :environment do
     PipelineWalk::VARIANTS.each { |name, what| puts format("  %-18s %s", name, what) }
   end
+
+  desc "Reconcilia el registro de artefactos con el bucket"
+  task verify_artifacts: :environment do
+    report = Artifacts::Verify.call
+
+    puts report
+    puts
+
+    {
+      "FILA SIN OBJETO · se registró algo que no llegó al bucket" => report.missing_objects,
+      "OBJETO SIN FILA · blob huérfano, purgable" => report.orphan_objects,
+      "CHECKSUM DISTINTO · alguien tocó el contenido" => report.checksum_mismatches
+    }.each do |title, divergences|
+      next if divergences.empty?
+
+      puts title
+      divergences.each { |divergence| puts "  #{divergence}" }
+      puts
+    end
+
+    # Sale con código distinto de cero. Un heartbeat que siempre sale 0 no sirve
+    # para nada: nadie mira la salida de una tarea que nunca falla.
+    abort "#{report.divergences.size} divergencias" if report.divergences?
+
+    puts "Sin divergencias."
+  end
 end
