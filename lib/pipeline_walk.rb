@@ -452,7 +452,7 @@ module PipelineWalk
         HumanNote.create!(
           initiative: initiative, platform_client: @client,
           author_user: signer, body: body,
-          code: "#{Date.current.iso8601}-#{SecureRandom.hex(2)}")
+          code: HumanNote.code_for(signer))
       end
 
       def latest_dod(initiative)

@@ -32,6 +32,7 @@ class Initiative < ApplicationRecord
   has_many :gate_validations, dependent: :destroy
   has_many :artifacts, dependent: :destroy
   has_many :initiative_sources, dependent: :destroy
+  has_many :initiative_roles, dependent: :destroy
 
   enum :current_stage, STAGES.each_with_index.to_h, prefix: :at, validate: true
   enum :current_stage_status,

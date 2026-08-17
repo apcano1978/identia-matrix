@@ -28,9 +28,25 @@ class TestGuide < ApplicationRecord
     }
   end
 
-  # Lo que impide validar. Los críticos no admiten eximición silenciosa.
+  # Lo que impide validar · EL BLOQUEO ASIMÉTRICO (F6 §5).
+  #
+  # Tres condiciones a la vez, y quitar cualquiera de ellas rompe el diseño:
+  #
+  #   única evidencia   un auto-verificado ya lo comprobó SERAPH. Pedir que
+  #                     además lo recorra una persona es burocracia
+  #   crítico           con la simplificación de F10 la mayoría de criterios
+  #                     acaban en ⊗; exigirlos todos haría de cada GATE 2 un
+  #                     trámite de diez casillas, y los trámites se sellan sin
+  #                     leer — peor que no bloquear, porque además parece que
+  #                     alguien lo miró
+  #   sin resolver      ni recorrido ni eximido
+  #
+  # Hasta F6 esto no miraba `evidence_origin`, así que un auto-verificado
+  # crítico bloqueaba. Lo destapó el primer test que separó los dos casos.
   def blocking_steps
-    guide_steps.to_a.select { |s| s.critical? && !s.settled? }
+    guide_steps.to_a.select do |step|
+      step.evidence_sole_evidence? && step.critical? && !step.settled?
+    end
   end
 
   def to_s = code

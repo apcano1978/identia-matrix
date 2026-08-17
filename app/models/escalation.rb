@@ -27,4 +27,5 @@ class Escalation < ApplicationRecord
   scope :resolved, -> { where.not(resolved_at: nil) }
 
   def open? = resolved_at.nil?
+  def resolved? = !open?
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_07_191035) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_17_160115) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -330,6 +330,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_07_191035) do
     t.index ["repository_id"], name: "index_initiative_repositories_on_repository_id"
   end
 
+  create_table "initiative_roles", force: :cascade do |t|
+    t.bigint "initiative_id", null: false
+    t.bigint "platform_user_id", null: false
+    t.integer "role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["initiative_id", "platform_user_id"], name: "idx_initiative_roles_unique", unique: true
+    t.index ["initiative_id"], name: "index_initiative_roles_on_initiative_id"
+    t.index ["platform_user_id"], name: "index_initiative_roles_on_platform_user_id"
+  end
+
   create_table "initiative_sources", force: :cascade do |t|
     t.bigint "initiative_id", null: false
     t.string "source_type", null: false
@@ -626,6 +637,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_07_191035) do
   add_foreign_key "human_notes", "platform_users", column: "author_user_id"
   add_foreign_key "initiative_repositories", "initiatives"
   add_foreign_key "initiative_repositories", "repositories"
+  add_foreign_key "initiative_roles", "initiatives"
+  add_foreign_key "initiative_roles", "platform_users"
   add_foreign_key "initiative_sources", "initiatives"
   add_foreign_key "initiatives", "platform_clients"
   add_foreign_key "initiatives", "platform_projects"
