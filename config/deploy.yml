@@ -1,0 +1,145 @@
+# Kamal · identia-matrix.
+#
+# La tercera aplicación del VPS 34.252.205.239, junto a:
+#   · identia_platform  → identiaconsulting.com, tras kamal-proxy
+#   · identia_brain     → interno, en 172.17.0.1:8000
+#
+# Se despliega DESDE LA MÁQUINA LOCAL, con el `kamal` global (no `bin/kamal`):
+#
+#   cd identia-matrix && source .env.kamal && kamal deploy
+#
+# Los valores de los secretos viven en UN SOLO SITIO, `.env.kamal` (gitignored).
+# `.kamal/secrets` solo los referencia y esto solo declara sus nombres.
+service: identia_matrix
+image: apcano1978/identia_matrix
+
+servers:
+  web:
+    - 34.252.205.239
+  sidekiq:
+    hosts:
+      - 34.252.205.239
+    cmd: bundle exec sidekiq -C config/sidekiq.yml
+
+# kamal-proxy es único en el host y enruta por la cabecera Host, así que
+# convivir con identiaconsulting.com no requiere nada especial — salvo que el
+# registro A de este subdominio EXISTA antes del primer despliegue: Let's
+# Encrypt valida por HTTP-01 y sin DNS no emite el certificado.
+proxy:
+  ssl: true
+  host: matrix.identiaconsulting.com
+  app_port: 80          # Thruster escucha en el 80 dentro del contenedor
+  healthcheck:
+    # `production.rb` excluye /up del force_ssl justo para esto.
+    path: /up
+    interval: 3
+    timeout: 60
+
+registry:
+  server: ghcr.io
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+ssh:
+  user: web
+  keys: [ "~/.ssh/identia_web" ]
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    DATABASE_HOST: identia_matrix-db
+    DATABASE_PORT: 5432
+    DATABASE_USERNAME: identia_matrix
+    DATABASE_NAME: identia_matrix_production
+    SIDEKIQ_USERNAME: admin
+
+    # Los tres interruptores de fase. Los tres en `fake` todavía:
+    #   MATRIX_AUTH_SOURCE     → `platform` en F7
+    #   MATRIX_PLATFORM_SOURCE → `platform` en F8
+    #   MATRIX_AGENT_RUNTIME   → `brain` en F9
+    MATRIX_AGENT_RUNTIME: fake
+    MATRIX_PLATFORM_SOURCE: fake
+    MATRIX_AUTH_SOURCE: fake
+
+    # AI_SERVICE_URL: http://172.17.0.1:8000   # F9, igual que en platform
+
+  secret:
+    - RAILS_MASTER_KEY
+    - IDENTIA_MATRIX_DATABASE_PASSWORD
+    - REDIS_PASSWORD
+    - REDIS_URL
+
+    # Sin estas dos la aplicación NO ARRANCA en producción, a propósito: con
+    # ellas vacías /sidekiq entraba con usuario y contraseña vacíos.
+    - SIDEKIQ_PASSWORD
+
+    # ⚠ DEUDA BLOQUEANTE hasta F7. Matrix no verifica contraseñas: hasta que
+    # exista `POST /internal/v1/authenticate` en platform, entra quien sepa
+    # esta contraseña compartida. Que sea larga y aleatoria.
+    - MATRIX_FAKE_AUTH_PASSWORD
+
+    # Obligatorias en producción por config/initializers/active_record_encryption.rb.
+    # Se generan con `bin/rails db:encryption:init`.
+    - AR_ENCRYPTION_PRIMARY_KEY
+    - AR_ENCRYPTION_DETERMINISTIC_KEY
+    - AR_ENCRYPTION_KEY_DERIVATION_SALT
+
+    # El bucket de artefactos. OJO: se llama AWS_ARTIFACTS_BUCKET, no
+    # AWS_BUCKET como en identia-platform — son buckets distintos con políticas
+    # distintas, y confundirlos publicaría artefactos donde no deben ir.
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_REGION
+    - AWS_ARTIFACTS_BUCKET
+
+# SIN VOLUMEN DE STORAGE, a diferencia de identia-platform.
+#
+# En producción el servicio de Active Storage es `:artifacts` (S3) y no hay
+# fallback a disco. Montar un volumen sería una mentira y, peor, haría POSIBLE
+# el fallback: los artefactos se escribirían en el contenedor y desaparecerían
+# en el siguiente despliegue, en silencio. Sin volumen, el fallo es inmediato.
+
+asset_path: /rails/public/assets
+
+aliases:
+  console:      app exec --interactive --reuse "bin/rails console"
+  shell:        app exec --interactive --reuse "bash"
+  logs:         app logs -f
+  sidekiq-logs: app logs -f -r sidekiq
+  dbc:          app exec --interactive --reuse "bin/rails dbconsole"
+  verify:       app exec --reuse "bin/rails matrix:verify_artifacts"
+
+accessories:
+  # SIN `port:`, a diferencia de platform y brain.
+  #
+  # El VPS ya tiene ocupados el 5432 (platform), el 5434 (brain) y el 6379
+  # (platform). Sin publicar, los accesorios viven en la red de Kamal y la
+  # aplicación los alcanza por nombre; para entrar desde el host,
+  # `kamal accessory exec db`. Un puerto menos expuesto es un puerto menos.
+  db:
+    image: postgres:16-alpine
+    host: 34.252.205.239
+    env:
+      clear:
+        POSTGRES_USER: identia_matrix
+        POSTGRES_DB: identia_matrix_production
+      secret:
+        - POSTGRES_PASSWORD   # alias de IDENTIA_MATRIX_DATABASE_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+
+  # Propio, no el de platform. Compartirlo mezclaría las colas de Sidekiq de
+  # dos aplicaciones y sus dos cachés en el mismo servidor.
+  redis:
+    image: redis:7-alpine
+    host: 34.252.205.239
+    cmd: "sh -c 'redis-server --requirepass $REDIS_PASSWORD --appendonly yes'"
+    env:
+      secret:
+        - REDIS_PASSWORD
+    directories:
+      - data:/data
