@@ -1,0 +1,46 @@
+<% breadcrumb "p", @platform_project.platform_project_ref %>
+<% content_for :title, "identia-matrix · #{@platform_project.platform_project_ref}" %>
+
+<%= render "shared/view_bar",
+           back: { label: "clientes", path: clients_path },
+           title: @platform_project.platform_project_ref,
+           notes: [ pluralize(@initiatives.size, "evolutivo") ] %>
+
+<div class="flex-1 min-h-0 overflow-y-auto px-[22px] pt-[18px] pb-6">
+  <div class="flex items-baseline gap-3.5">
+    <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+      <%= @platform_project.name %>
+    </h1>
+    <span class="text-t105 text-terminal-fg-3">
+      lo que matrix ha producido para este proyecto de platform
+    </span>
+  </div>
+
+  <% @initiatives.each do |initiative| %>
+    <%= section_header initiative.code, gloss: initiative.title %>
+
+    <div class="mt-[9px] mb-1 flex flex-col gap-px">
+      <% artifacts = @artifacts_by_initiative[initiative] %>
+      <% if artifacts.empty? %>
+        <p class="px-3 py-2.5 bg-terminal-sunken text-t105 text-terminal-disabled">
+          Todavía no ha publicado ningún artefacto.
+        </p>
+      <% end %>
+
+      <%# Se atraviesa hacia la PANTALLA de matrix, no hacia los bytes: el
+          artefacto se lee con su procedencia al lado, que es de lo que va el
+          sistema. %>
+      <% artifacts.each do |artifact| %>
+        <%= link_to client_initiative_path(initiative.platform_client, initiative,
+                                           artifact: artifact.code,
+                                           version: artifact.version),
+                    class: "grid grid-cols-[150px_1fr_80px] gap-3.5 items-baseline
+                            px-3 py-2.5 bg-terminal-sunken text-t105" do %>
+          <span class="text-antique-gold"><%= artifact.code %></span>
+          <span class="truncate text-terminal-fg-3"><%= artifact.storage_key %></span>
+          <span class="text-right text-terminal-muted">v<%= artifact.version %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -57,8 +57,12 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # El dominio de matrix en el VPS. Hoy la aplicación no envía ningún correo
+  # —no hay mailers—, pero un `example.com` olvidado es de las cosas que se
+  # descubren tarde y por un enlace roto.
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("MATRIX_HOST", "matrix.identiaconsulting.com"), protocol: "https"
+  }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
   # config.action_mailer.smtp_settings = {

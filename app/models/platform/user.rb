@@ -31,6 +31,15 @@ class Platform::User < Platform::Record
     ROLES_WITH_ACCESS.include?(role) && !disabled? && !missing_in_platform?
   end
 
+  # Si esta persona puede leer el material de un cliente concreto.
+  #
+  # Hoy la respuesta es la misma para todos los clientes: quien entra en matrix
+  # los ve todos. **El cliente entra por la firma de todos modos**, igual que en
+  # `Citations::Resolve`, y por el mismo motivo: el día que haya alcance por
+  # cliente —una persona de platform asignada solo a los suyos— hay un único
+  # sitio que tocar, y ninguna llamada que revisar.
+  def may_read_client?(_client) = may_access_matrix?
+
   # Lo que se congela en `gate_signatures.identity` al firmar. Sin nombre no se
   # queda en blanco: el correo identifica igual.
   def identity_snapshot

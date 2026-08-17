@@ -20,9 +20,22 @@ Rails.application.routes.draw do
   # OJO: va montada como Rack, fuera de ApplicationController, así que el
   # `require_authentication` del concern de autenticación NO le aplica.
   if Rails.env.production?
+    # ⚠ Con `ENV.fetch(..., "")` de respaldo, unas credenciales SIN PONER
+    # comparan "" con "" y **entra cualquiera con usuario y contraseña vacíos**.
+    # Era inocuo mientras matrix no tenía producción; deja de serlo el día que
+    # se despliega. Se comprueba al arrancar y se cae ruidosamente, que es la
+    # única forma de que un secreto que falta no se convierta en una puerta.
+    expected_username = ENV["SIDEKIQ_USERNAME"].to_s
+    expected_password = ENV["SIDEKIQ_PASSWORD"].to_s
+
+    if expected_username.empty? || expected_password.empty?
+      raise "SIDEKIQ_USERNAME y SIDEKIQ_PASSWORD son obligatorias en producción: " \
+            "sin ellas /sidekiq queda abierto con credenciales vacías"
+    end
+
     Sidekiq::Web.use(Rack::Auth::Basic) do |username, password|
-      ActiveSupport::SecurityUtils.secure_compare(username, ENV.fetch("SIDEKIQ_USERNAME", "")) &
-        ActiveSupport::SecurityUtils.secure_compare(password, ENV.fetch("SIDEKIQ_PASSWORD", ""))
+      ActiveSupport::SecurityUtils.secure_compare(username, expected_username) &
+        ActiveSupport::SecurityUtils.secure_compare(password, expected_password)
     end
   end
   mount Sidekiq::Web => "/sidekiq"
@@ -64,6 +77,15 @@ Rails.application.routes.draw do
   end
 
   resources :agents, only: %i[index show], param: :key
+
+  # El enlace profundo desde identia-platform: `/p/proj-2291` resuelve la
+  # referencia de proyecto a sus evolutivos y sus artefactos publicados.
+  #
+  # Corto a propósito — lo construye platform concatenando una plantilla con la
+  # `ref` que ya tiene— y sin API en sentido inverso: hoy basta con atravesar.
+  get "/p/:platform_project_ref" => "platform_projects#show",
+      as: :platform_project_deep_link,
+      constraints: { platform_project_ref: %r{[A-Za-z0-9._-]+} }
 
   root "dashboard#show"
 end
