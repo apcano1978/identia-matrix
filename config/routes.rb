@@ -69,6 +69,38 @@ Rails.application.routes.draw do
       # Lo que un agente puede leer y citar para este evolutivo. Cuelga del
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.
       resources :sources, only: :index
+
+      # La cadena de evidencia (F6). Cinco pantallas que se leen en este orden:
+      #
+      #   DoD → informe → guía → GATE 2
+      #                     ↑
+      #          paquete → GATE 1 → Claude Code
+      #
+      # Todas son `show` singular: hay un DoD vigente, un informe vigente y una
+      # guía vigente por evolutivo. Las versiones anteriores se ven desde el
+      # visor de artefactos, que es donde vive la historia.
+      resource :definition_of_done, only: :show, path: "dod"
+      resource :verification, only: :show
+      resource :guide, only: :show
+
+      # Las dos puertas. `show` para leer; la escritura cuelga de cada una y va
+      # siempre a `create`: firmar y validar son actos, no ediciones.
+      resource :gate_1, only: :show, path: "gate-1", controller: "gate_1" do
+        resource :signature, only: :create
+        resource :return_to_trinity, only: :create, path: "return"
+      end
+
+      resource :gate_2, only: :show, path: "gate-2", controller: "gate_2" do
+        resource :validation, only: :create
+      end
+
+      # Los pasos de la guía. Tres actos distintos y ninguna edición: recorrer,
+      # levantar la mano y autorizar el cierre sin la prueba.
+      resources :guide_steps, only: [], path: "steps" do
+        resource :walk, only: :create
+        resource :raised_hand, only: :create, path: "raise-hand"
+        resource :exemption, only: :create
+      end
     end
     # Los nombres de repositorio admiten punto —`docs.site`—, y sin la
     # restricción Rails se comería el sufijo tomándolo por un formato.

@@ -1,0 +1,61 @@
+<%= side_panel(width: 300) do %>
+  <%# La cifra que da sentido a toda la fase. %>
+  <%= panel_block("COBERTURA DE EVIDENCIA") do %>
+    <% sole = guide.guide_steps.select(&:evidence_sole_evidence?) %>
+
+    <p class="text-t115 leading-[1.5] text-terminal-fg-2">
+      <span class="text-t14 text-terminal-fg"><%= sole.size %></span>
+      de <%= coverage[:total] %> pasos son
+      <span class="text-terminal-fg">única evidencia</span>:
+      nadie los ha verificado automáticamente.
+    </p>
+
+    <%# Los TRES estados, no dos. El tercero apareció con el ⊗ irrecorrible:
+        hay pasos que nadie recorrió y que alguien, con nombre, autorizó cerrar
+        así. Meterlos en «recorrido» falsearía la única cifra que esta pantalla
+        existe para dar. %>
+    <div class="mt-2.5 flex flex-col gap-1 text-t105">
+      <% { walked: "recorrido", exempted: "eximido", pending: "pendiente" }.each do |key, label| %>
+        <div class="flex items-baseline gap-2">
+          <span class="<%= GatesHelper::COVERAGE_STATES.fetch(key).last %>">
+            <%= GatesHelper::COVERAGE_STATES.fetch(key).first %>
+          </span>
+          <span class="text-terminal-fg-3"><%= label %></span>
+          <span class="ml-auto text-terminal-fg-4"><%= coverage[key] %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if blocking.any? %>
+    <%= panel_block("CRITERIOS QUE DEPENDEN SOLO DE TU RECORRIDO") do %>
+      <div class="flex flex-col gap-1 text-t105">
+        <% blocking.each do |step| %>
+          <p class="text-terminal-fg-3">
+            <span class="text-glyph-unsupported">⊗</span>
+            <span class="text-antique-gold"><%= step.dod_criterion %></span>
+            · <%= step.title.truncate(38) %>
+          </p>
+        <% end %>
+      </div>
+      <p class="mt-2 text-t95 leading-[1.5] text-terminal-muted">
+        Bloquean la validación: son críticos y nadie más los ha comprobado.
+      </p>
+    <% end %>
+  <% end %>
+
+  <%= panel_block("PROCEDENCIA") do %>
+    <dl class="text-t105 leading-[1.8]">
+      <%= render "initiatives/fact", term: "informe", value: report.code %>
+      <%= render "initiatives/fact", term: "ciclo QA", value: report.qa_cycle %>
+      <%= render "initiatives/fact", term: "emitida por",
+                 value: report.agent_run&.code || "—" %>
+    </dl>
+  <% end %>
+
+  <div class="px-3.5 py-3">
+    <%= link_to "ir a GATE 2 ↗", client_initiative_gate_2_path(@client, @initiative),
+                class: "block border border-terminal-border-gold px-2.5 py-1.5
+                        text-center text-t105 text-antique-gold" %>
+  </div>
+<% end %>

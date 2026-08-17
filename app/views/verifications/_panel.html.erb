@@ -1,0 +1,74 @@
+<%= side_panel(width: 300) do %>
+  <%# «¿Sobre qué se dictaminó?». La maqueta pintaba aquí «ENTORNO EFÍMERO · 3
+      clones · destruidos al terminar», porque en su diseño SERAPH levantaba
+      contenedores. Al decidirse en F10 que LEE EL CI en vez de ejecutar, el
+      panel cambia de contenido pero no de sitio ni de propósito. %>
+  <%= panel_block("EJECUCIONES DE CI") do %>
+    <% if ci_checks.empty? %>
+      <p class="text-t105 text-terminal-disabled">
+        Sin ejecuciones registradas.
+      </p>
+    <% else %>
+      <div class="flex flex-col gap-2">
+        <% ci_checks.each do |check| %>
+          <div class="border-l-2 <%= check.status_green? ? 'border-cite-origin-code' : 'border-terminal-border-fail' %>
+                      pl-2.5">
+            <div class="flex items-baseline gap-2 text-t105">
+              <span class="text-terminal-fg-2"><%= check.repository.name %></span>
+              <%# El commit EJECUTADO, que no es el sellado en GATE 1.
+                  Colapsarlos perdería la única forma de saber sobre qué se
+                  firmó y sobre qué se verificó. %>
+              <span class="ml-auto text-antique-gold">@<%= check.commit_sha %></span>
+            </div>
+            <p class="mt-0.5 flex items-center gap-1.5 text-t10 text-terminal-fg-4">
+              <%= check_glyph(check.status_green? ? :ok : :failed, size: "text-t105") %>
+              <%= ci_summary(check) %>
+            </p>
+            <% if check.ci_url.present? %>
+              <%= link_to "↗ run", check.ci_url, class: "text-t10 text-terminal-muted" %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <p class="mt-2.5 text-t95 leading-[1.5] text-terminal-muted">
+        <% if report.ci_status == "green" %>
+          Los <%= ci_checks.size %> repositorios tienen CI en verde para el
+          commit ejecutado.
+        <% else %>
+          El semáforo se compone de todos los checks obligatorios, no solo de la
+          suite.
+        <% end %>
+      </p>
+    <% end %>
+  <% end %>
+
+  <%# La evidencia citable: lo que convierte una línea de un log en algo que un
+      artefacto puede afirmar. %>
+  <% evidenced = report.verdicts.select(&:evidenced?) %>
+  <% if evidenced.any? %>
+    <%= panel_block("EVIDENCIA CITABLE") do %>
+      <div class="flex flex-col gap-2">
+        <% evidenced.each do |verdict| %>
+          <div>
+            <p class="text-t10 text-terminal-fg-4">
+              <%= verdict.dod_criterion.key %> · <%= verdict.evidence %>
+            </p>
+            <p class="mt-0.5"><%= citation_chip verdict.evidence_citation %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%= panel_block("PROCEDENCIA") do %>
+    <dl class="text-t105 leading-[1.8]">
+      <%= render "initiatives/fact", term: "agente",
+                 value: report.agent_run&.code || "—" %>
+      <%= render "initiatives/fact", term: "iteración", value: report.iteration %>
+      <%= render "initiatives/fact", term: "ciclo QA", value: report.qa_cycle %>
+      <%= render "initiatives/fact", term: "consume ciclo",
+                 value: report.consumes_cycle? ? "sí" : "no" %>
+    </dl>
+  <% end %>
+<% end %>

@@ -28,13 +28,13 @@
                 class: "pb-0.5 #{artifact.nil? || artifact == artifacts.first ?
                   'text-antique-gold border-b border-antique-gold' : ''}" %>
 
+    <%# Desde F6 las tres llevan a su PANTALLA, no a seleccionar un artefacto en
+        el visor: el DoD, el informe y la guía tienen cada uno lo suyo que
+        enseñar —contadores, veredictos, cobertura— que un visor de markdown no
+        puede dar. El artefacto sigue leyéndose desde el panel de ARTEFACTOS. %>
     <% artifact_tabs(initiative, artifacts, artifact).each do |tab| %>
       <% if tab[:artifact] %>
-        <%= link_to tab[:label],
-                    client_initiative_path(client, initiative,
-                                           artifact: tab[:artifact].code),
-                    class: "pb-0.5 #{tab[:current] ?
-                      'text-antique-gold border-b border-antique-gold' : ''}" %>
+        <%= link_to tab[:label], tab[:path], class: "pb-0.5" %>
       <% else %>
         <span class="text-terminal-disabled cursor-not-allowed"
               title="<%= initiative.code %> todavía no tiene ese artefacto">

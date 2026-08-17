@@ -1,0 +1,118 @@
+<% breadcrumb "clients", @client.slug, @initiative.code, "verify" %>
+<% content_for :title, "identia-matrix · #{@report.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code, path: initiative_path_for },
+           title: @report.code,
+           notes: [ "ciclo #{@report.qa_cycle}/#{Initiative::MAX_QA_CYCLES}",
+                    "contra #{@dod}" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+        Informe de verificación
+      </h1>
+      <span class="ml-auto">
+        <% if @report.outcome_conforme? %>
+          <%= status_chip "CONFORME · pasa a GATE 2", tone: :done %>
+        <% else %>
+          <%= status_chip @report.outcome.upcase, tone: :fail %>
+        <% end %>
+      </span>
+    </div>
+
+    <%# Los cuatro contadores EN IGUALDAD VISUAL. No son «dos buenos y dos
+        malos»: son cuatro resultados distintos y la pantalla los enseña como
+        cuatro. %>
+    <div class="mt-4 grid grid-cols-4 gap-3">
+      <% verdict_tally(@report).each do |result, count| %>
+        <div class="border border-terminal-border px-3 py-2.5">
+          <div class="flex items-baseline gap-2">
+            <%= verdict_glyph result, size: "text-t14" %>
+            <span class="text-t14 <%= verdict_tone(result) %>"><%= count %></span>
+          </div>
+          <p class="mt-1 text-t10 text-terminal-fg-4"><%= verdict_label(result) %></p>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @report.outcome_conforme? %>
+      <p class="mt-3 text-t105 leading-[1.6] text-terminal-fg-3">
+        Sin incumplimientos: SERAPH da conforme y emite la guía de pruebas
+        manuales.
+        <% if (pending = @report.unsupported_verdicts.size).positive? %>
+          <%= pending == 1 ? "El ⊗ pasa" : "Los #{pending} ⊗ pasan" %> a depender
+          del recorrido humano.
+        <% end %>
+      </p>
+    <% end %>
+
+    <%= section_header "VEREDICTOS", count: @verdicts.size,
+                       gloss: "un ⊗ no lleva evidencia: lleva a quién lo cubre" %>
+
+    <div class="mt-[9px] border border-terminal-border">
+      <div class="grid-verdicts px-3 py-1.5 bg-terminal-sunken text-t9
+                  tracking-[.08em] text-terminal-fg-4
+                  border-b border-terminal-border">
+        <span>VEREDICTO</span><span>CRITERIO</span><span>EVIDENCIA</span>
+      </div>
+
+      <% @verdicts.each do |verdict| %>
+        <div class="grid-verdicts items-baseline px-3 py-2.5
+                    border-b border-terminal-border last:border-b-0">
+          <span class="flex items-center gap-1.5 text-t105">
+            <%= verdict_glyph verdict.result %>
+            <span class="<%= verdict_tone(verdict.result) %>">
+              <%= verdict_label(verdict.result) %>
+            </span>
+          </span>
+
+          <div>
+            <p class="text-t105 leading-[1.5] text-terminal-fg-2">
+              <span class="text-antique-gold"><%= verdict.dod_criterion.key %></span>
+              · <%= verdict.dod_criterion.statement %>
+            </p>
+            <% if verdict.evidence.present? %>
+              <p class="mt-0.5 text-t10 text-terminal-muted"><%= verdict.evidence %></p>
+            <% end %>
+          </div>
+
+          <%# Un ⊗ no lleva evidencia sino REDIRECCIÓN: es el enlace que
+              convierte un criterio sin verificar en un paso con dueño. %>
+          <div class="text-t10">
+            <% if verdict.guide_step %>
+              <%= link_to client_initiative_guide_path(@client, @initiative,
+                                                       anchor: "paso-#{format('%02d', verdict.guide_step.position)}"),
+                          class: "text-glyph-unsupported" do %>
+                → <%= verdict.guide_step.test_guide.code %> ·
+                paso <%= format("%02d", verdict.guide_step.position) %>
+              <% end %>
+            <% elsif verdict.evidence_citation %>
+              <span class="text-terminal-fg-4">
+                <%= citation_compact(verdict.evidence_citation) %>
+              </span>
+            <% else %>
+              <span class="text-terminal-disabled">—</span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# La frase que fija el reparto de autoridad, y el paso a la puerta. %>
+    <div class="mt-4 flex items-center gap-3.5">
+      <p class="text-t105 leading-[1.6] text-terminal-fg-3">
+        SERAPH no valida: solo dictamina y emite la guía.
+        <span class="text-terminal-fg">La conformidad final la firma un humano.</span>
+      </p>
+      <% if @guide %>
+        <%= link_to "ir a GATE 2 ↗", client_initiative_gate_2_path(@client, @initiative),
+                    class: "ml-auto flex-none border border-terminal-border-gold
+                            px-2.5 py-1 text-t10 text-antique-gold" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= render "verifications/panel", report: @report, ci_checks: @ci_checks %>
+</div>

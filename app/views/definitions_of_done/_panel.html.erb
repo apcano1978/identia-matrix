@@ -1,0 +1,49 @@
+<%= side_panel(width: 300) do %>
+  <%= panel_block("PROCEDENCIA") do %>
+    <dl class="text-t105 leading-[1.8]">
+      <%= render "initiatives/fact", term: "autor",
+                 value: dod.authored_by_run&.code || "—" %>
+      <%= render "initiatives/fact", term: "deriva de",
+                 value: dod.derived_from_artifact&.code || "—" %>
+      <%= render "initiatives/fact", term: "revisado por",
+                 value: dod.reviewed_by_run&.code || "sin revisar" %>
+      <%= render "initiatives/fact", term: "versión", value: "v#{dod.version}" %>
+    </dl>
+  <% end %>
+
+  <%# El bloque que documenta una DECISIÓN, no un estado: por qué hubo una v2.
+      Se pinta solo cuando la hay, porque en la v1 no habría nada que contar. %>
+  <% if dod.version > 1 %>
+    <%= panel_block("MORFEO · SOBRE LA SECUENCIA") do %>
+      <p class="text-t105 leading-[1.6] text-terminal-fg-3">
+        v1 no traía <span class="text-antique-gold">c0</span>. MORFEO lo marcó
+        bloqueante: un plan multi-repo sin criterio de compatibilidad durante la
+        ventana está incompleto.
+      </p>
+    <% end %>
+  <% end %>
+
+  <%= panel_block("CRITERIOS POR REPOSITORIO") do %>
+    <div class="flex flex-col gap-1.5 text-t105">
+      <% criteria_by_scope(criteria).each do |scope, group| %>
+        <div class="flex items-baseline gap-2">
+          <span class="<%= scope == 'entre servicios' ? 'text-glyph-unsupported' : 'text-terminal-fg-2' %>">
+            <%= scope %>
+          </span>
+          <span class="ml-auto text-terminal-muted"><%= group.size %></span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if dod.artifact %>
+    <%= panel_block("ALMACENAMIENTO") do %>
+      <p class="text-t10 leading-[1.6] text-terminal-fg-4 break-all">
+        <%= dod.artifact.storage_key %>
+      </p>
+      <p class="mt-2 text-t95 text-terminal-muted">
+        markdown · clave inmutable · sin borrado
+      </p>
+    <% end %>
+  <% end %>
+<% end %>

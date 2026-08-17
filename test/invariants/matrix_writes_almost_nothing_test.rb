@@ -15,6 +15,11 @@ require "test_helper"
 # conviene pensarlo dos veces.
 class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
   # Todo lo que la aplicación puede escribir, hoy.
+  #
+  # Ninguna es `update` ni `destroy`, y no es casualidad: **todo lo que matrix
+  # escribe es un ACTO que ocurre una vez y deja constancia**, no la edición de
+  # un campo. Firmar, validar, recorrer un paso, autorizar que se cierre sin
+  # recorrerlo. Que la lista sea toda de `create` es la propiedad, no el estilo.
   ALLOWED = [
     # Entrar y salir. Escribe en `sessions`, que es de matrix.
     "sessions#create",
@@ -22,7 +27,24 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
 
     # INVARIANTE 8 · resolver un conflicto de nivel a favor del origen. Marca
     # el artefacto derivado para revisión SIN tocar su fila.
-    "citation_conflict_resolutions#create"
+    "citation_conflict_resolutions#create",
+
+    # ── Las dos puertas (F6) ────────────────────────────────────────────────
+    #
+    # GATE 1 · irreversible, nominal y con re-autenticación: autoriza a escribir
+    # sobre repositorios de un cliente.
+    "signatures#create",
+    # La cuarta bifurcación: negarse a firmar y devolver a TRINITY con nota.
+    "return_to_trinities#create",
+    # GATE 2 · reversible por rechazo. Confirma que lo ejecutado sirve.
+    "validations#create",
+
+    # ── La guía de pruebas (F6) ─────────────────────────────────────────────
+    "walks#create",
+    # Levantar la mano sobre un paso que no se puede recorrer…
+    "raised_hands#create",
+    # …y que OTRA persona autorice cerrarlo sin esa prueba.
+    "exemptions#create"
   ].freeze
 
   test "la aplicación solo escribe donde está declarado" do

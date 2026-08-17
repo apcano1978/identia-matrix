@@ -244,6 +244,27 @@
   gap: 13px;
 }
 
+/* Tabla de criterios del DoD: id, criterio, traza, veredicto. */
+@utility grid-dod-criteria {
+  display: grid;
+  grid-template-columns: 44px 1fr 264px 132px;
+  gap: 13px;
+}
+
+/* Tabla de veredictos del informe: veredicto, criterio, evidencia. */
+@utility grid-verdicts {
+  display: grid;
+  grid-template-columns: 158px 1fr 190px;
+  gap: 13px;
+}
+
+/* Tabla de commits que sella una firma: repositorio, commit, alcance. */
+@utility grid-gate-commits {
+  display: grid;
+  grid-template-columns: 186px 128px 1fr;
+  gap: 13px;
+}
+
 /* Nodo del pipeline: glifo, cuerpo, marca derecha. */
 @utility grid-pipeline-node {
   display: grid;

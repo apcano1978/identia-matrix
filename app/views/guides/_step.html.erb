@@ -1,0 +1,93 @@
+<%# Un paso de la guía.
+
+    La asimetría visual no es estética: es la misma que la regla de bloqueo. Un
+    paso de ÚNICA EVIDENCIA es lo único que nadie más ha comprobado, y tiene que
+    verse distinto desde el otro lado de la habitación — borde izquierdo de 2 px
+    y fondo levemente aclarado. Un auto-verificado no realza la fila. %>
+<% sole = step.evidence_sole_evidence? %>
+<div id="paso-<%= format('%02d', step.position) %>"
+     class="px-3.5 py-3 <%= sole ?
+       'border-l-2 border-terminal-border-strong bg-[rgba(240,233,215,.04)]' :
+       'border border-terminal-border' %>">
+  <div class="flex items-baseline gap-2.5">
+    <span class="text-t105 text-antique-gold"><%= format("%02d", step.position) %></span>
+    <span class="text-t115 text-terminal-fg"><%= step.title %></span>
+
+    <span class="ml-auto flex items-center gap-2.5">
+      <%# Las dos marcas, y por qué una grita. %>
+      <% if sole %>
+        <span class="border border-terminal-border-strong bg-terminal-bg px-2 py-[2px]
+                     text-t9 font-medium tracking-[.14em] text-terminal-fg-3">
+          ÚNICA EVIDENCIA
+        </span>
+      <% else %>
+        <span class="border border-terminal-border px-2 py-[2px] text-t9
+                     text-terminal-muted">auto-verificado</span>
+      <% end %>
+
+      <span class="flex items-center gap-1.5 text-t105 <%= step_state_tone(step) %>">
+        <%= step_state_glyph(step) %> <%= step_state_label(step) %>
+      </span>
+    </span>
+  </div>
+
+  <%# ── Modo recorrido: la prosa y las citas ──────────────────────────────%>
+  <div data-guide-target="walkthrough">
+    <% if step.body.present? %>
+      <p class="mt-2 text-t105 leading-[1.6] text-terminal-fg-2"><%= step.body %></p>
+    <% end %>
+
+    <% if step.dod_criterion %>
+      <p class="mt-1.5 text-t10 text-terminal-fg-4">
+        <% if sole %>
+          <span class="text-glyph-unsupported">⊗</span>
+          única prueba de
+          <span class="text-antique-gold"><%= step.dod_criterion %></span>
+          · SERAPH no puede verificarlo
+        <% else %>
+          cubre <span class="text-terminal-fg-3"><%= step.dod_criterion %></span>
+        <% end %>
+      </p>
+    <% end %>
+  </div>
+
+  <%# ── Modo validación: la casilla ───────────────────────────────────────%>
+  <div data-guide-target="validation" class="hidden mt-2">
+    <% if step.walked? %>
+      <p class="text-t10 text-terminal-fg-4">
+        recorrido por <%= step.walked_by_user %> ·
+        <%= l(step.walked_at, format: :short) %>
+        <%= " · #{step.walk_note}" if step.walk_note.present? %>
+      </p>
+    <% elsif step.exempted? %>
+      <%# Eximido NO es recorrido, y la pantalla lo dice: si contara como
+          recorrido, la cobertura mentiría sobre lo único que existe para dar. %>
+      <p class="text-t10 text-glyph-fail">
+        ⊘ eximido por <%= step.exempted_by_user %> ·
+        autorizado sin recorrer
+      </p>
+    <% else %>
+      <div class="flex items-center gap-2.5">
+        <%= button_to "○ marcar recorrido",
+                      client_initiative_guide_step_walk_path(@client, @initiative, step),
+                      class: "border border-terminal-border-gold px-2.5 py-1
+                              text-t10 text-antique-gold" %>
+
+        <%# Levantar la mano solo tiene sentido en un paso que bloquea: en uno
+            auto-verificado no hay nada bloqueado que desbloquear. %>
+        <% if sole && step.critical? && !step.opened_escalations.any?(&:open?) %>
+          <%= link_to "no puedo recorrerlo",
+                      client_initiative_gate_2_path(@client, @initiative,
+                                                    anchor: "paso-#{format('%02d', step.position)}"),
+                      class: "text-t10 text-terminal-fg-4" %>
+        <% end %>
+
+        <% if (open = step.opened_escalations.detect(&:open?)) %>
+          <span class="text-t10 text-glyph-fail">
+            ⊘ mano levantada por <%= open.opened_by_user %> · espera aprobación
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

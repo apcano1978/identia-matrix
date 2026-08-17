@@ -58,13 +58,29 @@ module InitiativesHelper
 
   # Las pestañas del artefacto. Deshabilitada = el evolutivo todavía no tiene
   # ese artefacto, y se pinta apagada en vez de llevar a una pantalla vacía.
+  # Las tres pestañas de evidencia. Siguen colgando de que exista el artefacto
+  # correspondiente —sin DoD no hay pantalla de DoD— pero desde F6 ya no
+  # seleccionan qué enseña el visor: cada una lleva a la suya, porque el DoD,
+  # el informe y la guía tienen cosas que enseñar —contadores, veredictos,
+  # cobertura— que un visor de markdown no puede dar.
   ARTIFACT_TABS = { "dod" => :dod, "verify" => :verify, "guide" => :guide }.freeze
 
   def artifact_tabs(initiative, artifacts, selected)
+    client = initiative.platform_client
+
     ARTIFACT_TABS.map do |label, kind|
       artifact = artifacts.find { |a| a.kind == kind.to_s }
 
-      { label: label, artifact: artifact, current: artifact == selected }
+      { label: label, artifact: artifact, current: artifact == selected,
+        path: evidence_path_for(label, client, initiative) }
+    end
+  end
+
+  def evidence_path_for(label, client, initiative)
+    case label
+    when "dod" then client_initiative_definition_of_done_path(client, initiative)
+    when "verify" then client_initiative_verification_path(client, initiative)
+    else client_initiative_guide_path(client, initiative)
     end
   end
 

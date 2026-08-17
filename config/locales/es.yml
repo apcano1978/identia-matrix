@@ -57,3 +57,11 @@ es:
       - oct
       - nov
       - dic
+
+  # Cuándo ocurrió algo, no solo qué día. Lo pide todo lo que deja constancia
+  # nominal —quién recorrió un paso, quién firmó, quién autorizó— y sin la hora
+  # dos decisiones del mismo día son indistinguibles.
+  time:
+    formats:
+      short: "%-d %b · %H:%M"
+      default: "%-d %b %Y · %H:%M"

@@ -1,0 +1,116 @@
+<% breadcrumb "clients", @client.slug, @initiative.code, "dod" %>
+<% content_for :title, "identia-matrix · #{@dod.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code, path: initiative_path_for },
+           title: @dod.to_s,
+           notes: [ @dod.authored_by_run&.code,
+                    @dod.artifact ? "inmutable · #{@dod.artifact.storage_key}" : nil ].compact %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+        Definición de terminado
+      </h1>
+      <span class="text-t105 text-terminal-fg-3">
+        el contrato contra el que se verifica
+      </span>
+    </div>
+
+    <%= section_header "CRITERIOS", count: @criteria.size,
+                       gloss: "cada uno con su traza y su veredicto" %>
+
+    <div class="mt-[9px] border border-terminal-border">
+      <div class="grid-dod-criteria px-3 py-1.5 bg-terminal-sunken text-t9
+                  tracking-[.08em] text-terminal-fg-4
+                  border-b border-terminal-border">
+        <span>ID</span><span>CRITERIO</span><span>TRAZA</span><span>VEREDICTO</span>
+      </div>
+
+      <% @criteria.each do |criterion| %>
+        <% verdict = @verdicts[criterion.id] %>
+        <div class="grid-dod-criteria items-baseline px-3 py-2.5
+                    border-b border-terminal-border last:border-b-0">
+          <span class="text-t105 text-antique-gold"><%= criterion.key %></span>
+
+          <div>
+            <p class="text-t105 leading-[1.5] text-terminal-fg-2">
+              <%= criterion.statement %>
+            </p>
+
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <%# c0 no es un criterio más: es el de compatibilidad durante la
+                  ventana de despliegue, y aparece solo en todo evolutivo que
+                  toque más de un repositorio. %>
+              <% if criterion.mandatory_multi_repo_compatibility? %>
+                <%= status_chip "OBLIGATORIO · MULTI-REPO", tone: :gate2 %>
+              <% end %>
+
+              <span class="text-t10 <%= criterion.repository ? 'text-terminal-muted' : 'text-glyph-unsupported' %>">
+                <%= criterion_scope(criterion) %>
+              </span>
+
+              <% if criterion.critical? %>
+                <span class="text-t10 text-glyph-fail">crítico</span>
+              <% end %>
+            </div>
+          </div>
+
+          <%# La misma cita que guarda la tabla, en formato compacto: un solo
+              formateador, para que no reaparezca la cuarta inconsistencia. %>
+          <span class="text-t10 text-terminal-fg-4">
+            <%= criterion.trace_citation ? citation_compact(criterion.trace_citation) : "—" %>
+          </span>
+
+          <span class="flex items-center gap-1.5 text-t105">
+            <% if verdict %>
+              <%= verdict_glyph verdict.result %>
+              <span class="<%= verdict_tone(verdict.result) %>">
+                <%= verdict_label(verdict.result) %>
+              </span>
+            <% else %>
+              <span class="text-terminal-disabled">sin verificar</span>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+
+      <%# Los cuatro contadores, siempre los cuatro: un cero también dice algo. %>
+      <div data-tally class="flex items-center gap-4 px-3 py-2 bg-terminal-sunken
+                  border-t border-terminal-border-strong text-t105">
+        <% verdict_tally(@report).each do |result, count| %>
+          <span class="flex items-center gap-1.5">
+            <%= verdict_glyph result %>
+            <span class="<%= verdict_tone(result) %>"><%= count %></span>
+          </span>
+        <% end %>
+        <span class="ml-auto text-t10 text-terminal-muted">
+          <%= @report ? "según #{@report.code}" : "sin informe todavía" %>
+        </span>
+      </div>
+    </div>
+
+    <%# La caja que explica el cuarto veredicto entero. Se pinta solo si hay
+        algún ⊗, porque si no sobra. %>
+    <% unsupported = @criteria.reject(&:repository) %>
+    <% if unsupported.any? %>
+      <div class="mt-4 border-l-2 border-terminal-border-strong
+                  bg-[rgba(240,233,215,.04)] px-3.5 py-2.5
+                  text-t105 leading-[1.6] text-terminal-fg-3">
+        <span class="text-glyph-unsupported">⊗</span>
+        <span class="text-terminal-fg">
+          <%= unsupported.map(&:key).to_sentence(two_words_connector: " y ",
+                                                  last_word_connector: " y ") %>
+        </span>
+        <%= unsupported.size == 1 ? "exige" : "exigen" %> integración entre
+        servicios. SERAPH lee el CI de cada repositorio por separado, y ningún CI
+        levanta dos servicios a la vez para que se hablen. Su única evidencia
+        <%= unsupported.size == 1 ? "será un paso" : "serán los pasos" %> de la
+        guía de pruebas.
+      </div>
+    <% end %>
+  </div>
+
+  <%= render "definitions_of_done/panel", dod: @dod, criteria: @criteria %>
+</div>

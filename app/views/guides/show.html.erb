@@ -1,0 +1,48 @@
+<% breadcrumb "clients", @client.slug, @initiative.code, "guide" %>
+<% content_for :title, "identia-matrix · #{@guide.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code, path: initiative_path_for },
+           title: @guide.code,
+           notes: [ "#{@coverage[:walked]}/#{@coverage[:total]} pasos" ] %>
+
+<div class="flex-1 min-h-0 flex" data-controller="guide"
+     data-guide-active-class="text-antique-gold">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+        Guía de pruebas
+      </h1>
+
+      <%# El conmutador. Los dos modos enseñan EL MISMO contenido con distinta
+          cara: no hay dos documentos. %>
+      <div class="ml-auto flex gap-3 text-t105">
+        <button type="button" data-action="guide#select" data-guide-target="mode"
+                data-mode="walkthrough" class="text-antique-gold">recorrido</button>
+        <button type="button" data-action="guide#select" data-guide-target="mode"
+                data-mode="validation" class="text-terminal-fg-3">validación</button>
+      </div>
+    </div>
+
+    <%# El lede de cada modo, que es lo que explica para qué sirve mirarlo así. %>
+    <p data-guide-target="walkthrough"
+       class="mt-2 text-t105 leading-[1.6] text-terminal-fg-3">
+      Lectura continua: qué se ha construido y por qué. Cada paso declara si
+      SERAPH ya lo verificó o si tu recorrido es la única prueba que existirá.
+    </p>
+    <p data-guide-target="validation"
+       class="mt-2 hidden text-t105 leading-[1.6] text-terminal-fg-3">
+      Checklist ejecutable. Los pasos de única evidencia son obligatorios:
+      <span class="text-terminal-fg">nadie más los ha comprobado.</span>
+    </p>
+
+    <div class="mt-4 flex flex-col gap-2">
+      <% @steps.each do |step| %>
+        <%= render "guides/step", step: step, guide: @guide %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= render "guides/panel", guide: @guide, coverage: @coverage,
+             blocking: @blocking, report: @report %>
+</div>

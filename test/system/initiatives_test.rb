@@ -56,13 +56,22 @@ class InitiativesTest < ApplicationSystemTestCase
     assert_selector ".markdown-body h2", text: "01 · Precio servido por pricing-svc"
   end
 
-  # Las pestañas de la maqueta llevan a pantallas que son F6. Hasta entonces
-  # seleccionan qué artefacto enseña el visor.
-  test "las pestañas seleccionan artefacto" do
+  # Desde F6 las pestañas llevan a SU PANTALLA, no a seleccionar un artefacto en
+  # el visor: el DoD, el informe y la guía tienen cosas que enseñar —contadores,
+  # veredictos, cobertura— que un visor de markdown no puede dar. El artefacto
+  # sigue leyéndose desde el panel de ARTEFACTOS.
+  test "las pestañas llevan a las pantallas de evidencia" do
     open "ev-031"
     assert_text "guia-pruebas-031.md"
 
     click_on "dod"
+
+    assert_current_path client_initiative_definition_of_done_path("vivla", "ev-031")
+    assert_selector "h1", text: "Definición de terminado"
+  end
+
+  test "y el artefacto del DoD se sigue leyendo desde el panel" do
+    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031", version: 2)
 
     assert_text "dod-031.md"
     assert_selector ".markdown-body h1", text: "Definición de terminado"
