@@ -76,12 +76,50 @@ class InitiativesTest < ApplicationSystemTestCase
     assert_no_selector "a", text: "dod"
   end
 
-  test "source y diff estan apagados: llegan con el bucket en F5" do
-    open "ev-031"
+  # ── F5 · el visor y sus tres modos ────────────────────────────────────────
 
-    assert_selector "span.cursor-not-allowed", text: "source"
+  # `source` enseña el DOCUMENTO: la cabecera y el cuerpo, que es lo que hay en
+  # el bucket. La numeración es real, no la 61 recortada de la maqueta.
+  test "source enseña el markdown crudo, numerado y con su cabecera" do
+    visit client_initiative_path("vivla", "ev-031", artifact: "spec-031",
+                                                     view: "source")
+
+    assert_text "key: artifacts://vivla/ev-031/spec-031/v4.md"
+    assert_text "checksum: sha256:"
+    assert_selector "td", text: "1", match: :first
+    assert_text "# Especificación · ev-031"
+  end
+
+  # §7.5 · el diff entre las dos versiones del DoD. Lo que cambió es que se
+  # añadió el criterio c0, que es la historia que el seed ya contaba.
+  test "el diff entre dod-031 v1 y v2 enseña el criterio que se añadió" do
+    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031",
+                                                     version: 2, view: "diff")
+
+    assert_text "comparando"
+    assert_text "− v1"
+    assert_text "+ v2"
+    assert_selector "tr", text: "## c0 · Compatibilidad entre servicios"
+  end
+
+  test "y se puede saltar entre las versiones de un artefacto" do
+    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031",
+                                                     version: 2)
+    click_on "v1"
+
+    assert_text "artifacts://vivla/ev-031/dod-031/v1.md"
+    assert_selector ".markdown-body h2", text: "c1 · Precio resuelto en el motor"
+    assert_no_selector ".markdown-body h2", text: "c0 · Compatibilidad entre servicios"
+  end
+
+  # Un artefacto de una sola versión no ofrece el modo: no hay contra qué
+  # comparar. Mismo tratamiento que las pestañas sin artefacto de F3.
+  test "un artefacto de una sola versión no ofrece diff" do
+    visit client_initiative_path("vivla", "ev-031", artifact: "spec-031")
+
     assert_selector "span.cursor-not-allowed", text: "diff"
-    assert_selector "span", text: "rendered"
+    assert_no_selector "a", text: "diff"
+    assert_selector "a", text: "source"
   end
 
   # ── F4 · procedencia ──────────────────────────────────────────────────────

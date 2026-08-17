@@ -147,6 +147,29 @@ class DesignSeedTest < ActiveSupport::TestCase
                  "hay citas sin fuente: o falta sembrarla, o el locator no casa"
   end
 
+  # El seed narraba la v1 del DoD en dos sitios —el prior de MORFEO y el evento
+  # de la fixture de SERAPH— y no existía como fila. Sin ella no hay cadena de
+  # versiones que comparar.
+  test "el DoD tiene sus dos versiones, y la v1 es la que no traía c0" do
+    versions = Artifact.where(code: "dod-031").order(:version)
+
+    assert_equal [ 1, 2 ], versions.map(&:version)
+
+    v1, v2 = versions.to_a
+
+    assert_not_includes v1.body_markdown, "## c0"
+    assert_includes v2.body_markdown, "## c0"
+    assert_includes v2.body_markdown, "obligatorio"
+  end
+
+  test "y las dos derivan de la misma spec" do
+    spec = Artifact.find_by!(code: "spec-031")
+
+    Artifact.where(code: "dod-031").each do |dod|
+      assert_equal spec.storage_key, dod.stored_front_matter[:derives_from]
+    end
+  end
+
   test "el paquete se llama pkg-045, y la traza del DoD resuelve contra él" do
     package = Artifact.kind_pkg.sole
 

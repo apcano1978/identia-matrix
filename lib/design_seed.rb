@@ -27,6 +27,12 @@ module DesignSeed
     close: %w[link closure]
   }.freeze
 
+  # Cuerpos sueltos que NO son fixtures de agente: versiones anteriores que el
+  # seed materializa para que la cadena exista. Van aquí y no en
+  # `lib/runtime/fixtures/`, cuyo inventario exacto afirma un test y cuyos
+  # ficheros tienen que cumplir el contrato con el brain.
+  BODIES_ROOT = Rails.root.join("lib/design_seed/bodies")
+
   module_function
 
   def call
@@ -236,6 +242,16 @@ module DesignSeed
 
     dossier = artifact_for(initiative, kind: :dossier, run: runs[:tank])
     spec = artifact_for(initiative, kind: :spec, version: 4, run: runs[:neo])
+
+    # La v1 del DoD, la que MORFEO devolvió. El seed ya la narraba en dos sitios
+    # —`summary: "v1 no traía c0"` en el prior de MORFEO, y el evento «se añade
+    # el criterio c0 obligatorio» en la fixture de SERAPH— pero no existía como
+    # fila. Sin ella el visor no tiene dos versiones que comparar, y la cadena
+    # de versiones que el sistema afirma tener era una sola fila con un número
+    # alto.
+    artifact_for(initiative, kind: :dod, version: 1, run: runs[:seraph_dod],
+                 derives_from: spec, body: BODIES_ROOT.join("dod-031-v1.md").read)
+
     dod_artifact = artifact_for(initiative, kind: :dod, version: 2,
                                 run: runs[:seraph_dod], derives_from: spec)
 

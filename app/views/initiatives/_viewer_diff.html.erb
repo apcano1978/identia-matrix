@@ -1,0 +1,32 @@
+<%# Qué cambió entre dos versiones.
+
+    Compara CUERPOS, no documentos: el front-matter cambia en cada versión por
+    construcción —version, checksum, produced_at— y ese ruido taparía la señal.
+
+    La maqueta rotula `diff v2↔v3` mientras el resto de la pantalla va por v4.
+    No se copia: aquí se comparan versiones que existen, y por defecto la
+    anterior contra la que se está viendo. %>
+<div class="sticky top-0 flex items-center gap-2.5 border-b border-terminal-border
+            bg-terminal-sunken px-4 py-1.5 text-t10 text-terminal-fg-4">
+  <span>comparando</span>
+  <span class="text-glyph-fail">− v<%= compared.version %></span>
+  <span class="text-glyph-done">+ v<%= artifact.version %></span>
+  <span class="ml-auto">
+    <%= diff.count(&:added?) %> añadidas · <%= diff.count(&:deleted?) %> borradas
+  </span>
+</div>
+
+<table class="w-full font-mono text-t105 leading-[1.65]">
+  <tbody>
+    <% diff.each do |line| %>
+      <tr class="<%= diff_line_class(line) %>">
+        <td class="w-10 select-none pl-4 text-right align-top
+                   text-terminal-disabled tabular-nums"><%= line.before %></td>
+        <td class="w-10 select-none pr-2 text-right align-top
+                   text-terminal-disabled tabular-nums"><%= line.after %></td>
+        <td class="w-4 select-none text-center align-top"><%= diff_line_mark(line) %></td>
+        <td class="whitespace-pre-wrap break-words pr-4"><%= line.text %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

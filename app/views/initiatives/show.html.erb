@@ -7,7 +7,8 @@
 <div class="flex-1 min-h-0 flex">
   <%= render "initiatives/pipeline", initiative: @initiative %>
   <%= render "initiatives/viewer", initiative: @initiative, artifact: @artifact,
-             report: @report %>
+             report: @report, versions: @versions, mode: @mode,
+             compared: @compared, diff: @diff %>
   <%= render "initiatives/panel", initiative: @initiative, artifact: @artifact,
              events: @events, refs: @refs %>
 </div>

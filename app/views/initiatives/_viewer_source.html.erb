@@ -1,0 +1,27 @@
+<%# El markdown crudo, numerado. Enseña el DOCUMENTO: el front-matter y el
+    cuerpo, que es lo que hay en el bucket. Ese es el sentido de «source», y
+    además hace visible la cabecera con la que cualquiera puede sacar un
+    artefacto y saber qué es sin preguntarle a matrix.
+
+    Nada de `html_safe` aquí: es texto crudo por definición. %>
+<table class="w-full font-mono text-t105 leading-[1.65]">
+  <tbody>
+    <% source_lines(artifact).each do |line| %>
+      <tr>
+        <td class="w-12 select-none pr-3 pl-4 text-right align-top
+                   text-terminal-disabled tabular-nums">
+          <%= line.number %>
+        </td>
+        <td class="whitespace-pre-wrap break-words pr-4 text-terminal-fg-2">
+          <%= line.text %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if source_lines(artifact).empty? %>
+  <p class="px-4 py-3.5 text-t105 text-terminal-disabled">
+    Este artefacto no tiene bytes en el almacén.
+  </p>
+<% end %>

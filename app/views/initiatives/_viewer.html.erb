@@ -1,23 +1,54 @@
-<%# El visor. En F3 solo el modo `rendered`: `source` y `diff` llegan en F5, con
-    el bucket, porque necesitan los bytes originales y la versión anterior. Se
-    pintan apagados en vez de esconderse — la maqueta los promete y conviene que
-    se vea que llegan, no que se olvidaron. %>
+<%# El visor, con sus tres modos.
+
+    `rendered` enseña el cuerpo; `source`, el DOCUMENTO entero —cabecera
+    incluida—, que es literalmente lo que hay en el bucket; `diff`, qué cambió
+    entre dos versiones consecutivas.
+
+    Todo por GET: esta pantalla no escribe nada, y el selector de versión son
+    enlaces y no un `<select>` porque un select necesitaría un formulario. %>
 <section class="flex-1 min-w-0 flex flex-col border-r border-terminal-border">
   <div class="h-[30px] flex-none flex items-center gap-2.5 px-4
               bg-terminal-rail border-b border-terminal-border">
     <% if artifact %>
       <span class="text-t11 text-terminal-fg"><%= artifact.code %>.md</span>
       <span class="text-t10 text-terminal-muted">· <%= artifact_run_label(artifact) %></span>
+
+      <%# El selector de versión. Solo aparece cuando hay más de una: una sola
+          versión no es una elección. %>
+      <% if versions.size > 1 %>
+        <span class="flex items-center gap-1.5 text-t10">
+          <% versions.each do |other| %>
+            <% if other == artifact %>
+              <span class="text-antique-gold">v<%= other.version %></span>
+            <% else %>
+              <%= link_to "v#{other.version}",
+                          client_initiative_path(initiative.platform_client, initiative,
+                                                 artifact: other.code,
+                                                 version: other.version, view: mode),
+                          class: "text-terminal-fg-4" %>
+            <% end %>
+          <% end %>
+        </span>
+      <% end %>
     <% else %>
       <span class="text-t11 text-terminal-disabled">sin artefactos todavía</span>
     <% end %>
 
     <div class="ml-auto flex gap-3 text-t10 text-terminal-muted">
-      <span class="text-terminal-disabled cursor-not-allowed"
-            title="el modo source llega en F5, con el bucket">source</span>
-      <span class="text-antique-gold">rendered</span>
-      <span class="text-terminal-disabled cursor-not-allowed"
-            title="el diff entre versiones llega en F5">diff</span>
+      <%= viewer_mode_link "source", mode: :source, initiative: initiative,
+                           artifact: artifact, current: mode %>
+      <%= viewer_mode_link "rendered", mode: :rendered, initiative: initiative,
+                           artifact: artifact, current: mode %>
+
+      <%# Un artefacto de una sola versión no ofrece diff: no hay contra qué
+          comparar. Mismo tratamiento que las pestañas sin artefacto de F3. %>
+      <% if versions.size > 1 %>
+        <%= viewer_mode_link "diff", mode: :diff, initiative: initiative,
+                             artifact: artifact, current: mode %>
+      <% else %>
+        <span class="text-terminal-disabled cursor-not-allowed"
+              title="<%= artifact ? "#{artifact.code} solo tiene una versión: no hay contra qué compararla" : 'no hay artefacto que comparar' %>">diff</span>
+      <% end %>
     </div>
   </div>
 
@@ -37,8 +68,16 @@
     </div>
   <% end %>
 
-  <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3.5">
-    <%= markdown artifact&.body_markdown %>
+  <div class="flex-1 min-h-0 overflow-y-auto <%= mode == :rendered ? 'px-4 py-3.5' : '' %>">
+    <% case mode %>
+    <% when :source %>
+      <%= render "initiatives/viewer_source", artifact: artifact %>
+    <% when :diff %>
+      <%= render "initiatives/viewer_diff", artifact: artifact,
+                 compared: compared, diff: diff %>
+    <% else %>
+      <%= markdown artifact&.body_markdown %>
+    <% end %>
   </div>
 
   <%# `whitespace-nowrap` y `truncate`: es una barra de 28 px de alto y su
