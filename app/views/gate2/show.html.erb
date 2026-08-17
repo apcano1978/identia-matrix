@@ -1,0 +1,70 @@
+<% breadcrumb "clients", @client.slug, @initiative.code, "gate-2" %>
+<% content_for :title, "identia-matrix · GATE 2 · #{@initiative.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code, path: initiative_path_for },
+           title: "GATE 2",
+           notes: [ @guide.code, "#{@coverage[:walked]}/#{@coverage[:total]} pasos" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <p class="text-t9 tracking-[.14em] text-glyph-gate2">VALIDACIÓN</p>
+    <h1 class="mt-1 font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+      Confirmas que lo ejecutado sirve.
+    </h1>
+    <p class="mt-1 text-t105 text-terminal-fg-3">
+      No autorizas nada: eso fue <%= link_to "GATE 1",
+        client_initiative_gate_1_path(@client, @initiative), class: "text-antique-gold" %>.
+    </p>
+
+    <%# La cifra que da sentido a toda la fase. %>
+    <div class="mt-4 border border-terminal-border-strong px-3.5 py-3">
+      <p class="text-t115 leading-[1.5] text-terminal-fg-2">
+        <span class="text-t14 text-terminal-fg"><%= @sole_evidence.size %></span>
+        de <%= @coverage[:total] %> pasos son
+        <span class="text-terminal-fg">única evidencia</span>: nadie los ha
+        verificado automáticamente.
+      </p>
+
+      <% if @blocking.any? %>
+        <p class="mt-2 text-t105 text-terminal-fg-4">
+          Criterios del DoD que dependen solo de tu recorrido:
+        </p>
+        <div class="mt-1 flex flex-col gap-0.5 text-t105">
+          <% @blocking.each do |step| %>
+            <p class="text-terminal-fg-3">
+              <span class="text-glyph-unsupported">⊗</span>
+              <span class="text-antique-gold"><%= step.dod_criterion %></span>
+              · <%= step.title %>
+            </p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%= section_header "PASOS", count: @steps.size,
+                       gloss: "solo bloquean los de única evidencia sobre criterios críticos" %>
+
+    <div class="mt-[9px] flex flex-col gap-2">
+      <% @steps.each do |step| %>
+        <%= render "gate2/step", step: step, may_approve: @may_validate %>
+      <% end %>
+    </div>
+
+    <%# Por qué puede cerrarse con ⊗, literal. %>
+    <div class="mt-4 border-l-2 border-terminal-border-gold
+                bg-[rgba(196,155,94,.07)] px-3.5 py-2.5
+                text-t105 leading-[1.6] text-terminal-fg-3">
+      Los criterios ⊗ no son un descuido: son lo que la automatización todavía no
+      alcanza. La guía los cubre a mano y GATE 2 deja constancia de quién lo miró.
+      <span class="text-terminal-fg">Es una decisión registrada, no una omisión.</span>
+    </div>
+
+    <%= render "gate2/action", initiative: @initiative, guide: @guide,
+               blocking: @blocking, may_validate: @may_validate %>
+
+    <% if @decisions.any? %>
+      <%= render "gate2/decisions", decisions: @decisions %>
+    <% end %>
+  </div>
+</div>

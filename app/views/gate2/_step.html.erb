@@ -1,0 +1,103 @@
+<% sole = step.evidence_sole_evidence? %>
+<% blocks = sole && step.critical? && !step.settled? %>
+<% open_hand = step.opened_escalations.detect(&:open?) %>
+
+<div id="paso-<%= format('%02d', step.position) %>"
+     class="px-3.5 py-3 <%= blocks ?
+       'border-l-2 border-terminal-border-fail bg-[rgba(201,128,112,.06)]' :
+       'border border-terminal-border' %>">
+  <div class="flex items-baseline gap-2.5">
+    <span class="text-t105 text-antique-gold"><%= format("%02d", step.position) %></span>
+    <span class="text-t115 text-terminal-fg"><%= step.title %></span>
+
+    <span class="ml-auto flex items-center gap-2.5">
+      <% if sole %>
+        <span class="border border-terminal-border-strong bg-terminal-bg px-2 py-[2px]
+                     text-t9 font-medium tracking-[.14em] text-terminal-fg-3">
+          ÚNICA EVIDENCIA
+        </span>
+      <% end %>
+      <span class="flex items-center gap-1.5 text-t105 <%= step_state_tone(step) %>">
+        <%= step_state_glyph(step) %> <%= step_state_label(step) %>
+      </span>
+    </span>
+  </div>
+
+  <% if step.dod_criterion %>
+    <p class="mt-1 text-t10 text-terminal-fg-4">
+      cubre <span class="text-antique-gold"><%= step.dod_criterion %></span>
+      <%= " · crítico" if step.critical? %>
+      <%= " · no bloquea" if sole && !step.critical? %>
+    </p>
+  <% end %>
+
+  <% if step.walked? %>
+    <p class="mt-2 text-t10 text-terminal-fg-4">
+      recorrido por <%= step.walked_by_user %> · <%= l(step.walked_at, format: :short) %>
+    </p>
+
+  <% elsif step.exempted? %>
+    <%# Eximido NO es recorrido. Si contara como recorrido, la cobertura diría
+        «4 de 4» sobre pasos que nadie hizo, y LINK no podría narrar el desvío. %>
+    <p class="mt-2 text-t10 text-glyph-fail">
+      ⊘ eximido por <%= step.exempted_by_user %> ·
+      <%= l(step.exempted_at, format: :short) %> · autorizado sin recorrer
+    </p>
+
+  <% elsif open_hand %>
+    <%# Mano levantada: espera a que OTRA persona decida. %>
+    <div class="mt-2 border-l-2 border-terminal-border-fail
+                bg-[rgba(201,128,112,.08)] px-3 py-2">
+      <p class="text-t105 text-glyph-fail">
+        ⊘ <%= open_hand.opened_by_user %> no puede recorrerlo
+      </p>
+      <% if open_hand.opened_at %>
+        <p class="mt-0.5 text-t10 text-terminal-fg-4">
+          desde <%= l(open_hand.opened_at, format: :short) %>
+        </p>
+      <% end %>
+
+      <% if may_approve && open_hand.opened_by_user_id != Current.user.id %>
+        <%= form_with url: client_initiative_guide_step_exemption_path(@client, @initiative, step),
+                      class: "mt-2 flex items-end gap-2.5" do |form| %>
+          <div class="flex-1">
+            <%= form.label :reason, "autoriza el cierre, dejando por escrito por qué",
+                           class: "block text-t10 text-terminal-fg-4" %>
+            <%= form.text_field :reason, required: true,
+                                class: "terminal-field mt-1 w-full" %>
+          </div>
+          <%= form.submit "⊘ autorizar sin recorrer",
+                          class: "flex-none border border-terminal-border-fail px-3 py-1.5
+                                  text-t105 text-glyph-fail" %>
+        <% end %>
+      <% elsif open_hand.opened_by_user_id == Current.user.id %>
+        <%# Nadie autoriza su propia solicitud. Es la regla que de verdad
+            protege, y no depende de ningún papel. %>
+        <p class="mt-1.5 text-t10 text-terminal-fg-4">
+          Lo tiene que autorizar otra persona: nadie cierra su propia solicitud.
+        </p>
+      <% end %>
+    </div>
+
+  <% else %>
+    <div class="mt-2 flex items-center gap-2.5">
+      <%= button_to "○ marcar recorrido",
+                    client_initiative_guide_step_walk_path(@client, @initiative, step),
+                    class: "border border-terminal-border-gold px-2.5 py-1
+                            text-t10 text-antique-gold" %>
+
+      <%# Levantar la mano solo tiene sentido donde hay algo bloqueado. %>
+      <% if blocks %>
+        <%= form_with url: client_initiative_guide_step_raised_hand_path(@client, @initiative, step),
+                      class: "flex items-center gap-2" do |form| %>
+          <%= form.text_field :reason, required: true,
+                              placeholder: "por qué no puedes recorrerlo",
+                              class: "terminal-field w-[300px]" %>
+          <%= form.submit "no puedo recorrerlo",
+                          class: "border border-terminal-border px-2.5 py-1
+                                  text-t10 text-terminal-fg-4" %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

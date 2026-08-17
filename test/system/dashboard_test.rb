@@ -66,10 +66,18 @@ class DashboardTest < ApplicationSystemTestCase
     assert_text(/runs \d+/)
   end
 
-  test "abrir una fila lleva al evolutivo" do
+  # Desde F6 el botón lleva a LA PUERTA que hay que atender, no a la ficha: una
+  # decisión se toma delante de lo que se está decidiendo, no desde una lista.
+  test "el botón de una fila lleva a lo que hay que atender" do
     within("[data-initiative=\'ev-041\']") { click_on "firmar ↗" }
 
-    assert_current_path client_initiative_path("caser", "ev-041")
+    assert_current_path client_initiative_gate_1_path("caser", "ev-041")
+  end
+
+  test "y las bandejas sin puerta siguen llevando al evolutivo" do
+    within("[data-initiative=\'ev-038\']") { click_on "abrir ↗" }
+
+    assert_current_path client_initiative_path("cirsa", "ev-038")
   end
 
   private

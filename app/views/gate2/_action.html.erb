@@ -1,0 +1,55 @@
+<div class="mt-4 border border-terminal-border-strong px-3.5 py-3">
+  <% if blocking.any? %>
+    <%# El bloqueo asimétrico. Solo bloquean los de única evidencia sobre
+        criterios críticos: los auto-verificados ya los comprobó SERAPH, y los
+        no críticos convertirían cada GATE 2 en un trámite de diez casillas —que
+        se sellan sin leer, y encima parece que alguien lo miró. %>
+    <p class="text-t115 leading-[1.5] text-glyph-fail">
+      No se puede validar todavía:
+      <%= pluralize(blocking.size, "paso") %> de única evidencia sobre
+      <%= blocking.size == 1 ? "un criterio crítico" : "criterios críticos" %>
+      sin resolver.
+    </p>
+    <p class="mt-1 text-t105 text-terminal-fg-4">
+      Recórrelos, o levanta la mano si no puedes: alguien con autoridad tendrá
+      que autorizar cerrarlos sin esa prueba.
+    </p>
+  <% else %>
+    <p class="text-t115 leading-[1.5] text-terminal-fg">
+      Todo lo que bloquea está resuelto.
+    </p>
+  <% end %>
+
+  <% if may_validate %>
+    <div class="mt-3 flex flex-wrap items-end gap-3">
+      <% if blocking.empty? %>
+        <%= button_to "validar y pasar a LINK",
+                      client_initiative_gate_2_validation_path(@client, initiative,
+                                                               decision: "validated"),
+                      class: "border border-terminal-border-gold bg-antique-gold
+                              px-3 py-1.5 text-t105 text-terminal-bg" %>
+      <% end %>
+
+      <%# GATE 2 es reversible por rechazo, y ahí está su diferencia con GATE 1.
+          El rechazo devuelve a NEO, sube la iteración y NO consume ciclo de QA:
+          no hay ningún ✕, es una decisión humana. %>
+      <%= form_with url: client_initiative_gate_2_validation_path(@client, initiative),
+                    class: "flex flex-1 items-end gap-2.5" do |form| %>
+        <%= form.hidden_field :decision, value: "rejected" %>
+        <div class="flex-1">
+          <%= form.label :rejection_note, "o recházalo, diciendo qué no sirve",
+                         class: "block text-t10 text-terminal-fg-4" %>
+          <%= form.text_field :rejection_note, required: true,
+                              class: "terminal-field mt-1 w-full" %>
+        </div>
+        <%= form.submit "↺ rechazar · devolver a NEO",
+                        class: "flex-none border border-terminal-border-strong px-3 py-1.5
+                                text-t105 text-terminal-fg-3" %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="mt-3 text-t105 text-terminal-fg-4">
+      No puedes validar en este evolutivo.
+    </p>
+  <% end %>
+</div>

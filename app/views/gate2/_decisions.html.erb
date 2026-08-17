@@ -1,0 +1,33 @@
+<%# GATE 2 acumula filas: es reversible, y el historial de decisiones es parte
+    de lo que el sistema existe para conservar. %>
+<%= section_header "DECISIONES", count: decisions.size, tone: :muted,
+                   gloss: "GATE 2 es reversible: cada pasada deja la suya" %>
+
+<div class="mt-[9px] flex flex-col gap-1">
+  <% decisions.reverse_each do |decision| %>
+    <div class="flex items-baseline gap-3 px-3 py-2 bg-terminal-sunken text-t105">
+      <span class="<%= decision.decision_validated? ? 'text-glyph-done' : 'text-glyph-fail' %>">
+        <%= decision.decision_validated? ? "✓ validado" : "↺ rechazado" %>
+      </span>
+      <span class="text-terminal-fg-3"><%= decision.decided_by_user %></span>
+      <span class="text-terminal-muted">
+        <%= l(decision.decided_at, format: :short) %>
+      </span>
+
+      <%# El snapshot congelado: lo que la persona tenía delante al decidir.
+          Recalcularlo diría otra cosa. %>
+      <% if (snapshot = decision.coverage_snapshot).present? %>
+        <span class="text-t10 text-terminal-fg-4">
+          <%= snapshot["walked"] %>/<%= snapshot["total"] %> recorridos
+          <%= " · #{snapshot['exempted']} eximidos" if snapshot["exempted"].to_i.positive? %>
+        </span>
+      <% end %>
+
+      <% if decision.rejection_note.present? %>
+        <span class="ml-auto text-terminal-fg-4 truncate">
+          «<%= decision.rejection_note %>»
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+</div>

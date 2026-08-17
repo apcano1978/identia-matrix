@@ -24,10 +24,11 @@
 
   <%= age initiative.stage_changed_at || initiative.opened_at %>
 
-  <%# El botón NAVEGA, no ejecuta: firmar y validar son F6. El `↗` es la
-      convención de la propia maqueta para «esto te lleva a otro sitio». %>
-  <%= link_to "#{row.action} ↗",
-              client_initiative_path(initiative.platform_client.slug, initiative.code),
+  <%# El botón sigue NAVEGANDO y no ejecuta —el `↗` es la convención de la
+      maqueta para «esto te lleva a otro sitio»— pero desde F6 lleva a la
+      puerta, no a la ficha. Firmar y validar son decisiones que se toman
+      delante de lo que se está firmando, no desde una bandeja. %>
+  <%= link_to "#{row.action} ↗", tray_destination(initiative, row.action),
               class: "py-[5px] text-center text-t10 font-medium #{
                 tone == :gold ? 'bg-antique-gold text-ink hover:text-ink'
                               : 'border border-terminal-border-gold text-antique-gold'

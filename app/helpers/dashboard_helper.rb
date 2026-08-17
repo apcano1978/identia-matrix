@@ -37,6 +37,19 @@ module DashboardHelper
   end
 
   # `4.82 M tok`. El consumo de hoy, agregado de agent_runs.
+  # A dónde lleva el botón de cada bandeja. Desde F6, a la puerta que hay que
+  # atender: una decisión se toma delante de lo que se está decidiendo, no
+  # desde una lista.
+  def tray_destination(initiative, action)
+    client = initiative.platform_client
+
+    case action
+    when "firmar" then client_initiative_gate_1_path(client, initiative)
+    when "validar" then client_initiative_gate_2_path(client, initiative)
+    else client_initiative_path(client, initiative)
+    end
+  end
+
   def token_total(runs)
     tokens = runs.sum { |run| run.total_tokens }
 

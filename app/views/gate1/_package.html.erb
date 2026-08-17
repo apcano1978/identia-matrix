@@ -1,0 +1,19 @@
+<%= section_header "PAQUETE DE TRABAJO", gloss: package.code %>
+
+<div class="mt-[9px] grid grid-cols-3 gap-3">
+  <% { "tareas" => package.tasks_count,
+       "ficheros" => package.new_files_count + package.modified_files_count,
+       "migraciones" => package.migrations_count }.each do |label, value| %>
+    <div class="border border-terminal-border px-3 py-2.5">
+      <p class="text-t14 text-terminal-fg"><%= value %></p>
+      <p class="mt-0.5 text-t10 text-terminal-fg-4"><%= label %></p>
+    </div>
+  <% end %>
+</div>
+
+<% if package.new_files_count.positive? || package.modified_files_count.positive? %>
+  <p class="mt-2 text-t10 text-terminal-muted">
+    <span class="text-glyph-done">+</span> <%= package.new_files_count %> nuevos ·
+    <span class="text-terminal-fg-3">~</span> <%= package.modified_files_count %> modificados
+  </p>
+<% end %>

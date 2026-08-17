@@ -1,0 +1,28 @@
+<%# La secuencia de despliegue solo tiene sentido en multi-repo: con un solo
+    repositorio no hay ventana de convivencia entre servicios que ordenar. %>
+<% if package.multi_repo? %>
+  <%= section_header "SECUENCIA DE DESPLIEGUE", tone: :gate2,
+                     gloss: "la tabla de arriba lista qué se sella · el orden lo fija solo este bloque" %>
+
+  <div class="mt-[9px] flex flex-col gap-1">
+    <% package.deploy_sequence.each do |row| %>
+      <div class="flex items-baseline gap-3 px-3 py-2 bg-terminal-sunken text-t105">
+        <span class="text-antique-gold"><%= row.deploy_order %></span>
+        <span class="w-[140px] flex-none text-terminal-fg"><%= row.repository.name %></span>
+        <span class="text-terminal-fg-3"><%= row.compatibility_note %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <p class="mt-2 flex items-start gap-2 text-t10 leading-[1.6] text-terminal-fg-4">
+    <span class="text-t105">⧗</span>
+    <span>
+      Durante la ventana convive la versión nueva con la vieja: lo cubre el
+      criterio <span class="text-antique-gold">c0</span> del DoD.
+    </span>
+  </p>
+<% else %>
+  <p class="mt-4 text-t105 text-terminal-fg-4">
+    Un solo repositorio: no hay ventana de convivencia entre servicios.
+  </p>
+<% end %>

@@ -1,0 +1,81 @@
+<%= section_header "PRECONDICIONES", tone: :gate2 %>
+
+<div class="mt-[9px] flex flex-col gap-1">
+  <% preconditions.each do |precondition| %>
+    <div class="flex items-baseline gap-2.5 px-3 py-2 bg-terminal-sunken text-t105">
+      <% if precondition[:checked_by] == :system %>
+        <span class="<%= precondition[:met] ? 'text-glyph-done' : 'text-glyph-fail' %>">
+          <%= precondition[:met] ? "✓" : "✕" %>
+        </span>
+      <% else %>
+        <%# No bloquea, pero se firma con él delante: la responsabilidad de
+            haberlo leído es de quien firma, no del sistema. %>
+        <span class="text-terminal-fg-4">◆</span>
+      <% end %>
+
+      <span class="text-terminal-fg-3"><%= precondition[:text] %></span>
+
+      <% if precondition[:checked_by] == :judgement %>
+        <span class="ml-auto text-t9 tracking-[.14em] text-terminal-muted">
+          TU CRITERIO
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# La tarjeta de firma. La frase la compone EL SISTEMA, no el firmante: lo que
+    se firma es una afirmación concreta sobre este paquete y estos
+    repositorios, no un «acepto» genérico que no dice nada. %>
+<div class="mt-4 border border-terminal-border-fail bg-[rgba(201,128,112,.06)]
+            px-3.5 py-3">
+  <p class="text-t115 leading-[1.5] text-terminal-fg">
+    «Firmé la entrega de <%= package.code.upcase %> a Claude Code sobre
+    <%= pluralize(package.repositories.count, "repositorio") %><%=
+      " y asumí la ventana de despliegue" if package.multi_repo? %>.»
+  </p>
+
+  <% if may_sign %>
+    <%= form_with url: client_initiative_gate_1_signature_path(@client, initiative),
+                  class: "mt-3 flex items-end gap-2.5" do |form| %>
+      <div>
+        <%# Re-autenticación. Es irreversible, nominal y autoriza escritura
+            sobre repositorios de un cliente: la fricción de una contraseña es
+            proporcionada a lo que se está autorizando, y una sesión olvidada en
+            un portátil no debería poder firmar. %>
+        <%= form.label :password, "confirma con tu contraseña",
+                       class: "block text-t10 text-terminal-fg-4" %>
+        <%= form.password_field :password, required: true, autocomplete: "off",
+                                class: "terminal-field mt-1 w-[260px]" %>
+      </div>
+
+      <%= form.submit "firmar y liberar",
+                      class: "border border-terminal-border-gold bg-antique-gold
+                              px-3 py-1.5 text-t105 text-terminal-bg" %>
+    <% end %>
+
+    <%# La cuarta bifurcación. No es una variante del rechazo: devuelve a
+        TRINITY y no a NEO, porque lo que está mal es el paquete, no la spec. Y
+        exige una nota: sin ella TRINITY volvería a sellar lo mismo sin saber
+        qué corregir. %>
+    <%= form_with url: client_initiative_gate_1_return_to_trinity_path(@client, initiative),
+                  class: "mt-3 flex items-end gap-2.5 border-t border-terminal-border pt-3" do |form| %>
+      <div class="flex-1">
+        <%= form.label :note, "o devuelve a TRINITY, diciendo qué corregir",
+                       class: "block text-t10 text-terminal-fg-4" %>
+        <%= form.text_field :note, required: true,
+                            placeholder: "El orden de despliegue invierte los dos primeros repositorios.",
+                            class: "terminal-field mt-1 w-full" %>
+      </div>
+
+      <%= form.submit "↺ devolver a TRINITY",
+                      class: "flex-none border border-terminal-border-strong px-3 py-1.5
+                              text-t105 text-terminal-fg-3" %>
+    <% end %>
+  <% else %>
+    <p class="mt-3 text-t105 text-terminal-fg-4">
+      No puedes firmar en este evolutivo. Firmar es nominal: lo hace quien
+      responde de la entrega.
+    </p>
+  <% end %>
+</div>

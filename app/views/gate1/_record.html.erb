@@ -1,0 +1,24 @@
+<%= section_header "REGISTRO", tone: :gate2 %>
+
+<div class="mt-[9px] border border-terminal-border-strong px-3.5 py-3">
+  <p class="text-t115 leading-[1.5] text-terminal-fg">
+    «<%= signature.statement %>»
+  </p>
+
+  <dl class="mt-3 text-t105 leading-[1.8]">
+    <%# La identidad CONGELADA, no el usuario actual: si esta persona cambia de
+        cargo o desaparece de platform, el registro sigue diciendo quién firmó. %>
+    <%= render "initiatives/fact", term: "firmó", value: signature.identity %>
+    <%= render "initiatives/fact", term: "cuándo",
+               value: l(signature.signed_at, format: :default) %>
+    <%= render "initiatives/fact", term: "paquete", value: signature.package_hash %>
+    <%= render "initiatives/fact", term: "ejecutado",
+               value: signature.fully_executed? ? "sí · los commits están confirmados" : "todavía no" %>
+  </dl>
+</div>
+
+<p class="mt-2 text-t10 leading-[1.6] text-terminal-fg-4">
+  Una firma no se modifica ni se borra. Si lo autorizado deja de ser lo que se
+  quería, se sella un paquete nuevo y se firma otra vez — el registro de lo que
+  se autorizó entonces sigue diciendo lo que decía.
+</p>

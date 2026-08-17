@@ -1,0 +1,28 @@
+<%# El acuse de recibo de una escritura.
+
+    Hasta F6 la aplicación era de solo lectura y no había nada que acusar: el
+    único flash lo pintaba el login, por su cuenta. Con las dos puertas hay seis
+    escrituras, y varias pueden negarse —una contraseña mal, un paso que bloquea,
+    una solicitud que no puedes autorizar tú—. Sin esto, negarse se veía igual
+    que hacerlo: la página volvía sin decir nada.
+
+    Va DENTRO de `main`, encima del contenido y sin quitarle alto a nadie: la
+    página no scrollea y una barra fija arriba del todo desplazaría las medidas
+    que los tests de F3 comprueban al píxel. %>
+<% if flash[:alert].present? || flash[:notice].present? %>
+  <div class="flex-none border-b border-terminal-border">
+    <% if flash[:alert].present? %>
+      <p class="flex items-start gap-2.5 border-l-2 border-terminal-border-fail
+                bg-[rgba(201,128,112,.09)] px-4 py-2 text-t105 text-terminal-fg-2">
+        <span class="text-glyph-fail">✕</span><%= flash[:alert] %>
+      </p>
+    <% end %>
+
+    <% if flash[:notice].present? %>
+      <p class="flex items-start gap-2.5 border-l-2 border-cite-origin-code
+                bg-[rgba(74,122,58,.09)] px-4 py-2 text-t105 text-terminal-fg-2">
+        <span class="text-glyph-done">●</span><%= flash[:notice] %>
+      </p>
+    <% end %>
+  </div>
+<% end %>

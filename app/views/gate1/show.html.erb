@@ -1,0 +1,58 @@
+<% signed = @signature.present? %>
+<% breadcrumb "clients", @client.slug, @initiative.code, "gate-1" %>
+<% content_for :title, "identia-matrix · GATE 1 · #{@initiative.code}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.code, path: initiative_path_for },
+           title: "GATE 1",
+           notes: [ @package.code, signed ? "firmado" : "espera firma" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <%# Los dos estados. Lo que cambia no es la información: es si estás delante
+        de una decisión o del registro de una ya tomada. %>
+    <p class="text-t9 tracking-[.14em] <%= signed ? 'text-glyph-done' : 'text-glyph-fail' %>">
+      <%= signed ? "REGISTRO DE FIRMA" : "PARADA OBLIGATORIA" %>
+    </p>
+    <h1 class="mt-1 font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+      <%= signed ? "Firmado. La ejecución quedó autorizada." : "Nada se ejecuta sin tu firma." %>
+    </h1>
+
+    <%= render "gate1/package", package: @package %>
+
+    <%= section_header signed ? "COMMITS QUE SELLÓ ESTA FIRMA" : "COMMITS QUE SELLA ESTA FIRMA",
+                       count: @commits.size %>
+
+    <div class="mt-[9px] border border-terminal-border">
+      <div class="grid-gate-commits px-3 py-1.5 bg-terminal-sunken text-t9
+                  tracking-[.08em] text-terminal-fg-4
+                  border-b border-terminal-border">
+        <span>REPOSITORIO</span><span>COMMIT SELLADO</span><span>ALCANCE DE ESCRITURA</span>
+      </div>
+
+      <% @commits.each do |row| %>
+        <div class="grid-gate-commits items-baseline px-3 py-2.5
+                    border-b border-terminal-border last:border-b-0 text-t105">
+          <span class="text-terminal-fg"><%= row.repository.name %></span>
+          <span class="text-antique-gold"><%= row.base_sha %></span>
+          <span class="text-terminal-fg-3"><%= row.write_scope || "—" %></span>
+        </div>
+      <% end %>
+    </div>
+
+    <%# La definición operativa de la firma. %>
+    <p class="mt-2 text-t10 leading-[1.6] text-terminal-fg-4">
+      Claude Code no puede escribir fuera de estos commits. Cualquier repositorio
+      ausente de la tabla queda fuera de la firma.
+    </p>
+
+    <%= render "gate1/deploy_sequence", package: @package %>
+
+    <% if signed %>
+      <%= render "gate1/record", signature: @signature %>
+    <% else %>
+      <%= render "gate1/action", initiative: @initiative, package: @package,
+                 preconditions: @preconditions, may_sign: @may_sign %>
+    <% end %>
+  </div>
+</div>
