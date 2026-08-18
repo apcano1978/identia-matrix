@@ -60,11 +60,13 @@
         <%= banner.glyph %>
       </span>
       <span class="text-t115 text-terminal-fg"><%= banner.text %></span>
-      <span class="ml-auto flex-none whitespace-nowrap text-t105
-                   text-terminal-disabled cursor-not-allowed"
-            title="el informe de verificación tiene su propia pantalla en F6">
-        ver informe →
-      </span>
+      <%# El informe tiene su propia pantalla desde F6, y el banner nace de sus
+          veredictos: es el enlace natural desde aquí. %>
+      <% if report %>
+        <%= link_to "ver informe →",
+                    client_initiative_verification_path(initiative.platform_client, initiative),
+                    class: "ml-auto flex-none whitespace-nowrap text-t105 text-antique-gold" %>
+      <% end %>
     </div>
   <% end %>
 
