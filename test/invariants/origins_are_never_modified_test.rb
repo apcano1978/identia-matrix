@@ -43,7 +43,7 @@ class OriginsAreNeverModifiedTest < ActiveSupport::TestCase
   end
 
   test "no hay ninguna ruta ni controlador que escriba en la proyección" do
-    offenders = Dir[Rails.root.join("app/controllers/**/*.rb")].select do |file|
+    offenders = scan_sources("app/controllers/**/*.rb").select do |file|
       File.read(file).match?(/Platform::(Client|User|Project|Document|Meeting)\s*\.\s*(create|update|destroy)/)
     end
 

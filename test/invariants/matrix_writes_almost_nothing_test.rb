@@ -71,7 +71,7 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
   # La proyección de platform es de solo lectura fuera de `Platform::Record.writing`,
   # y ningún controlador la abre.
   test "ningún controlador escribe en la proyección de platform" do
-    offenders = Dir[Rails.root.join("app/controllers/**/*.rb")].select do |path|
+    offenders = scan_sources("app/controllers/**/*.rb").select do |path|
       Pathname(path).read.match?(/Platform::Record\.writing/)
     end
 

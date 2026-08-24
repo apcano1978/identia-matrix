@@ -69,9 +69,9 @@ class OnlyUnmetConsumesAQaCycleTest < ActiveSupport::TestCase
 
   private
     def sources_matching(pattern)
-      Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")]
-        .select { |file| File.read(file).match?(pattern) }
-        .map { |file| Pathname(file).relative_path_from(Rails.root).to_s }
+      relative_to_root(
+        scan_sources("app/**/*.rb", "lib/**/*.rb")
+          .select { |file| File.read(file).match?(pattern) })
     end
 
     def verified(*results)

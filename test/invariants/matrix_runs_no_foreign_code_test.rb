@@ -29,7 +29,7 @@ class MatrixRunsNoForeignCodeTest < ActiveSupport::TestCase
   # habrá que comprobar que el verificador consulta la CI ajena en lugar de
   # levantar contenedores.
   test "no hay ejecución de procesos en el código de la aplicación" do
-    offenders = Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")]
+    offenders = scan_sources("app/**/*.rb", "lib/**/*.rb")
                 .reject { |file| file.include?("/tasks/") }
                 .select { |file| runs_processes?(File.read(file)) }
                 .map { |file| Pathname(file).relative_path_from(Rails.root).to_s }

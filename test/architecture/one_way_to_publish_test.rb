@@ -65,8 +65,7 @@ class OneWayToPublishTest < ActiveSupport::TestCase
 
   private
     def sources
-      @sources ||= SCANNED.flat_map { |dir| Dir[Rails.root.join(dir, "**/*.rb")] }
-                          .to_h do |path|
+      @sources ||= scan_sources(*SCANNED.map { |dir| "#{dir}/**/*.rb" }).to_h do |path|
         [ Pathname(path).relative_path_from(Rails.root).to_s, Pathname(path).read ]
       end
     end

@@ -53,7 +53,7 @@ class OneWayToCiteTest < ActiveSupport::TestCase
   end
 
   test "solo el servicio resuelve la fuente de una cita" do
-    resolvers = Dir[Rails.root.join("app/**/*.rb"), Rails.root.join("lib/**/*.rb")]
+    resolvers = scan_sources("app/**/*.rb", "lib/**/*.rb")
                 .reject { |path| path.include?("app/services/citations/") }
                 .select { |path| Pathname(path).read.match?(/Platform::Meeting\.find_by\(held_on/) }
 

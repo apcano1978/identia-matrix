@@ -100,13 +100,11 @@ class VocabularyTest < ActiveSupport::TestCase
   private
 
   def scanned_files
-    SCANNED.flat_map do |entry|
-      path = Rails.root.join(entry)
-      next [] unless path.exist?
-      next [ path ] if path.file?
-
-      Dir.glob(path.join("**/*.{rb,erb,yml,js}")).map { |file| Pathname.new(file) }
+    patrones = SCANNED.map do |entry|
+      Rails.root.join(entry).file? ? entry : "#{entry}/**/*.{rb,erb,yml,js}"
     end
+
+    scan_sources(*patrones).map { |file| Pathname.new(file) }
   end
 
   # Este propio test nombra las formas prohibidas para poder buscarlas; y los
