@@ -57,13 +57,22 @@ env:
     DATABASE_NAME: identia_matrix_production
     SIDEKIQ_USERNAME: admin
 
-    # Los tres interruptores de fase. Los tres en `fake` todavía:
-    #   MATRIX_AUTH_SOURCE     → `platform` en F7
+    # Los tres interruptores de fase. El de autenticación ya está girado:
+    #   MATRIX_AUTH_SOURCE     → `platform` ✅ F7
     #   MATRIX_PLATFORM_SOURCE → `platform` en F8
     #   MATRIX_AGENT_RUNTIME   → `brain` en F9
     MATRIX_AGENT_RUNTIME: fake
     MATRIX_PLATFORM_SOURCE: fake
-    MATRIX_AUTH_SOURCE: fake
+
+    # `fake` NO es una opción aquí: Auth::FakeSource llama a
+    # `refuse_in_production!` en cada autenticación, así que con `fake` puesto
+    # el login responde 500 y no entra nadie. Eso es lo que bloqueaba el
+    # despliegue antes de F7.
+    MATRIX_AUTH_SOURCE: platform
+
+    # La API interna de platform, por el bridge de Docker — la misma forma que
+    # tiene el brain. En desarrollo es host.docker.internal:3000.
+    PLATFORM_API_URL: http://172.17.0.1:3000
 
     # AI_SERVICE_URL: http://172.17.0.1:8000   # F9, igual que en platform
 
@@ -77,10 +86,14 @@ env:
     # ellas vacías /sidekiq entraba con usuario y contraseña vacíos.
     - SIDEKIQ_PASSWORD
 
-    # ⚠ DEUDA BLOQUEANTE hasta F7. Matrix no verifica contraseñas: hasta que
-    # exista `POST /internal/v1/authenticate` en platform, entra quien sepa
-    # esta contraseña compartida. Que sea larga y aleatoria.
-    - MATRIX_FAKE_AUTH_PASSWORD
+    # El token del sujeto `matrix:auth` en platform. Es lo único que matrix
+    # necesita para tener login, y solo sirve para eso: su único scope es
+    # `matrix:auth:verify`. Lo emite platform con
+    # `rake matrix:issue_token[matrix:auth]`.
+    #
+    # (Aquí vivía MATRIX_FAKE_AUTH_PASSWORD. Ya no: la contraseña compartida
+    # era la deuda que cerró F7, y en producción nunca llegó a usarse.)
+    - PLATFORM_API_TOKEN_AUTH
 
     # Obligatorias en producción por config/initializers/active_record_encryption.rb.
     # Se generan con `bin/rails db:encryption:init`.

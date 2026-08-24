@@ -51,10 +51,19 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal user, outcome.user
   end
 
-  test "la fuente real no finge funcionar: llega en F7" do
-    assert_raises(NotImplementedError) do
+  # Este test afirmaba, hasta F7, que la fuente real levantaba
+  # `NotImplementedError`. Ya no: existe. Lo que sigue afirmando es que **no
+  # finge**, que era lo que protegía de verdad — sin el token emitido se niega
+  # a llamar a nadie en vez de devolver «no autenticado», que dejaría creer que
+  # la integración está y solo falla la contraseña.
+  test "la fuente real no finge funcionar sin credencial" do
+    ENV.delete("PLATFORM_API_TOKEN_AUTH")
+
+    error = assert_raises(Platform::Api::Error) do
       Auth::PlatformSource.authenticate(email_address: "a@b.com", password: "x")
     end
+
+    assert_includes error.message, "PLATFORM_API_TOKEN_AUTH"
   end
 
   test "matrix no guarda contraseñas" do
