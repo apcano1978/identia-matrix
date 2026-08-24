@@ -1,83 +1,82 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://identiaconsulting.com/contracts/matrix-platform/read.v1.json",
-  "title": "platform → matrix · lectura de clientes, proyectos y fuentes",
-  "description": "Lo que identia-platform sirve a matrix por /internal/v1. SOLO LECTURA: matrix nunca crea, edita ni borra un cliente, un documento ni una transcripción — ninguna ruta, ningún formulario, ningún job.\n\nAVISO DE ESTADO (agosto 2026): platform todavía NO sirve dos de estos recursos. No existe endpoint de meetings, y el endpoint /internal/v1/documents que sí existe sirve natasha_documents (memoria privada del agente), que NO es el modelo Document del CRM. Además el cuerpo de documentos y transcripciones no está en tabla: vive en content_versions y en adjuntos de Active Storage. Cerrar esos huecos es la fase F7, dentro del repositorio de platform.",
+  "title": "platform → matrix · lectura de clientes, proyectos, fuentes y usuarios",
+  "description": "Lo que identia-platform sirve a matrix por /internal/v1. SOLO LECTURA: matrix nunca crea, edita ni borra un cliente, un documento ni una transcripción — ninguna ruta, ningún formulario, ningún job.\n\nENMENDADO EL 24 DE AGOSTO DE 2026, al construir F7. La versión anterior describía el contrato DESEADO —claves en inglés, `platform_id`— y platform sirve el suyo: claves en español e `id`, como los otros doce endpoints de /internal/v1. Se enmienda la v1 en vez de crear una v2 porque todavía no hay consumidores (F7 §6): el primero es la sincronización de F8, y esa ventana se cierra cuando F8 entre en marcha.\n\nPor qué se dobló este lado y no el otro: platform sirve doce endpoints en su convención y Natasha depende de ellos; añadir dos en otra habría dejado su API bilingüe. La traducción a los nombres de dominio de matrix —name, client_platform_id, held_on— la hace `Platform::Sync` en F8, que es donde va un adaptador. Un contrato que describe una forma que nadie sirve no detecta ninguna deriva, que es para lo único que existe un contrato.\n\nLos objetos admiten propiedades adicionales A PROPÓSITO: platform puede añadir campos de forma aditiva sin romper a matrix. Lo que matrix necesita va en `required`. La regla de cero PII NO se hace cumplir aquí —`projects` sirve el nombre del jefe de proyecto y este esquema lo tolera—: se hace cumplir en el esquema de matrix, que no tiene columna donde guardarlo.",
 
   "type": "object",
   "$defs": {
-    "identity": {
+    "pagination": {
       "type": "object",
-      "description": "Cómo referencia matrix a una entidad de platform. Platform no tiene UUIDs ni slugs en estas tablas: el identificador es el id bigint que devuelve la API, y matrix lo guarda en su propia proyección.",
-      "required": ["platform_id"],
+      "description": "Solo aparece si la petición llevó `?page=`. Sin el parámetro, la respuesta es la de siempre y esta clave no existe: es lo que hace la paginación aditiva para Natasha, que consume los mismos índices. Matrix pide siempre página.",
+      "required": ["page", "pages", "count"],
+      "additionalProperties": false,
       "properties": {
-        "platform_id": { "type": "integer", "minimum": 1 }
+        "page": { "type": "integer", "minimum": 1 },
+        "pages": { "type": "integer", "minimum": 0 },
+        "count": { "type": "integer", "minimum": 0 },
+        "next_page": { "type": ["integer", "null"] }
       }
     },
 
-    "client": {
+    "lead": {
       "type": "object",
-      "description": "En platform el cliente es un Lead (y su registro Client 1:1 cuando se convierte). No hay tabla Customer.",
-      "required": ["platform_id", "name"],
-      "additionalProperties": false,
+      "description": "El cliente. En platform es un Lead (y su registro Client 1:1 cuando se convierte). No hay tabla Customer.\n\nEl SLUG no viene de aquí: es propiedad de matrix, se deriva del nombre y se congela en la primera sincronización, porque va dentro de claves de artefacto inmutables y los nombres de cliente se renombran.",
+      "required": ["id", "nombre"],
       "properties": {
-        "platform_id": { "type": "integer", "minimum": 1 },
-        "name": { "type": "string" },
+        "id": { "type": "integer", "minimum": 1 },
+        "nombre": { "type": "string" },
         "sector": { "type": ["string", "null"] },
-        "city": { "type": ["string", "null"] },
-        "description": { "type": ["string", "null"] },
-        "status": { "type": ["string", "null"] },
-        "archived": { "type": "boolean", "default": false },
+        "ciudad": { "type": ["string", "null"] },
+        "pais": { "type": ["string", "null"] },
+        "estado": { "type": ["string", "null"] },
+        "descripcion": { "type": ["string", "null"] },
+        "archived": { "type": "boolean" },
         "primary_contact": {
           "type": ["object", "null"],
+          "description": "SOLO EL ROL, sin nombre (F7 §5). La maqueta de matrix enseñaba `marta.roldan · cto`; se queda en `cto`. Para saber con qué interlocutor se habla, el rol aporta casi todo el valor y el nombre casi ninguno — y así la regla de cero PII se queda sin excepciones que documentar.",
+          "required": ["rol"],
           "additionalProperties": false,
-          "properties": {
-            "name": { "type": "string" },
-            "role": { "type": ["string", "null"] }
-          }
+          "properties": { "rol": { "type": "string" } }
         }
       }
     },
 
-    "platform_project": {
+    "project": {
       "type": "object",
-      "description": "Lo que platform llama proyecto, y que en matrix se corresponde con un evolutivo. NUNCA se le llama `project` a secas en el código de matrix.\n\nOJO con la cadena: en platform, Project no apunta al Lead. Va Lead → Budget → BudgetVersion → Project. El serializer debe exponer client_platform_id APLANADO para que matrix no replique esa navegación.",
-      "required": ["platform_id", "ref", "name", "client_platform_id"],
-      "additionalProperties": false,
+      "description": "Lo que platform llama proyecto, y que en matrix se corresponde con un evolutivo. NUNCA se le llama `project` a secas en el código de matrix.\n\nOJO con la cadena: en platform, Project no apunta al Lead. Va Lead → Budget → BudgetVersion → Project. Por eso `client_id` viene APLANADO: matrix no replica una navegación interna de platform que puede cambiar.",
+      "required": ["id", "ref", "nombre", "client_id"],
       "properties": {
-        "platform_id": { "type": "integer", "minimum": 1 },
+        "id": { "type": "integer", "minimum": 1 },
         "ref": {
           "type": "string",
           "pattern": "^PRJ-\\d{4}-\\d+$",
-          "description": "Referencia de negocio con secuencia anual e índice único: PRJ-2026-9001."
+          "description": "Referencia de negocio con secuencia anual e índice único: PRJ-2026-9001. Es también lo que resuelve el enlace profundo `matrix/p/:ref` desde la ficha de proyecto de platform."
         },
-        "name": { "type": "string" },
-        "client_platform_id": { "type": "integer", "minimum": 1 },
-        "status": { "type": ["string", "null"] },
-        "current_phase": { "type": ["string", "null"] },
-        "started_on": { "type": ["string", "null"], "format": "date" },
-        "estimated_end_on": { "type": ["string", "null"], "format": "date" },
-        "archived": { "type": "boolean", "default": false }
+        "nombre": { "type": "string" },
+        "client_id": { "type": "integer", "minimum": 1 },
+        "estado": { "type": ["string", "null"] },
+        "fase_actual": { "type": ["string", "null"] },
+        "fecha_inicio": { "type": ["string", "null"], "format": "date" },
+        "fecha_fin_estimada": { "type": ["string", "null"], "format": "date" }
       }
     },
 
-    "document": {
+    "source_body": {
       "type": "object",
-      "description": "Documento de cliente del CRM. En platform es el modelo Document, NO natasha_documents.",
-      "required": ["platform_id", "title", "client_platform_id"],
-      "additionalProperties": false,
+      "description": "Lo que comparten un documento y una transcripción: el cuerpo, que NO está en tabla. Vive en `content_versions` (markdown en Active Storage) y en adjuntos.\n\nREGLA DE FORMA: el índice NO trae `cuerpo` ni `adjuntos`; el detalle sí. Un índice de doscientos documentos con cuerpo son doscientas descargas de S3 en una petición. Matrix sincroniza en dos pasos: el índice para descubrir qué hay y qué cambió —de ahí `version` y `updated_at`—, el detalle para traerse lo que necesita.",
       "properties": {
-        "platform_id": { "type": "integer", "minimum": 1 },
-        "title": { "type": "string" },
-        "client_platform_id": { "type": "integer", "minimum": 1 },
-        "platform_project_id": { "type": ["integer", "null"] },
-        "body": {
-          "type": ["string", "null"],
-          "description": "Markdown de la versión actual (content_versions). Null si el documento solo tiene adjuntos binarios sin texto extraído."
+        "version": {
+          "type": ["integer", "null"],
+          "description": "Número de la versión actual. Nulo si todavía no hay ninguna. Con esto matrix decide si le hace falta pedir el detalle, sin pedirlo."
         },
-        "attachments": {
+        "updated_at": { "type": "string", "format": "date-time" },
+        "cuerpo": {
+          "type": ["string", "null"],
+          "description": "Markdown de la versión actual. Nulo si no hay versión o si la versión es un PDF — en ese caso el texto llega por `adjuntos[].texto_extraido`."
+        },
+        "adjuntos": {
           "type": "array",
-          "default": [],
           "items": {
             "type": "object",
             "required": ["filename"],
@@ -86,44 +85,74 @@
               "filename": { "type": "string" },
               "content_type": { "type": ["string", "null"] },
               "byte_size": { "type": ["integer", "null"], "minimum": 0 },
-              "extracted_text": {
+              "texto_extraido": {
                 "type": ["string", "null"],
-                "description": "La extracción vive en platform, que es donde está el binario. Así matrix nunca toca un origen."
+                "description": "La extracción vive en platform, que es donde está el binario: así matrix nunca toca un origen. Declarado y en nulo hasta el bloque C de F7, que es donde entra `pdf-reader`. Nulo también para siempre en un PDF escaneado: no se va a montar OCR, y un PDF escaneado no es citable."
               }
             }
           }
-        },
-        "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+
+    "client_document": {
+      "type": "object",
+      "description": "Documento de cliente del CRM. Es el modelo Document, NO `natasha_documents` —la memoria privada de la agente, que sirve /internal/v1/documents—. Por eso la ruta lleva el prefijo `client_`: para que nadie los confunda dentro de seis meses.",
+      "required": ["id", "titulo", "lead_id"],
+      "allOf": [{ "$ref": "#/$defs/source_body" }],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "titulo": { "type": "string" },
+        "lead_id": { "type": "integer", "minimum": 1 },
+        "project_id": { "type": ["integer", "null"] }
       }
     },
 
     "meeting": {
       "type": "object",
-      "description": "Transcripción de reunión. En platform es el modelo Meeting; hoy no tiene endpoint (F7).",
-      "required": ["platform_id", "title", "held_on", "client_platform_id"],
-      "additionalProperties": false,
+      "description": "Reunión DE CLIENTE con su transcripción, una de las fuentes principales de TANK. Es el modelo Meeting.\n\nNo confundir con /internal/v1/strategy_meetings, que son las reuniones INTERNAS de estrategia y van por el scope `meetings:read`. Dos modelos con nombres parecidos y scopes distintos.",
+      "required": ["id", "titulo", "fecha", "lead_id"],
+      "allOf": [{ "$ref": "#/$defs/source_body" }],
       "properties": {
-        "platform_id": { "type": "integer", "minimum": 1 },
-        "title": { "type": "string" },
-        "held_on": { "type": "string", "format": "date" },
-        "client_platform_id": { "type": "integer", "minimum": 1 },
-        "platform_project_id": { "type": ["integer", "null"] },
-        "body": { "type": ["string", "null"] },
-        "duration_seconds": { "type": ["integer", "null"], "minimum": 0 },
-        "updated_at": { "type": "string", "format": "date-time" }
+        "id": { "type": "integer", "minimum": 1 },
+        "titulo": { "type": "string" },
+        "fecha": { "type": "string", "format": "date" },
+        "lead_id": { "type": "integer", "minimum": 1 },
+        "project_id": { "type": ["integer", "null"] }
       }
     },
 
-    "page": {
+    "user": {
       "type": "object",
-      "description": "Los índices de /internal/v1 tienen hoy un limit(200) duro. Para indexar un cliente entero hace falta paginación.",
-      "required": ["page", "pages", "count"],
+      "description": "Un usuario de platform, que es lo que matrix tiene por usuario: matrix no tiene usuarios propios ni guarda contraseñas.\n\n`disabled` es obligatorio y no es un adorno: F8 §A.3 bis cierra las sesiones abiertas de quien haya sido deshabilitado en platform, y sin este campo no sabría a quién.\n\n`name` y `cargo` no violan la regla de cero PII: es la identidad de quien va a entrar, y matrix la congela en `gate_signatures.identity` al firmar. La regla protege a los CONTACTOS del cliente, que es otra cosa.",
+      "required": ["id", "email_address", "name", "role", "disabled"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "email_address": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "cargo": { "type": ["string", "null"] },
+        "role": { "type": "string", "enum": ["admin", "superadmin", "marketing"] },
+        "disabled": { "type": "boolean" }
+      }
+    },
+
+    "authenticated_user": {
+      "type": "object",
+      "description": "La respuesta de POST /internal/v1/authenticate (F7 §2.4). Platform AUTENTICA —¿es esta la contraseña de esta persona?— y devuelve el rol; quién entra en matrix lo decide matrix con `may_access_matrix?`. Esa regla no viaja al otro repositorio: si viviera allí, platform tendría que enterarse cada vez que matrix la cambie.\n\nUna credencial mala y una cuenta deshabilitada salen las dos como 401 con el mismo cuerpo: distinguirlas diría si la cuenta existe.",
+      "required": ["user"],
       "additionalProperties": false,
       "properties": {
-        "page": { "type": "integer", "minimum": 1 },
-        "pages": { "type": "integer", "minimum": 0 },
-        "count": { "type": "integer", "minimum": 0 },
-        "next_page": { "type": ["integer", "null"] }
+        "user": {
+          "type": "object",
+          "required": ["platform_id", "email_address", "role"],
+          "properties": {
+            "platform_id": { "type": "integer", "minimum": 1 },
+            "email_address": { "type": "string", "format": "email" },
+            "name": { "type": ["string", "null"] },
+            "cargo": { "type": ["string", "null"] },
+            "role": { "type": "string", "enum": ["admin", "superadmin", "marketing"] }
+          }
+        }
       }
     }
   },
@@ -135,8 +164,8 @@
       "required": ["leads"],
       "additionalProperties": false,
       "properties": {
-        "leads": { "type": "array", "items": { "$ref": "#/$defs/client" } },
-        "pagination": { "$ref": "#/$defs/page" }
+        "leads": { "type": "array", "items": { "$ref": "#/$defs/lead" } },
+        "pagination": { "$ref": "#/$defs/pagination" }
       }
     },
     {
@@ -145,29 +174,48 @@
       "required": ["projects"],
       "additionalProperties": false,
       "properties": {
-        "projects": { "type": "array", "items": { "$ref": "#/$defs/platform_project" } },
-        "pagination": { "$ref": "#/$defs/page" }
+        "projects": { "type": "array", "items": { "$ref": "#/$defs/project" } },
+        "pagination": { "$ref": "#/$defs/pagination" }
       }
     },
     {
-      "title": "GET /internal/v1/client_documents · pendiente en platform (F7)",
+      "title": "GET /internal/v1/client_documents",
       "type": "object",
       "required": ["client_documents"],
       "additionalProperties": false,
       "properties": {
-        "client_documents": { "type": "array", "items": { "$ref": "#/$defs/document" } },
-        "pagination": { "$ref": "#/$defs/page" }
+        "client_documents": { "type": "array", "items": { "$ref": "#/$defs/client_document" } },
+        "pagination": { "$ref": "#/$defs/pagination" }
       }
     },
     {
-      "title": "GET /internal/v1/meetings · pendiente en platform (F7)",
+      "title": "GET /internal/v1/meetings",
       "type": "object",
       "required": ["meetings"],
       "additionalProperties": false,
       "properties": {
         "meetings": { "type": "array", "items": { "$ref": "#/$defs/meeting" } },
-        "pagination": { "$ref": "#/$defs/page" }
+        "pagination": { "$ref": "#/$defs/pagination" }
       }
+    },
+    {
+      "title": "GET /internal/v1/users",
+      "type": "object",
+      "required": ["users"],
+      "additionalProperties": false,
+      "properties": {
+        "users": { "type": "array", "items": { "$ref": "#/$defs/user" } },
+        "pagination": { "$ref": "#/$defs/pagination" }
+      }
+    },
+    { "title": "POST /internal/v1/authenticate", "$ref": "#/$defs/authenticated_user" },
+    {
+      "title": "GET /internal/v1/client_documents/:id",
+      "$ref": "#/$defs/client_document"
+    },
+    {
+      "title": "GET /internal/v1/meetings/:id",
+      "$ref": "#/$defs/meeting"
     }
   ]
 }

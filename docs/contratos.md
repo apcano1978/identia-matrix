@@ -81,22 +81,65 @@ brain no escribe en el bucket ni guarda estado de pipeline.
 
 ## Estado de la junta con platform
 
-`read.v1.json` describe el contrato **deseado**, no el que platform sirve hoy.
-A agosto de 2026 faltan tres cosas, y cerrarlas es la fase **F7**, dentro del
-repositorio de platform:
+`read.v1.json` describía el contrato **deseado**, no el que platform sirve. Desde
+el **24 de agosto de 2026** describe el que sirve: F7 construyó los endpoints que
+faltaban y el esquema se enmendó para casar con ellos.
 
-1. No hay endpoint de `meetings`. Las transcripciones no se pueden leer.
-2. El endpoint `/internal/v1/documents` que sí existe sirve `natasha_documents`
-   —la memoria privada del agente—, que **no** es el modelo `Document` del CRM.
-   Por eso el contrato lo llama `client_documents`: para que no colisionen.
-3. El cuerpo de documentos y transcripciones **no está en tabla**. Vive en
-   `content_versions` (markdown en S3) y en adjuntos de Active Storage. Por eso
-   `body` es nullable y hay un bloque `attachments` con `extracted_text`.
+Las tres cosas que faltaban, cerradas:
 
-Y una cuarta, de forma más que de contenido: en platform, `Project` no apunta al
-`Lead` — la cadena es `Lead → Budget → BudgetVersion → Project`. El contrato
-exige `client_platform_id` **aplanado** para que matrix no replique esa
-navegación.
+1. **Ya hay endpoint de reuniones de cliente**: `GET /internal/v1/meetings`, con
+   scope `matrix:sources:read`. No confundirlo con `/strategy_meetings`, que son
+   las reuniones internas de estrategia y van por `meetings:read`.
+2. **`client_documents`** sirve el modelo `Document` del CRM.
+   `/internal/v1/documents` sigue sirviendo `natasha_documents` —la memoria
+   privada de la agente— y no ha cambiado.
+3. **El cuerpo sigue sin estar en tabla**, y por eso hay regla de forma: el
+   índice **no** trae `cuerpo` ni `adjuntos`; el detalle sí. Doscientos
+   documentos con cuerpo serían doscientas descargas de S3 en una petición.
+
+Y la cuarta, la de forma: `projects` expone **`client_id` aplanado**, para que
+matrix no replique la cadena `Lead → Budget → BudgetVersion → Project`.
+
+### La enmienda: el contrato habla el idioma de platform
+
+El esquema original usaba `platform_id`, `name`, `title`, `held_on`, `body`. La
+API de platform usa `id`, `nombre`, `titulo`, `fecha`, `cuerpo`, como sus otros
+doce endpoints internos.
+
+**Se dobló este lado.** Platform sirve una docena de endpoints en su convención y
+Natasha depende de ellos en producción; añadir dos en otra habría dejado su API
+bilingüe para siempre. La traducción a los nombres de dominio de matrix la hace
+`Platform::Sync` en F8, que es donde va un adaptador.
+
+Se enmendó la **v1** en vez de crear una v2 porque **no hay consumidores
+todavía** —el primero es F8—, que es la misma excepción que la regla de
+compatibilidad de más arriba contempla. Esa ventana se cierra cuando F8 entre en
+marcha.
+
+### Dos decisiones del esquema que conviene no deshacer
+
+- **Los recursos admiten propiedades adicionales.** Si platform añade un campo,
+  matrix no revienta. Lo que matrix necesita va en `required`, que es lo que sí
+  detecta la deriva que importa: que algo **desaparezca** o cambie de tipo.
+- **La regla de cero PII no se hace cumplir aquí.** `projects` sirve `pm` —el
+  nombre del jefe de proyecto— y este esquema lo tolera, porque prohibirlo
+  obligaría a cambiar la forma de un endpoint del que depende Natasha. Se hace
+  cumplir donde de verdad se puede: **el esquema de matrix no tiene columna
+  donde guardarlo**. Un campo que llega y no tiene dónde caer, se cae.
+
+  Lo que sí prohíbe el esquema es el nombre del **contacto del cliente** dentro
+  de `primary_contact`, que era el caso que la maqueta pedía y F7 §5 descartó.
+
+### Lo que hay más allá de la lectura
+
+`read.v1.json` cubre también dos cosas que no son índices de datos:
+
+- **`POST /internal/v1/authenticate`** (F7 §2.4), con el que matrix verifica una
+  contraseña. Platform autentica y devuelve el rol; **quién entra en matrix lo
+  decide matrix**.
+- **`GET /internal/v1/users`**, que no estaba en la guía de F7 y hace falta:
+  matrix proyecta `platform_users`, y F8 §A.3 bis revalida esa proyección para
+  cerrar las sesiones de quien haya sido deshabilitado en platform.
 
 ## Referencias entre servicios
 

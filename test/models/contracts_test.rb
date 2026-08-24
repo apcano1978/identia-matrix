@@ -192,52 +192,116 @@ class ContractsTest < ActiveSupport::TestCase
   end
 
   # --- platform → matrix · lectura ------------------------------------------
+  #
+  # ENMENDADO el 24 de agosto de 2026, al construir F7. Estos tests afirmaban la
+  # forma DESEADA —claves en inglés, `platform_id`— y platform sirve la suya:
+  # claves en español e `id`, como sus otros doce endpoints internos. Se enmendó
+  # la v1 en vez de crear una v2 porque todavía no hay consumidores; el primero
+  # es la sincronización de F8. Ver la cabecera del propio esquema.
 
   test "un indice de clientes valida" do
     payload = {
       leads: [
-        { platform_id: 42, name: "Vivla", sector: "proptech", city: "Madrid",
-          primary_contact: { name: "marta.roldan", role: "cto" } }
+        { id: 42, nombre: "Vivla", sector: "proptech", ciudad: "Madrid",
+          estado: "convertido", archived: false,
+          primary_contact: { rol: "cto" } }
       ]
     }
 
     assert_valid_contract(:matrix_platform_read, payload)
   end
 
-  test "un proyecto de platform exige ref y cliente aplanado" do
-    ok = { projects: [ { platform_id: 2291, ref: "PRJ-2026-9001", name: "Unificar precios", client_platform_id: 42 } ] }
-    assert_valid_contract(:matrix_platform_read, ok)
-
-    # La cadena Lead → Budget → BudgetVersion → Project no la replica matrix:
-    # platform tiene que exponer el cliente ya resuelto.
-    without_client = { projects: [ { platform_id: 2291, ref: "PRJ-2026-9001", name: "x" } ] }
-    refute Contracts.valid?(:matrix_platform_read, without_client)
-  end
-
-  test "una ref de proyecto con otro formato se rechaza" do
-    payload = { projects: [ { platform_id: 2291, ref: "proj-2291", name: "x", client_platform_id: 42 } ] }
+  test "el contacto principal no puede traer el nombre de la persona" do
+    # Cero PII, sin excepciones (F7 §5). La maqueta enseñaba `marta.roldan · cto`
+    # y es la unica cosa de la maqueta que se descarta por decision y no por
+    # desliz suyo.
+    payload = { leads: [ { id: 42, nombre: "Vivla",
+                           primary_contact: { rol: "cto", name: "marta.roldan" } } ] }
 
     refute Contracts.valid?(:matrix_platform_read, payload)
   end
 
-  test "documentos y transcripciones admiten cuerpo nulo" do
-    # Hoy en platform el cuerpo no está en tabla: vive en content_versions y en
-    # adjuntos. Un documento sin texto extraído es un caso real, no un error.
+  test "un proyecto de platform exige ref y cliente aplanado" do
+    ok = { projects: [ { id: 2291, ref: "PRJ-2026-9001", nombre: "Unificar precios", client_id: 42 } ] }
+    assert_valid_contract(:matrix_platform_read, ok)
+
+    # La cadena Lead -> Budget -> BudgetVersion -> Project no la replica matrix:
+    # platform tiene que exponer el cliente ya resuelto.
+    sin_cliente = { projects: [ { id: 2291, ref: "PRJ-2026-9001", nombre: "x" } ] }
+    refute Contracts.valid?(:matrix_platform_read, sin_cliente)
+  end
+
+  test "una ref de proyecto con otro formato se rechaza" do
+    payload = { projects: [ { id: 2291, ref: "proj-2291", nombre: "x", client_id: 42 } ] }
+
+    refute Contracts.valid?(:matrix_platform_read, payload)
+  end
+
+  test "el indice de fuentes no trae cuerpo y el detalle si" do
+    # La regla de forma de F7 3.1. El indice existe para descubrir que hay y
+    # que cambio -de ahi `version`-, no para traerselo todo.
     assert_valid_contract(:matrix_platform_read, {
       client_documents: [
-        { platform_id: 901, title: "acta-precios.pdf", client_platform_id: 42, body: nil,
-          attachments: [ { filename: "acta-precios.pdf", content_type: "application/pdf", extracted_text: nil } ],
-          updated_at: "2026-05-02T08:40:00+02:00" }
+        { id: 901, titulo: "acta-precios", lead_id: 42, project_id: nil,
+          version: 2, updated_at: "2026-05-02T08:40:00+02:00" }
       ]
     })
 
     assert_valid_contract(:matrix_platform_read, {
+      id: 901, titulo: "acta-precios", lead_id: 42, project_id: nil, version: 2,
+      cuerpo: "# Acta\n\nEl precio base sube un 4 %.",
+      adjuntos: [], updated_at: "2026-05-02T08:40:00+02:00"
+    })
+  end
+
+  test "documentos y transcripciones admiten cuerpo nulo" do
+    # El cuerpo no esta en tabla: vive en content_versions y en adjuntos. Un
+    # documento que solo tiene un PDF sin extraer es un caso real, no un error.
+    assert_valid_contract(:matrix_platform_read, {
+      id: 901, titulo: "acta-precios", lead_id: 42, cuerpo: nil,
+      adjuntos: [ { filename: "acta-precios.pdf", content_type: "application/pdf",
+                    byte_size: 8134, texto_extraido: nil } ],
+      updated_at: "2026-05-02T08:40:00+02:00"
+    })
+
+    assert_valid_contract(:matrix_platform_read, {
       meetings: [
-        { platform_id: 55, title: "unificación de precio", held_on: "2026-05-02",
-          client_platform_id: 42, body: "…", duration_seconds: 4360,
-          updated_at: "2026-05-02T23:00:00+02:00" }
+        { id: 55, titulo: "unificacion de precio", fecha: "2026-05-02",
+          lead_id: 42, version: 1, updated_at: "2026-05-02T23:00:00+02:00" }
       ]
     })
+  end
+
+  test "los usuarios exigen saber si estan deshabilitados" do
+    # Sin este campo, F8 no puede cerrar las sesiones de quien perdio el acceso
+    # en platform: la sesion es de matrix y sobreviviria hasta caducar.
+    ok = { users: [ { id: 1, email_address: "antonio@identiaconsulting.com",
+                      name: "Antonio Perez", cargo: "CIO", role: "admin", disabled: false } ] }
+    assert_valid_contract(:matrix_platform_read, ok)
+
+    sin_disabled = { users: [ { id: 1, email_address: "a@b.com", name: "A", role: "admin" } ] }
+    refute Contracts.valid?(:matrix_platform_read, sin_disabled)
+  end
+
+  test "la respuesta de authenticate trae el rol, que es lo que matrix necesita" do
+    ok = { user: { platform_id: 1, email_address: "antonio@identiaconsulting.com",
+                   name: "Antonio Perez", cargo: "CIO", role: "admin" } }
+    assert_valid_contract(:matrix_platform_read, ok)
+
+    sin_rol = { user: { platform_id: 1, email_address: "a@b.com" } }
+    refute Contracts.valid?(:matrix_platform_read, sin_rol)
+  end
+
+  test "la paginacion es opcional, y cuando viene tiene forma" do
+    con_pagina = { meetings: [], pagination: { page: 1, pages: 4, count: 87, next_page: 2 } }
+    assert_valid_contract(:matrix_platform_read, con_pagina)
+
+    ultima = { meetings: [], pagination: { page: 4, pages: 4, count: 87, next_page: nil } }
+    assert_valid_contract(:matrix_platform_read, ultima)
+
+    # Sin `?page=` la clave no existe, y eso tambien es valido: es lo que hace
+    # la paginacion aditiva para Natasha, que consume los mismos indices.
+    assert_valid_contract(:matrix_platform_read, { meetings: [] })
   end
 
   # --- Manejo de errores ----------------------------------------------------
