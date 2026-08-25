@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_25_093231) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_132224) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -493,6 +493,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_093231) do
     t.index ["platform_client_id"], name: "index_repositories_on_platform_client_id"
   end
 
+  create_table "repository_credentials", force: :cascade do |t|
+    t.bigint "platform_client_id", null: false
+    t.string "host", null: false
+    t.text "token", null: false
+    t.string "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["platform_client_id", "host", "created_at"], name: "idx_repository_credentials_latest"
+    t.index ["platform_client_id"], name: "index_repository_credentials_on_platform_client_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.bigint "platform_user_id", null: false
     t.string "ip_address"
@@ -657,6 +668,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_093231) do
   add_foreign_key "platform_meetings", "platform_projects"
   add_foreign_key "platform_projects", "platform_clients"
   add_foreign_key "repositories", "platform_clients"
+  add_foreign_key "repository_credentials", "platform_clients"
   add_foreign_key "sessions", "platform_users"
   add_foreign_key "stage_entries", "initiatives"
   add_foreign_key "test_guides", "artifacts"

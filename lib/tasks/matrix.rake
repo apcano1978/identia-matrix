@@ -87,6 +87,53 @@ namespace :matrix do
     AVISO
   end
 
+  desc "Ancla e indexa los repositorios de un evolutivo. Ej: matrix:index[ev-031]"
+  task :index, [ :code ] => :environment do |_task, args|
+    initiative = Initiative.find_by!(code: args.fetch(:code))
+
+    puts "#{initiative.code} · #{initiative.platform_client.slug} · " \
+         "fuente #{Repositories::Source.real? ? 'remota' : 'falsa'}"
+    Repositories::Index.call(initiative: initiative, actor: "manual").each do |result|
+      puts "  #{result}"
+    end
+  end
+
+  desc "Guarda la credencial de LECTURA de un cliente. Ej: TOKEN=ghp_… matrix:credential[evalora,github.com]"
+  task :credential, [ :client, :host ] => :environment do |_task, args|
+    # El valor llega por variable de entorno y no por argumento: lo que se
+    # escribe en la línea de `rake` queda en el historial del shell, y esto es
+    # un secreto. Por la misma razón no hay formulario — un token en un POST
+    # acaba en logs de acceso y en el historial del navegador.
+    token = ENV["TOKEN"].to_s.strip
+    abort "Falta TOKEN=… en el entorno." if token.empty?
+
+    client = Platform::Client.find_by!(slug: args.fetch(:client))
+    host = args[:host].presence || "github.com"
+
+    anterior = RepositoryCredential.current_for(client, host)
+    credential = RepositoryCredential.create!(
+      platform_client: client, host: host, token: token,
+      note: "emitida a mano#{anterior ? ' · rota la anterior' : ''}")
+
+    puts "#{client.slug} · #{credential}"
+    puts "Manda la más reciente; la anterior queda como rastro." if anterior
+    puts "SOLO LECTURA: matrix no escribe en un repositorio ajeno en ninguna fase."
+  end
+
+  desc "Lista las credenciales de lectura vivas, sin revelar su valor."
+  task credentials: :environment do
+    vigentes = Platform::Client.active.filter_map do |client|
+      RepositoryCredential.where(platform_client: client).latest_first.first
+    end
+
+    if vigentes.empty?
+      puts "Ninguna credencial emitida. Los repositorios públicos se leen igual."
+      next
+    end
+
+    vigentes.each { |c| puts "#{c.platform_client.slug.ljust(20)} #{c}" }
+  end
+
   desc "Recorre un evolutivo por las doce etapas con el runtime falso"
   task :walk_pipeline, [ :code, :variant ] => :environment do |_task, args|
     code = args[:code].presence || "ev-999"
