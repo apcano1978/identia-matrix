@@ -49,4 +49,29 @@ module ClientsHelper
   def client_contact(client)
     client.primary_contact_role.presence&.then { |role| "contacto · #{role}" }
   end
+
+  # Cuándo se miraron por última vez las fuentes de este cliente (F8 §A.5).
+  #
+  # **Si platform no responde, matrix sigue funcionando** —para eso existe la
+  # proyección cacheada—, y lo único inaceptable sería que el desfase fuera
+  # silencioso. Por eso esto se pinta siempre, y en terracota pasadas dos horas.
+  #
+  # Lee `sources_synced_at` y no `synced_at`: el segundo se actualiza al
+  # refrescar el catálogo de clientes, sin haber pedido un solo documento.
+  def client_sync_state(client)
+    if client.sources_synced_at.blank?
+      return tag.span("sin sincronizar", class: "text-t105 text-terminal-fg-3",
+                      title: "todavía no se han pedido las fuentes de este cliente a platform")
+    end
+
+    desfasado = client.sources_synced_at < Platform::Sync::STALE_AFTER.ago
+    tono = desfasado ? "text-glyph-fail" : "text-terminal-fg-4"
+
+    tag.span(class: "text-t105 #{tono}",
+             title: "última sincronización con identia-platform: " \
+                    "#{l(client.sources_synced_at, format: :short)}") do
+      safe_join([ tag.span("sync", class: "text-terminal-fg-3 mr-1"),
+                  age(client.sources_synced_at, stale_after: Platform::Sync::STALE_AFTER) ])
+    end
+  end
 end

@@ -42,6 +42,51 @@ namespace :matrix do
          "fuente de platform: #{Platform::Source.current.name}"
   end
 
+  desc "Sincroniza la proyección de platform. Un cliente por slug, o todos."
+  task :sync, [ :slug ] => :environment do |_task, args|
+    unless Platform::Source.real?
+      abort "MATRIX_PLATFORM_SOURCE es `fake`: esto sincronizaría el seed contra sí mismo. " \
+            "Ponlo a `platform` para hablar con identia-platform de verdad."
+    end
+
+    refuse_over_seed! unless ENV["FORCE"] == "1"
+
+    resultados =
+      if args[:slug]
+        [ Platform::Sync.call(Platform::Client.find_by!(slug: args[:slug])) ]
+      else
+        Platform::Sync.all
+      end
+
+    resultados.each { |resultado| puts resultado }
+    puts "Nada que sincronizar: la proyección está vacía." if resultados.empty?
+  end
+
+  # 🛡 La maqueta no se pisa sin querer.
+  #
+  # Los seis clientes y los diez evolutivos de la demostración vienen del seed, y
+  # una sincronización real los deja marcados como ausentes —correctamente: no
+  # existen en platform—. Eso es irreversible dentro de la misma base, y el día
+  # que haga falta enseñar el producto no es el día de descubrirlo.
+  #
+  # La columna `sync_source` distingue de dónde vino cada fila, así que la
+  # comprobación es exacta y no una heurística.
+  def refuse_over_seed!
+    sembrados = Platform::Client.where(sync_source: "fake").count
+    return if sembrados.zero?
+
+    abort <<~AVISO
+      La proyección tiene #{sembrados} clientes sembrados de la maqueta.
+
+      Sincronizar contra platform los dejará marcados como ausentes, y con ellos
+      los evolutivos, documentos y reuniones de la demostración. No es un fallo
+      —no existen en platform— pero tampoco se deshace.
+
+      Para volver a la maqueta después:  make reset && bin/rails matrix:seed_design
+      Para sincronizar de todos modos:   FORCE=1 bin/rails "matrix:sync[#{Platform::Client.first&.slug}]"
+    AVISO
+  end
+
   desc "Recorre un evolutivo por las doce etapas con el runtime falso"
   task :walk_pipeline, [ :code, :variant ] => :environment do |_task, args|
     code = args[:code].presence || "ev-999"

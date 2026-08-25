@@ -93,8 +93,52 @@ class Platform::ProjectionTest < ActiveSupport::TestCase
     assert_not_includes Platform::User.with_access, user
   end
 
-  test "la fuente real no finge funcionar: llega en F8" do
-    assert_raises(NotImplementedError) { Platform::HttpSource.clients }
+  # Este test afirmaba, hasta F8, que la fuente real levantaba
+  # `NotImplementedError`. Ya no: existe. Lo que sigue afirmando es que **no
+  # finge** — sin `PLATFORM_API_URL` se niega a llamar a nadie en vez de
+  # devolver listas vacías, que dejarían la proyección en blanco marcándolo
+  # todo como ausente sin que nada dijera por qué.
+  test "la fuente real no finge funcionar sin configuración" do
+    previo = ENV.delete("PLATFORM_API_URL")
+
+    assert_raises(Platform::Api::Error) { Platform::HttpSource.new.clients }
+  ensure
+    ENV["PLATFORM_API_URL"] = previo if previo
+  end
+
+  # ── El ámbito, que es lo que F8 añade aquí ─────────────────────────────────
+
+  test "sin ámbito, lo que no viene se marca ausente en toda la tabla" do
+    Platform::Projection.import
+    total = Platform::Document.count
+
+    Platform::Projection.import(source_serving(documents: []))
+
+    assert_equal total, Platform::Document.where.not(missing_since: nil).count
+  end
+
+  test "con ámbito, solo dentro de él" do
+    # Sin esto, sincronizar un cliente sacaría del ámbito los documentos de
+    # todos los demás: no vinieron porque no se pidieron, no porque no existan.
+    Platform::Projection.import
+    vivla = Platform::Client.find_by!(slug: "vivla")
+    otros = Platform::Document.where.not(platform_client_id: vivla.id).count
+
+    Platform::Projection.import(source_serving(documents: []),
+                                client: vivla, only: [ :documents ])
+
+    assert_equal otros, Platform::Document.where(missing_since: nil)
+                                          .where.not(platform_client_id: vivla.id).count
+  end
+
+  test "`only` no toca las tablas que no nombra" do
+    Platform::Projection.import
+    usuarios = Platform::User.pluck(:id, :missing_since)
+
+    Platform::Projection.import(source_serving(documents: []), only: [ :documents ])
+
+    assert_equal usuarios, Platform::User.pluck(:id, :missing_since),
+                 "importar documentos no puede marcar ausentes a los usuarios"
   end
 
   private

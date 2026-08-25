@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_17_160115) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_081715) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -386,6 +386,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_160115) do
     t.datetime "missing_since"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "sources_synced_at"
     t.index ["platform_id"], name: "index_platform_clients_on_platform_id", unique: true
     t.index ["slug"], name: "index_platform_clients_on_slug", unique: true
   end

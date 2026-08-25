@@ -4,7 +4,7 @@
 # frecuencia fija que consulta la BD para decidir qué toca hacer. La frecuencia
 # real de cada cosa se configura en la aplicación, no en este fichero.
 #
-# Pendiente: la sincronización de la proyección de platform (F8).
+# La sincronización de la proyección de platform es la de abajo (F8).
 #
 # OJO si esto se vacía alguna vez: `sidekiq-cron` lee el fichero por su cuenta
 # al arrancar el worker —con su propio hook, no con el initializer— y un YAML
@@ -18,3 +18,14 @@ artifact_reconciliation:
   class: Artifacts::VerifyJob
   queue: low
   description: Reconcilia el registro de artefactos con el bucket (F5 §5)
+
+# El latido de la proyección de platform. Cada quince minutos: es el peor caso
+# de retraso en cerrar la sesión de alguien deshabilitado en platform, y es el
+# número que la fase asume al decidir NO comprobarlo en cada petición.
+#
+# Se salta solo si la fuente es la falsa, así que en desarrollo no hace nada.
+platform_sync:
+  cron: "*/15 * * * *"
+  class: Platform::SyncJob
+  queue: default
+  description: Sincroniza la proyección de identia-platform (F8 §A.5)

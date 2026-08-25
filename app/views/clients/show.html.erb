@@ -14,8 +14,9 @@
         <%= @client.name %>
       </h1>
       <span class="text-t12 text-terminal-fg-4"><%= @client.sector %></span>
-      <span class="ml-auto text-t105 text-terminal-muted">
-        <%= client_contact(@client) %>
+      <span class="ml-auto flex items-baseline gap-3">
+        <%= client_sync_state(@client) %>
+        <span class="text-t105 text-terminal-muted"><%= client_contact(@client) %></span>
       </span>
     </div>
 

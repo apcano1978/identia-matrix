@@ -100,6 +100,10 @@
       "description": "Documento de cliente del CRM. Es el modelo Document, NO `natasha_documents` —la memoria privada de la agente, que sirve /internal/v1/documents—. Por eso la ruta lleva el prefijo `client_`: para que nadie los confunda dentro de seis meses.",
       "required": ["id", "titulo", "lead_id"],
       "allOf": [{ "$ref": "#/$defs/source_body" }],
+      "not": {
+        "required": ["fecha"],
+        "$comment": "Un documento NO tiene fecha; una reunión sí. Sin esto, el detalle de una reunión casa también con esta rama —comparten id, titulo y lead_id— y el `oneOf` de la raíz falla sobre un payload perfectamente válido por casar con DOS. Salió al validar la primera respuesta real, en F8. Es la diferencia real entre los dos modelos, no un truco: `Document` es «simétrico a Meeting pero sin fecha»."
+      },
       "properties": {
         "id": { "type": "integer", "minimum": 1 },
         "titulo": { "type": "string" },
