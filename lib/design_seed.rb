@@ -53,9 +53,26 @@ module DesignSeed
       # escribieron. Es el caso normal, no una excepción del seed.
       Citations::Attach.resolve_pending
       seed_events
+      align_sequences
 
       report
     end
+  end
+
+  # El contador de códigos, por encima de lo sembrado.
+  #
+  # La maqueta trae `ev-041` con su número escrito a mano, y el asignador reparte
+  # desde cero. Sin esto, el primer alta pediría `ev-001` y seguiría subiendo
+  # hasta chocar con un código sembrado — y el índice único de `initiatives.code`
+  # haría fallar el alta con un error que no explica nada.
+  #
+  # Es lo único que el seed le dice al asignador, y solo hacia arriba: **el
+  # contador no baja nunca**, porque un número ya repartido no se recicla.
+  def align_sequences
+    highest = Initiative.pluck(:code).map { |code| code.delete_prefix("ev-").to_i }.max.to_i
+    sequence = MatrixSequence.find_or_create_by!(name: MatrixSequence::INITIATIVE)
+
+    sequence.update!(last_number: highest) if sequence.last_number < highest
   end
 
   def refuse_in_production!

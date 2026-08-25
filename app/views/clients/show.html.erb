@@ -5,7 +5,8 @@
     detalle: es la razón por la que esta pantalla no tiene un solo formulario. %>
 <%= render "shared/view_bar", back: { label: "clientes", path: clients_path },
            title: @client.slug,
-           notes: [ "ficha en solo lectura · se gestiona en identia-platform" ] %>
+           notes: [ "el cliente y sus proyectos se gestionan en identia-platform · " \
+                    "los evolutivos y los repositorios son de matrix" ] %>
 
 <div class="flex-1 min-h-0 flex">
   <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
@@ -24,12 +25,17 @@
                initiatives: @initiatives, pagy: @pagy,
                total: @initiatives_count, multi_repo: @multi_repo_count %>
 
+    <%= render "clients/new_initiative", client: @client,
+               repositories: @repositories, projects: @platform_projects %>
+
     <%= section_header "REPOSITORIOS", count: @repositories.size, tone: :gate2,
                        gloss: "eje de memoria · qué se hizo antes ahí" %>
     <div class="grid grid-cols-3 gap-3 mt-2.5">
       <%= render partial: "clients/repository_card", collection: @repositories,
                  as: :repository, locals: { client: @client } %>
     </div>
+
+    <%= render "clients/new_repository", client: @client %>
 
     <%= render "clients/client_sources", client: @client %>
   </div>

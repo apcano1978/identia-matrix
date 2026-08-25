@@ -30,6 +30,30 @@ class InitiativesController < ApplicationController
     @events = @initiative.events.recent.limit(Event::STREAM_SIZE * 2)
   end
 
+  # Dar de alta un evolutivo (P1). `create` y nada más: matrix no edita ni borra.
+  #
+  # Nace en `need` y ahí espera. **No hay forma de avanzarlo desde la interfaz**,
+  # y no se añade una: el pipeline lo mueven los agentes, que llegan en F9.
+  def create
+    client = Platform::Client.find_by!(slug: params[:client_slug])
+    authorize Initiative, :create?
+
+    initiative = Initiatives::Open.call(
+      client: client,
+      title: params[:title],
+      # DENTRO del cliente, nunca por id suelto: un `Repository.find` a secas es
+      # la forma más fácil de cruzar la frontera de cliente sin darse cuenta.
+      repositories: client.repositories.where(id: params[:repository_ids]),
+      platform_project: client.platform_projects.find_by(id: params[:platform_project_id]),
+      actor: Current.user.to_s)
+
+    redirect_to client_initiative_path(client, initiative), status: :see_other,
+                notice: "#{initiative.code} abierto. Espera a TANK, que llega en F9."
+  rescue Initiatives::Open::Refused => error
+    redirect_to client_path(client), status: :see_other,
+                alert: "No se ha abierto el evolutivo: #{error.message}."
+  end
+
   private
     MODES = %i[rendered source diff].freeze
 

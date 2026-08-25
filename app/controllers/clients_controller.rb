@@ -32,5 +32,10 @@ class ClientsController < ApplicationController
                                .group("initiatives.id").having("count(*) > 1")
                                .count.size
     @initiatives_count = @client.initiatives.count
+
+    # Para vincular un evolutivo nuevo a su proyecto de platform. Los ausentes
+    # se quedan fuera: se pueden seguir citando desde artefactos ya emitidos,
+    # pero no se empieza trabajo nuevo sobre algo que en platform ya no existe.
+    @platform_projects = @client.platform_projects.where(missing_since: nil).order(:name)
   end
 end

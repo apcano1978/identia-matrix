@@ -65,7 +65,16 @@ Rails.application.routes.draw do
   end
 
   resources :clients, only: %i[index show], param: :slug do
-    resources :initiatives, only: :show, param: :code do
+    # ── Las dos primeras altas de matrix (P1) ────────────────────────────────
+    #
+    # `create` y nada más, como el resto de lo que matrix escribe: dar de alta
+    # es un acto que ocurre una vez. **No hay `update` ni `destroy`**, y que no
+    # los haya se lee en `bin/rails routes` sin abrir un controlador.
+    #
+    # Cuelgan del CLIENTE y no de la raíz: es donde el evolutivo y el
+    # repositorio nacen, y es lo que hace que la frontera de cliente entre por
+    # la ruta en vez de por un parámetro que alguien pueda cambiar.
+    resources :initiatives, only: %i[show create], param: :code do
       # Lo que un agente puede leer y citar para este evolutivo. Cuelga del
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.
       resources :sources, only: :index
@@ -104,7 +113,7 @@ Rails.application.routes.draw do
     end
     # Los nombres de repositorio admiten punto —`docs.site`—, y sin la
     # restricción Rails se comería el sufijo tomándolo por un formato.
-    resources :repositories, only: :show, param: :name,
+    resources :repositories, only: %i[show create], param: :name,
                              constraints: { name: %r{[^/]+} }
   end
 

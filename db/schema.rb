@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_25_081715) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_093231) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -370,6 +370,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_081715) do
     t.index ["platform_client_id", "current_stage"], name: "index_initiatives_on_platform_client_id_and_current_stage"
     t.index ["platform_client_id"], name: "index_initiatives_on_platform_client_id"
     t.index ["platform_project_id"], name: "index_initiatives_on_platform_project_id"
+  end
+
+  create_table "matrix_sequences", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "last_number", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_matrix_sequences_on_name", unique: true
   end
 
   create_table "platform_clients", force: :cascade do |t|

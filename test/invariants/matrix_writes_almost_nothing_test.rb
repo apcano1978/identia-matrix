@@ -19,7 +19,8 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
   # Ninguna es `update` ni `destroy`, y no es casualidad: **todo lo que matrix
   # escribe es un ACTO que ocurre una vez y deja constancia**, no la edición de
   # un campo. Firmar, validar, recorrer un paso, autorizar que se cierre sin
-  # recorrerlo. Que la lista sea toda de `create` es la propiedad, no el estilo.
+  # recorrerlo, dar de alta. Que la lista sea toda de `create` es la propiedad,
+  # no el estilo — y las altas de P1 la conservaron sin tener que forzarla.
   ALLOWED = [
     # Entrar y salir. Escribe en `sessions`, que es de matrix.
     "sessions#create",
@@ -38,6 +39,19 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     "return_to_trinities#create",
     # GATE 2 · reversible por rechazo. Confirma que lo ejecutado sirve.
     "validations#create",
+
+    # ── Las dos altas (F8 · P1) ─────────────────────────────────────────────
+    #
+    # Las primeras escrituras de matrix con campos de formulario, y las dos son
+    # `create`: dar de alta es un acto que ocurre una vez, no la edición de un
+    # campo. La propiedad de esta lista sigue intacta.
+    #
+    # No las acompaña ningún `update` ni `destroy` a propósito. Un evolutivo mal
+    # abierto no se corrige: se abre otro y el primero se cierra por el camino
+    # que ya existe. Lo contrario obligaría a decidir qué pasa con las citas que
+    # ya lo nombran.
+    "initiatives#create",
+    "repositories#create",
 
     # ── La guía de pruebas (F6) ─────────────────────────────────────────────
     "walks#create",

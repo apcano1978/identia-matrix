@@ -1,0 +1,46 @@
+<%# Registrar un repositorio (P1). El primer formulario con campos de matrix,
+    junto al de evolutivo: hasta F8 las nueve escrituras eran actos sin campos.
+
+    `remote_url` y los dos de CI se piden AQUÍ aunque nadie los use todavía —la
+    parte B clona con el primero, F10 lee el CI con los otros— porque matrix no
+    tiene ningún `update`: lo que no se pida al alta no se puede añadir después
+    sin inventar una escritura nueva. %>
+<details class="mt-2.5 border border-terminal-border bg-terminal-sunken">
+  <summary class="cursor-pointer px-3.5 py-2 text-t11 text-terminal-fg-4
+                  hover:text-antique-gold">
+    + registrar un repositorio
+  </summary>
+
+  <%= form_with url: client_repositories_path(client), class: "px-3.5 pb-3.5 pt-1" do |form| %>
+    <div class="grid grid-cols-2 gap-px">
+      <%= form.text_field :name, required: true, placeholder: "nombre · booking-core",
+                          pattern: "[a-z0-9]+([-_.][a-z0-9]+)*",
+                          title: "minúsculas, números y - _ . como separadores",
+                          class: "terminal-field focus:terminal-field-focus" %>
+      <%= form.text_field :default_branch, value: "main", required: true,
+                          placeholder: "rama por defecto",
+                          class: "terminal-field focus:terminal-field-focus" %>
+    </div>
+
+    <%= form.url_field :remote_url, placeholder: "git remoto · git@github.com:cliente/repo.git",
+                       class: "terminal-field focus:terminal-field-focus mt-px w-full" %>
+
+    <div class="mt-3 flex items-baseline gap-2">
+      <span class="eyebrow text-terminal-muted">verificación automática</span>
+      <span class="text-t10 text-terminal-fg-3">
+        opcional · sin esto la ficha dirá que no admite verificación, en vez de fingir que verifica
+      </span>
+    </div>
+    <div class="grid grid-cols-2 gap-px mt-1">
+      <%= form.text_field :ci_provider, placeholder: "proveedor de CI · github",
+                          class: "terminal-field focus:terminal-field-focus" %>
+      <%= form.text_field :ci_repo_slug, placeholder: "repo del CI · cliente/booking-core",
+                          class: "terminal-field focus:terminal-field-focus" %>
+    </div>
+
+    <%= form.submit "registrar ⏎",
+                    class: "mt-3.5 cursor-pointer border border-terminal-border-gold
+                            bg-[rgba(196,155,94,.12)] px-3 py-1.5 text-t11
+                            text-antique-gold hover:bg-[rgba(196,155,94,.2)]" %>
+  <% end %>
+</details>

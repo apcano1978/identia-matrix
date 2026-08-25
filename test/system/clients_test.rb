@@ -50,12 +50,28 @@ class ClientsTest < ApplicationSystemTestCase
     assert_text "2 de 5 evolutivos tocan más de un repositorio"
   end
 
-  test "la ficha avisa de que no se edita aqui" do
+  # Este test afirmaba, hasta P1, que la pantalla no tenía ni un formulario.
+  # Ahora tiene dos —el alta de evolutivo y la de repositorio— y lo que sigue
+  # afirmando es la distinción que de verdad importa: **el cliente y sus
+  # proyectos siguen siendo de platform** y matrix no los toca; los evolutivos y
+  # los repositorios son suyos.
+  test "la ficha distingue lo que es de platform de lo que es de matrix" do
     open_vivla
 
-    assert_text "ficha en solo lectura · se gestiona en identia-platform"
-    # El único formulario de la pantalla es el de cerrar sesión, en el rail.
-    assert_no_selector "main form"
+    assert_text "el cliente y sus proyectos se gestionan en identia-platform"
+    assert_text "los evolutivos y los repositorios son de matrix"
+  end
+
+  test "y no ofrece editar el cliente por ningun sitio" do
+    open_vivla
+
+    # Los dos formularios de la pantalla son altas de lo que es de matrix.
+    # Ninguno apunta a la proyección, que es de solo lectura.
+    acciones = all("main form", visible: :all).map { |f| f[:action] }
+
+    assert_equal 2, acciones.size
+    assert acciones.all? { |a| a.end_with?("/initiatives", "/repositories") },
+           "hay un formulario que no es un alta de matrix: #{acciones.inspect}"
   end
 
   # Cero PII: de la persona de contacto viaja el cargo, nunca el nombre.
