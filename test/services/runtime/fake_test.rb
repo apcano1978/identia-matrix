@@ -45,14 +45,40 @@ class Runtime::FakeTest < ActiveSupport::TestCase
   end
 
   test "el runtime se elige con la variable de entorno" do
-    assert_equal Runtime::Fake, Runtime.implementation
+    assert_equal Runtime::Fake, Runtime.implementation("tank")
 
     with_env("MATRIX_AGENT_RUNTIME" => "brain") do
-      assert_equal Runtime::Brain, Runtime.implementation
+      assert_equal Runtime::Brain, Runtime.implementation("tank")
     end
 
     with_env("MATRIX_AGENT_RUNTIME" => "inventado") do
-      assert_raises(ArgumentError) { Runtime.implementation }
+      assert_raises(ArgumentError) { Runtime.implementation("tank") }
+    end
+  end
+
+  # Criterio 10 de F9: los agentes que aún no se han sustituido siguen
+  # funcionando en falso, y el pipeline no distingue. Es lo que permite hacer la
+  # fase de uno en uno en vez de en un salto.
+  test "con el runtime real, los agentes que aun no existen siguen en falso" do
+    with_env("MATRIX_AGENT_RUNTIME" => "brain") do
+      assert_equal Runtime::Brain, Runtime.implementation("tank"),
+                   "TANK ya existe en brain"
+
+      (Pipeline::STAGE_WORK.values.map { |w| w[:agent] }.uniq - Runtime::BRAIN_AGENTS).each do |agent|
+        assert_equal Runtime::Fake, Runtime.implementation(agent),
+                     "#{agent} todavía no existe en brain: pedirlo sería un 404"
+      end
+    end
+  end
+
+  test "un agente en falso produce su artefacto aunque el runtime sea `brain`" do
+    # El pipeline no puede notar la diferencia: si la notara, la cola dejaría de
+    # avanzar en cuanto la cabeza se volviera real.
+    with_env("MATRIX_AGENT_RUNTIME" => "brain") do
+      result = Runtime.run(agent_run(agent: :morfeo, purpose: :review))
+
+      assert_equal "morfeo", result.agent
+      assert_predicate result.body, :present?
     end
   end
 

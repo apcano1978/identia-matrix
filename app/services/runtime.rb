@@ -27,22 +27,39 @@ module Runtime
   class Unreachable < Error; end
   class Unexpected < Error; end
 
+  # Los agentes que YA existen en identia-brain. Crece de uno en uno, en orden de
+  # pipeline: TANK → NEO → SERAPH → MORFEO → TRINITY → LINK.
+  #
+  # Sin esta lista, `MATRIX_AGENT_RUNTIME=brain` sería todo o nada, y F9 no se
+  # podría hacer por partes: en cuanto TANK fuera real, lanzar NEO pediría al
+  # brain una clave que todavía no tiene registrada y devolvería un 404. La
+  # gracia de sustituirlos uno a uno es que la cabeza del flujo sea real y la
+  # cola siga siendo de fixture **sin que el pipeline lo note**.
+  #
+  # Que un agente esté aquí y no en el brain lo detecta el test de contrato
+  # (`test/services/runtime/brain_contract_test.rb`), no un 404 en producción.
+  BRAIN_AGENTS = %w[tank].freeze
+
   module_function
 
-  def implementation
+  # El runtime de UN agente. `brain` es el techo, no la orden: pide el real solo
+  # para los que existen y deja en falso al resto.
+  def implementation(agent = nil)
     case ENV.fetch("MATRIX_AGENT_RUNTIME", "fake")
     when "fake" then Fake
-    when "brain" then Brain
+    when "brain" then real?(agent) ? Brain : Fake
     else
       raise ArgumentError, "MATRIX_AGENT_RUNTIME debe ser `fake` o `brain`"
     end
   end
 
+  def real?(agent) = BRAIN_AGENTS.include?(agent.to_s)
+
   # El único punto de entrada. Construye la petición, la valida, ejecuta y
   # valida la respuesta — las dos validaciones siempre, con los dos runtimes.
   def run(agent_run)
     request = Request.for(agent_run)
-    payload = implementation.run(request)
+    payload = implementation(agent_run.agent).run(request)
 
     Contracts.validate!(:matrix_brain_agent_result, payload)
     build_result(payload)

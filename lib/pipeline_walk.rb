@@ -138,6 +138,10 @@ module PipelineWalk
         run.update!(status: :ok, finished_at: Time.current,
                     input_tokens: result.input_tokens,
                     output_tokens: result.output_tokens,
+                    # Con un agente real esto ya no es cero, y el pie del event
+                    # stream lo suma: un recorrido que no lo registrara haría que
+                    # el coste del día se quedara corto sin decir por qué.
+                    cost_cents: cost_cents(result),
                     brain_request_id: result.request_id)
         store(initiative, run, result, pass)
 
@@ -453,6 +457,11 @@ module PipelineWalk
           initiative: initiative, platform_client: @client,
           author_user: signer, body: body,
           code: HumanNote.code_for(signer, client: @client))
+      end
+
+      def cost_cents(result)
+        usd = result.usage["cost_usd"]
+        usd.present? ? (usd.to_f * 100).ceil : nil
       end
 
       def latest_dod(initiative)
