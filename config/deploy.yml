@@ -57,12 +57,18 @@ env:
     DATABASE_NAME: identia_matrix_production
     SIDEKIQ_USERNAME: admin
 
-    # Los tres interruptores de fase. El de autenticación ya está girado:
+    # Los tres interruptores de fase.
     #   MATRIX_AUTH_SOURCE     → `platform` ✅ F7
-    #   MATRIX_PLATFORM_SOURCE → `platform` en F8
-    #   MATRIX_AGENT_RUNTIME   → `brain` en F9
+    #   MATRIX_PLATFORM_SOURCE → `platform` ✅ F8 (se olvidó al cerrarla)
+    #   MATRIX_AGENT_RUNTIME   → `brain`    ⏳ F9, cuando estén los seis agentes
+    #
+    # ⚠ `MATRIX_AGENT_RUNTIME` se queda en `fake` a propósito. Hoy solo TANK
+    # existe en el brain, y aunque `Runtime::BRAIN_AGENTS` deja al resto en falso
+    # —así que `brain` sería seguro—, girarlo exige que el brain de producción
+    # tenga ya la credencial de matrix en su `AI_SERVICE_API_KEYS`. Sin ella,
+    # cada ejecución de TANK responde 401. Ver DEPLOY-CHECKLIST.
     MATRIX_AGENT_RUNTIME: fake
-    MATRIX_PLATFORM_SOURCE: fake
+    MATRIX_PLATFORM_SOURCE: platform
 
     # `fake` NO es una opción aquí: Auth::FakeSource llama a
     # `refuse_in_production!` en cada autenticación, así que con `fake` puesto
@@ -74,7 +80,9 @@ env:
     # tiene el brain. En desarrollo es host.docker.internal:3000.
     PLATFORM_API_URL: http://172.17.0.1:3000
 
-    # AI_SERVICE_URL: http://172.17.0.1:8000   # F9, igual que en platform
+    # El brain, por el bridge de Docker — la misma forma que usa platform. En
+    # desarrollo es host.docker.internal:8000.
+    AI_SERVICE_URL: http://172.17.0.1:8000
 
   secret:
     - RAILS_MASTER_KEY
@@ -94,6 +102,20 @@ env:
     # (Aquí vivía MATRIX_FAKE_AUTH_PASSWORD. Ya no: la contraseña compartida
     # era la deuda que cerró F7, y en producción nunca llegó a usarse.)
     - PLATFORM_API_TOKEN_AUTH
+
+    # Los otros dos sujetos, cada uno con sus scopes y ninguno más. Si el de la
+    # sincronización se filtrara, no debe servir para probar contraseñas.
+    #   matrix:system → la proyección de clientes, proyectos y usuarios
+    #   matrix:tank   → las fuentes que lee TANK al construir el contexto
+    # Los emite platform con `rake "matrix:issue_token[matrix:system]"`.
+    - PLATFORM_API_TOKEN_SYSTEM
+    - PLATFORM_API_TOKEN_TANK
+
+    # La credencial de matrix contra el brain (F9). NO es la de platform: cada
+    # consumidor tiene la suya, y de ahí saca el ledger quién gastó qué. Tiene
+    # que estar declarada también en el `AI_SERVICE_API_KEYS` del brain, o cada
+    # llamada a un agente responde 401.
+    - AI_SERVICE_API_KEY
 
     # Obligatorias en producción por config/initializers/active_record_encryption.rb.
     # Se generan con `bin/rails db:encryption:init`.
