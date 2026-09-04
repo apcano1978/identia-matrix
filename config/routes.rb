@@ -128,7 +128,13 @@ Rails.application.routes.draw do
                              constraints: { name: %r{[^/]+} }
   end
 
-  resources :agents, only: %i[index show], param: :key
+  resources :agents, only: %i[index show], param: :key do
+    # Editar la configuración (P2). Es el ÚNICO `update` de matrix, y su porqué
+    # está entero en `AgentConfigsController`: un ajuste no es un acto, y la
+    # procedencia que sí importa —con qué configuración corrió cada agente— se
+    # guarda en `agent_runs.config`, no versionando esta tabla.
+    resource :config, only: :update, controller: "agent_configs"
+  end
 
   # El enlace profundo desde identia-platform: `/p/proj-2291` resuelve la
   # referencia de proyecto a sus evolutivos y sus artefactos publicados.

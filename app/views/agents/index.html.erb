@@ -36,12 +36,9 @@
       </span>
     </div>
 
-    <%# SOLO LECTURA. Editar es F9: hoy no hay agentes de verdad a los que
-        configurar, y un formulario que guarda algo que nadie lee es peor que no
-        tenerlo. Ni un input en toda la pantalla. %>
-    <div class="mt-2 text-t105 text-terminal-disabled">
-      configuración en solo lectura · se edita en F9, cuando los agentes existan
-    </div>
+    <%# Editable desde F9 (P2). F3 la dejó en solo lectura a propósito: un
+        formulario que guarda algo que nadie lee es peor que no tenerlo, y hasta
+        que hubo agentes de verdad nadie leía esto. %>
 
     <% if @effective.any? %>
       <div class="grid grid-cols-2 gap-x-[34px] gap-y-[26px] mt-[22px]">
@@ -55,6 +52,9 @@
         <%= @agent.upcase %> todavía no tiene configuración sembrada.
       </p>
     <% end %>
+
+    <%= render "agents/editor", agent: @agent, client: @client,
+               global: @global, override: @override %>
   </div>
 
   <%= render "agents/panel", agent: @agent, client: @client, global: @global,

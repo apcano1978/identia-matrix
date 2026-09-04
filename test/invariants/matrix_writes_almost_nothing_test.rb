@@ -69,7 +69,23 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     # No hay `agent_runs#destroy` ni `#update` a propósito. Una ejecución que
     # salió mal no se borra: se relanza, y las dos quedan. Borrarla escondería
     # el coste que ya se pagó y el motivo por el que hubo que repetirla.
-    "agent_runs#create"
+    "agent_runs#create",
+
+    # ── El ÚNICO `update` del sistema (F9 · P2) ─────────────────────────────
+    #
+    # Y merece la conversación que esta lista existe para provocar. Se sopesó
+    # versionar `agent_configs` para conservar la propiedad, y se decidió que
+    # no: un ajuste de agente no es un hecho que ocurrió —es cómo se trabaja
+    # hoy—, y su valor anterior no es historia que nadie vaya a citar.
+    #
+    # Lo que SÍ había que salvar es la procedencia: si mañana cambia el umbral
+    # de deriva, el artefacto que MORFEO aprobó ayer no puede quedar
+    # inexplicable, porque es inmutable y no se puede anotar después. Eso se
+    # resolvió en el sitio correcto —`agent_runs.config` guarda la
+    # configuración efectiva de cada ejecución—, que es donde vive el hecho.
+    #
+    # Sigue sin haber ningún `destroy`.
+    "agent_configs#update"
   ].freeze
 
   test "la aplicación solo escribe donde está declarado" do

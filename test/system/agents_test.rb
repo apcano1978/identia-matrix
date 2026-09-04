@@ -13,13 +13,65 @@ class AgentsTest < ApplicationSystemTestCase
     end
   end
 
-  # F3 enseña; F9 edita. Un formulario que guarda algo que nadie lee todavía es
-  # peor que no tenerlo.
-  test "la pantalla es de solo lectura: ni un campo" do
-    assert_text "configuración en solo lectura · se edita en F9"
-    assert_no_selector "main input"
-    assert_no_selector "main select"
-    assert_no_selector "main button[type=submit]"
+  # F3 la dejó en solo lectura y F9 la abre (P2): hasta que hubo agentes de
+  # verdad, un formulario que guarda algo que nadie lee era peor que no tenerlo.
+  test "la configuracion global se puede editar" do
+    fill_in "settings", with: '{"contexto":{"profundidad":"solo el repositorio"}}'
+    click_on "guardar"
+
+    assert_text "Configuración de TANK global guardada"
+    assert_equal({ "contexto" => { "profundidad" => "solo el repositorio" } },
+                 AgentConfig.global.find_by(agent: "tank").settings)
+  end
+
+  test "un JSON roto no guarda nada y lo dice" do
+    antes = AgentConfig.global.find_by(agent: "tank").settings
+
+    fill_in "settings", with: "{esto no es json"
+    click_on "guardar"
+
+    assert_text "no es un JSON válido"
+    assert_equal antes, AgentConfig.global.find_by(agent: "tank").settings
+  end
+
+  test "queda constancia de quien lo cambio" do
+    fill_in "settings", with: '{"contexto":{"indexa_adr":false}}'
+    click_on "guardar"
+    assert_text "guardada"
+
+    assert_equal Platform::User.find_by!(platform_id: 1),
+                 AgentConfig.global.find_by(agent: "tank").updated_by_user
+  end
+
+  test "un cliente no puede sobrescribir un ajuste bloqueado" do
+    # `morfeo_loop.max_returns` sostiene un invariante: un cliente que se diera
+    # dos vueltas más estaría comprando otra política, no ajustando la suya.
+    open_agent "neo"
+    click_on "vivla"
+
+    assert_text "No admiten override"
+    fill_in "settings", with: '{"morfeo_loop":{"max_returns":9},"model":{"spec_length":"verbose"}}'
+    click_on "guardar"
+    assert_text "guardada"
+
+    override = AgentConfig.find_by(agent: "neo",
+                                   platform_client_id: Platform::Client.find_by!(slug: "vivla").id)
+
+    assert_nil override.settings["morfeo_loop"],
+               "la clave bloqueada se poda; el resto del cambio se guarda"
+    assert_equal "verbose", override.settings.dig("model", "spec_length")
+  end
+
+  test "el mismo ajuste SI se puede cambiar en la global" do
+    # Bloquearlo también arriba dejaría al sistema sin forma de cambiarlo nunca.
+    open_agent "neo"
+
+    fill_in "settings", with: '{"morfeo_loop":{"max_returns":3}}'
+    click_on "guardar"
+    assert_text "guardada"
+
+    assert_equal 3, AgentConfig.global.find_by(agent: "neo")
+                               .settings.dig("morfeo_loop", "max_returns")
   end
 
   test "las secciones van en orden de trabajo, no en el de postgres" do

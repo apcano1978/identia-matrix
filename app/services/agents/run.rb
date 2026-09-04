@@ -64,11 +64,19 @@ module Agents
     private
       attr_reader :initiative, :agent, :purpose
 
+      # `config` guarda la configuración EFECTIVA con la que corre esta
+      # ejecución. Desde P2 los ajustes se pueden cambiar, y sin esto un
+      # artefacto publicado bajo una política quedaría inexplicable en cuanto la
+      # política cambiara — y no se puede anotar después, porque es inmutable.
+      # `agent_configs` contesta cómo se trabaja hoy; esta columna, cómo se hizo
+      # esto.
       def start!
         AgentRun.create!(
           initiative: initiative, agent: agent, purpose: purpose,
           iteration: initiative.iteration,
           qa_cycle: initiative.qa_cycles_consumed,
+          config: AgentConfig.effective_for(
+            agent: agent, client: initiative.platform_client_id),
           code: next_code, status: :running, started_at: Time.current)
       rescue ActiveRecord::RecordNotUnique
         raise AlreadyRunning,
