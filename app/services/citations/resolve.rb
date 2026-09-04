@@ -90,12 +90,23 @@ module Citations
         # `2026-05-08` y autor `ap`. El código de la nota los junta. Buscar por
         # el locator a secas —que es lo que hacía el resolvedor del seed— no
         # encuentra nunca nada; no se veía porque el seed no siembra notas.
+        # Con autor, el código se compone y se busca EXACTO —incluido el ordinal
+        # de P8, si lo trae—. Sin autor no hay más remedio que el LIKE, y ahí
+        # está el porqué de que el ordinal vaya anidado dentro del autor: si
+        # fuera un sufijo suelto, `note/2026-08-17-antonio` parsearía sin autor
+        # y esta rama devolvería la primera nota de ese día, en silencio, dentro
+        # de un artefacto que nadie puede reescribir. Anidado, esa cita no
+        # parsea y no llega hasta aquí.
         def note(reference, client_id)
           scope = HumanNote.where(platform_client_id: client_id)
 
-          return scope.find_by(code: "#{reference.locator}-#{reference.author}") if reference.author.present?
+          return scope.find_by(code: code_for(reference)) if reference.author.present?
 
           scope.where("code LIKE ?", "#{reference.locator}-%").order(:id).first
+        end
+
+        def code_for(reference)
+          [ reference.locator, reference.author, reference.note_slug ].compact.join("-")
         end
 
         # Una cita derivada apunta a un artefacto por su `code`, que no lleva

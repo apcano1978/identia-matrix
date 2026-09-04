@@ -452,7 +452,7 @@ module PipelineWalk
         HumanNote.create!(
           initiative: initiative, platform_client: @client,
           author_user: signer, body: body,
-          code: HumanNote.code_for(signer))
+          code: HumanNote.code_for(signer, client: @client))
       end
 
       def latest_dod(initiative)

@@ -3,98 +3,195 @@
   "$id": "https://identiaconsulting.com/contracts/matrix-brain/agent_result.v1.json",
   "title": "brain → matrix · resultado de una ejecución de agente",
   "description": "Respuesta de POST /v1/agents/{key}/run. El brain devuelve CONTENIDO; matrix lo persiste y lo registra. El brain no escribe en el bucket ni guarda estado de pipeline: un solo escritor.",
-
   "type": "object",
-  "required": ["contract_version", "agent", "body", "usage"],
+  "required": [
+    "contract_version",
+    "agent",
+    "body",
+    "usage"
+  ],
   "additionalProperties": false,
-
   "properties": {
-    "contract_version": { "const": 1 },
-
-    "agent": {
-      "enum": ["tank", "neo", "seraph", "morfeo", "trinity", "link"]
+    "contract_version": {
+      "const": 1
     },
-
+    "agent": {
+      "enum": [
+        "tank",
+        "neo",
+        "seraph",
+        "morfeo",
+        "trinity",
+        "link"
+      ]
+    },
     "purpose": {
-      "enum": ["context", "spec", "dod_pass", "review", "package", "verification", "closure"],
+      "enum": [
+        "context",
+        "spec",
+        "dod_pass",
+        "review",
+        "package",
+        "verification",
+        "closure"
+      ],
       "description": "SERAPH interviene dos veces por ciclo con propósitos distintos: dod_pass antes de ejecutar, verification después."
     },
-
     "body": {
       "type": "string",
       "description": "El artefacto en markdown, SIN front-matter. El front-matter lo compone matrix al persistir, porque solo matrix conoce la clave y el checksum definitivos."
     },
-
     "citations": {
       "type": "array",
       "description": "Las citas que el agente afirma haber usado. Matrix vuelve a parsear el cuerpo de todos modos: esta lista es un contraste, no la fuente de verdad. Una discrepancia entre ambas es una señal de que el agente inventó una referencia.\n\nEl patrón NO se escribe a mano: se genera desde Citations::Grammar::SCHEMA_PATTERN, y un test comprueba que este fichero y la gramática no se han separado. Escrito a mano, este campo aceptaba código sin calificador de repositorio y tipos de fuente inventados — exactamente lo que el parser rechaza. Para regenerarlo: bin/rails matrix:sync_contracts",
       "default": [],
       "items": {
         "type": "string",
-        "pattern": "^\\[src:(?:(?:code|verify)/(?:[a-z0-9]+(?:-[a-z0-9]+)*):(?:[\\w./-]+)(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?(?:@(?:[0-9a-f]{7}))?|(?:meet)/(?:\\d{4}-\\d{2}-\\d{2})(?:-(?:[a-z0-9]+(?:-[a-z0-9]+)*))?(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?(?:@(?:[0-2]\\d:[0-5]\\d))?|(?:note)/(?:\\d{4}-\\d{2}-\\d{2})(?:-(?:[a-z]{2,4}))?(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?|(?:doc|spec|dod|pkg|close)/(?:[a-z0-9]+(?:[-.][a-z0-9]+)*)(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?)\\]$"
+        "pattern": "^\\[src:(?:(?:code|verify)/(?:[a-z0-9]+(?:-[a-z0-9]+)*):(?:[\\w./-]+)(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?(?:@(?:[0-9a-f]{7}))?|(?:meet)/(?:\\d{4}-\\d{2}-\\d{2})(?:-(?:[a-z0-9]+(?:-[a-z0-9]+)*))?(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?(?:@(?:[0-2]\\d:[0-5]\\d))?|(?:note)/(?:\\d{4}-\\d{2}-\\d{2})(?:-(?:[a-z]{2,4})(?:-(?:[a-z0-9]+(?:-[a-z0-9]+)*))?)?(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?|(?:doc|spec|dod|pkg|close)/(?:[a-z0-9]+(?:[-.][a-z0-9]+)*)(?:#(?:L\\d+|p\\d+|§\\d+|c\\d+|deploy))?)\\]$"
       }
     },
-
     "events": {
       "type": "array",
       "description": "Lo que el agente quiere que aparezca en el event stream mientras trabaja.",
       "default": [],
       "items": {
         "type": "object",
-        "required": ["kind", "message"],
+        "required": [
+          "kind",
+          "message"
+        ],
         "additionalProperties": false,
         "properties": {
-          "kind": { "enum": ["progress", "tool", "warning", "note"] },
-          "message": { "type": "string" },
-          "at": { "type": "string", "format": "date-time" },
-          "payload": { "type": "object", "additionalProperties": true }
+          "kind": {
+            "enum": [
+              "progress",
+              "tool",
+              "warning",
+              "note"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
         }
       }
     },
-
     "findings": {
       "type": "array",
       "description": "Hallazgos estructurados que matrix convierte en registros propios. MORFEO devuelve bloqueantes; SERAPH, veredictos. Ninguno CORRIGE nada: señalan.",
       "default": [],
       "items": {
         "type": "object",
-        "required": ["kind", "statement"],
+        "required": [
+          "kind",
+          "statement"
+        ],
         "additionalProperties": false,
         "properties": {
           "kind": {
-            "enum": ["blocking", "advisory", "verdict", "deploy_step", "criterion", "guide_step"]
+            "enum": [
+              "blocking",
+              "advisory",
+              "verdict",
+              "deploy_step",
+              "criterion",
+              "guide_step"
+            ]
           },
           "reference": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "El criterio, paso o repositorio al que se refiere: c3, paso 04, booking-core."
           },
-          "statement": { "type": "string" },
+          "statement": {
+            "type": "string"
+          },
           "verdict": {
-            "enum": ["met", "unmet", "inconclusive", "unsupported", null],
+            "enum": [
+              "met",
+              "unmet",
+              "inconclusive",
+              "unsupported",
+              null
+            ],
             "description": "Los cuatro veredictos: ✓ ✕ ? ⊗. Solo unmet consume ciclo de QA. Confundir inconclusive o unsupported con unmet haría que NEO escriba specs para arreglar bugs inexistentes."
           },
-          "evidence": { "type": ["string", "null"] },
-          "repository": { "type": ["string", "null"] }
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "repository": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     },
-
     "usage": {
       "type": "object",
       "description": "Consumo del run, para el registro de coste de matrix. El ledger del brain guarda una fila por LLAMADA; esto es el agregado del run.",
-      "required": ["input_tokens", "output_tokens"],
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
       "additionalProperties": false,
       "properties": {
-        "input_tokens": { "type": "integer", "minimum": 0 },
-        "output_tokens": { "type": "integer", "minimum": 0 },
-        "cache_read_tokens": { "type": "integer", "minimum": 0, "default": 0 },
-        "cache_write_tokens": { "type": "integer", "minimum": 0, "default": 0 },
-        "cost_usd": { "type": ["number", "null"], "minimum": 0 },
-        "model_used": { "type": ["string", "null"] },
-        "latency_ms": { "type": "integer", "minimum": 0 }
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_read_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "cache_write_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "cost_usd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "model_used": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
-
-    "request_id": { "type": ["string", "null"] }
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
   }
 }

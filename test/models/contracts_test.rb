@@ -158,6 +158,31 @@ class ContractsTest < ActiveSupport::TestCase
                  "el contrato y la gramática se han separado · corre bin/rails matrix:sync_contracts"
   end
 
+  test "el patron del codigo de nota del contrato se genera desde la gramatica" do
+    # El gemelo del anterior, y no lo tenía. `agent_run.v1.json` llevaba el
+    # patrón escrito a mano, así que cuando P8 añadió el ordinal el contrato se
+    # quedó con la forma vieja: el contexto de un evolutivo con dos notas del
+    # mismo autor el mismo día no habría salido de matrix, y el fallo habría
+    # aparecido lejos de aquí.
+    #
+    # Se arregla con: bin/rails matrix:sync_contracts
+    declarado = Contracts.definition(:matrix_brain_agent_run)
+                         .dig("properties", "context", "properties", "human_notes",
+                              "items", "properties", "code", "pattern")
+
+    assert_equal Citations::Grammar::NOTE_CODE_SCHEMA_PATTERN, declarado,
+                 "el contrato y la gramática se han separado · corre bin/rails matrix:sync_contracts"
+  end
+
+  test "el codigo de nota del contrato admite el ordinal y sigue rechazando un nombre entero" do
+    # Las mismas tres formas de la tabla de P8, ahora sobre el contrato de ida.
+    pattern = Regexp.new(Citations::Grammar::NOTE_CODE_SCHEMA_PATTERN)
+
+    assert_match pattern, "2026-05-08-ap"
+    assert_match pattern, "2026-08-17-ap-2"
+    refute_match pattern, "2026-08-17-antonio"
+  end
+
   test "el contrato y el parser aceptan y rechazan exactamente lo mismo" do
     # Este es el candado de verdad, y va en las DOS direcciones. La versión
     # anterior solo comprobaba que lo que el esquema acepta el parser también lo

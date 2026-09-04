@@ -38,7 +38,8 @@ module CitationCorpus
     "[src:pkg/pkg-045#deploy]"
   ].freeze
 
-  # Las dos enmiendas aditivas del 5 de agosto de 2026.
+  # Las tres enmiendas aditivas de la gramática. La tercera es la última: F9
+  # cierra la ventana en cuanto un agente produzca el primer artefacto real.
   AMENDED = [
     # `close` como noveno tipo: sin él TANK no puede citar la fuente al afirmar
     # que un evolutivo revierte una decisión de otro.
@@ -46,7 +47,12 @@ module CitationCorpus
     "[src:close/close-009]",
     # Sufijo opcional de reunión, para cuando hay más de una el mismo día.
     "[src:meet/2026-05-02-unificacion-precio@22:40]",
-    "[src:meet/2026-05-14-festivos-y-tarifa]"
+    "[src:meet/2026-05-14-festivos-y-tarifa]",
+    # Ordinal de nota (P8, 26 de agosto de 2026), para cuando hay más de una del
+    # mismo autor el mismo día. Va ANIDADO tras el autor; el porqué está abajo,
+    # en la entrada de INVALID que le corresponde.
+    "[src:note/2026-08-17-ap-2]",
+    "[src:note/2026-08-17-ap-12#p3]"
   ].freeze
 
   VALID = (MOCKUP + CANONICAL + AMENDED).freeze
@@ -71,6 +77,25 @@ module CitationCorpus
     "[src:guide/guia-pruebas-031#p03]" =>
       "una guía no es una fuente que se cite: el paso es un destino, no un origen",
     "[src:close/Close-002]" =>
-      "mayúsculas en el slug"
+      "mayúsculas en el slug",
+
+    # ⚠ ESTA ENTRADA ES LA RAZÓN DE QUE EL ORDINAL DE P8 VAYA ANIDADO DENTRO DEL
+    # AUTOR, y sin ella nadie volverá a saberlo.
+    #
+    # Se consideraron las dos formas. Con el ordinal SUELTO —fecha, luego autor
+    # opcional, luego sufijo opcional— esta cita pasaría a ser válida y
+    # parsearía como fecha `2026-08-17` SIN autor y sufijo `antonio`. Y
+    # `Citations::Resolve#note`, sin autor, cae a un LIKE sobre el locator y
+    # devuelve la primera nota de ese día: resolvería a la NOTA EQUIVOCADA, en
+    # silencio, dentro de un artefacto inmutable que nadie puede reescribir.
+    #
+    # Anidado tras el autor, `antonio` no puede ser un ordinal porque no hay
+    # autor delante que lo sostenga —el autor son dos a cuatro letras—, así que
+    # la cita sigue siendo inválida. Que es lo correcto.
+    "[src:note/2026-08-17-antonio]" =>
+      "un nombre entero no son iniciales de autor, y el ordinal solo existe " \
+      "detrás de un autor: suelto, esto parsearía sin autor y resolvería a otra nota",
+    "[src:note/2026-08-17-2]" =>
+      "ordinal sin autor: el ordinal va anidado tras las iniciales, no suelto"
   }.freeze
 end

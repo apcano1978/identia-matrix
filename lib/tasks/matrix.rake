@@ -1,20 +1,47 @@
 namespace :matrix do
-  desc "Regenera en los contratos lo que se deriva del código (hoy: el patrón de citas)"
-  task sync_contracts: :environment do
-    path = Rails.root.join("contracts/matrix-brain/agent_result.v1.json")
-    definition = JSON.parse(path.read)
-    current = definition.dig("properties", "citations", "items", "pattern")
+  # Lo que en los contratos se DERIVA de la gramática, y por tanto no se escribe
+  # a mano. Cada entrada dice qué fichero, qué ruta dentro de él y de dónde sale
+  # el valor.
+  #
+  # Son dos y las dos por el mismo motivo: escritas a mano se separaron de la
+  # gramática sin que nadie se enterase. El patrón de citas aceptaba código sin
+  # calificador de repositorio; el del código de nota se quedó sin el ordinal de
+  # P8 y habría impedido que saliera de matrix el contexto de un evolutivo con
+  # dos notas del mismo autor el mismo día.
+  DERIVED_FROM_GRAMMAR = [
+    { file: "agent_result.v1.json",
+      path: %w[properties citations items pattern],
+      what: "el patrón de citas",
+      value: -> { Citations::Grammar::SCHEMA_PATTERN } },
+    { file: "agent_run.v1.json",
+      path: %w[properties context properties human_notes items properties code pattern],
+      what: "el patrón del código de nota",
+      value: -> { Citations::Grammar::NOTE_CODE_SCHEMA_PATTERN } }
+  ].freeze
 
-    if current == Citations::Grammar::SCHEMA_PATTERN
-      puts "El contrato ya está al día."
+  desc "Regenera en los contratos lo que se deriva de la gramática de citas"
+  task sync_contracts: :environment do
+    changed = DERIVED_FROM_GRAMMAR.filter_map do |rule|
+      path = Rails.root.join("contracts/matrix-brain", rule[:file])
+      definition = JSON.parse(path.read)
+      expected = rule[:value].call
+
+      next if definition.dig(*rule[:path]) == expected
+
+      *parents, leaf = rule[:path]
+      definition.dig(*parents)[leaf] = expected
+      path.write("#{JSON.pretty_generate(definition)}\n")
+
+      "#{rule[:what]} en #{path.relative_path_from(Rails.root)}"
+    end
+
+    if changed.empty?
+      puts "Los contratos ya están al día."
       next
     end
 
-    definition["properties"]["citations"]["items"]["pattern"] = Citations::Grammar::SCHEMA_PATTERN
-    path.write("#{JSON.pretty_generate(definition)}\n")
-
-    puts "Actualizado el patrón de citas en #{path.relative_path_from(Rails.root)}."
-    puts "Revisa el diff: acabas de cambiar lo que el brain puede devolver."
+    changed.each { |line| puts "Actualizado #{line}." }
+    puts "Revisa el diff: acabas de cambiar lo que se puede intercambiar con el brain."
   end
 
   desc "Reconstruye initiatives.current_stage desde las stage_entries"

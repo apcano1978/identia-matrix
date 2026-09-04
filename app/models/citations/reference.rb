@@ -6,7 +6,8 @@ module Citations
   # La tabla `citations` de F2 se construirá a partir de esto, pero el parseo en
   # sí no necesita base de datos — y así se puede validar la gramática desde un
   # test unitario, sin cargar el dominio entero.
-  Reference = Data.define(:raw, :kind, :repository, :locator, :anchor, :commit_sha, :clock, :author, :meeting_slug) do
+  Reference = Data.define(:raw, :kind, :repository, :locator, :anchor, :commit_sha, :clock,
+                          :author, :meeting_slug, :note_slug) do
     def level = Grammar.level(kind)
 
     def origin?  = Grammar.origin?(kind)

@@ -62,16 +62,19 @@ module Citations
         commit_sha: capture(match, names, "sha"),
         clock: capture(match, names, "clock"),
         author: capture(match, names, "author"),
-        meeting_slug: capture(match, names, "meeting_slug")
+        meeting_slug: capture(match, names, "meeting_slug"),
+        note_slug: capture(match, names, "note_slug")
       )
     end
 
     # El locator es lo que identifica la fuente dentro de su tipo: la ruta del
     # fichero, el slug del documento o la fecha de la reunión.
     #
-    # El sufijo de reunión NO entra aquí: es un desambiguador, no la identidad.
-    # Una cita de reunión resuelve por fecha, y el sufijo solo elige entre las
-    # de ese día. Por eso el grupo se llama `meeting_slug` y no `slug`.
+    # Los sufijos NO entran aquí: son desambiguadores, no la identidad. Una
+    # cita de reunión o de nota resuelve por fecha, y el sufijo solo elige entre
+    # las de ese día. Por eso los grupos se llaman `meeting_slug` y `note_slug`
+    # y no `slug`: con ese nombre, el sufijo se llevaría el locator y la
+    # resolución apuntaría al sitio equivocado sin que ningún test se enterase.
     def locator_for(match, names)
       capture(match, names, "path") ||
         capture(match, names, "slug") ||
