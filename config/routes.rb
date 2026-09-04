@@ -79,6 +79,17 @@ Rails.application.routes.draw do
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.
       resources :sources, only: :index
 
+      # Poner a trabajar al agente que toca en la etapa actual (F9).
+      #
+      # `create` y no `update`: lanzar es un acto que ocurre una vez y deja
+      # constancia —una fila en `agent_runs`—, no la edición de un campo. La
+      # propiedad de la lista blanca sigue intacta.
+      #
+      # No lleva parámetro de agente: quién trabaja en cada etapa lo dice
+      # `Pipeline::STAGE_WORK`, no quien pulsa. Dejarlo elegir permitiría pedirle
+      # a LINK que narre un cierre que todavía no ha ocurrido.
+      resource :agent_run, only: :create, path: "run"
+
       # La cadena de evidencia (F6). Cinco pantallas que se leen en este orden:
       #
       #   DoD → informe → guía → GATE 2

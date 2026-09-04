@@ -45,13 +45,13 @@ class EnumsTest < ActiveSupport::TestCase
   test "y las mismas que brain recibe en el contexto de una ejecución" do
     schema = Contracts.definition(:matrix_brain_agent_run)
 
-    assert_equal schema.dig("properties", "context", "properties", "stage", "enum"),
+    assert_equal schema.dig("properties", "config", "properties", "stage", "enum"),
                  Initiative::STAGES
   end
 
   test "los artefactos previos que viajan a brain son los mismos siete tipos" do
     schema = Contracts.definition(:matrix_brain_agent_run)
-    contract_kinds = schema.dig("properties", "context", "properties",
+    contract_kinds = schema.dig("properties", "config", "properties",
                                 "prior_artifacts", "items", "properties",
                                 "kind", "enum")
 

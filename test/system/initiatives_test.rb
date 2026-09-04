@@ -227,6 +227,44 @@ class InitiativesTest < ApplicationSystemTestCase
     assert panel.has_no_button?("resolver · gana el origen")
   end
 
+  # ── Poner a trabajar a un agente (F9) ────────────────────────────────────
+
+  test "el pipeline ofrece lanzar al agente de la etapa actual" do
+    initiative = Initiative.find_by!(code: "ev-031")
+    initiative.update_columns(current_stage: "tank", current_stage_status: "active")
+
+    open "ev-031"
+
+    assert_button "▶ poner a trabajar a TANK"
+  end
+
+  test "en una etapa que mueve una persona no hay boton que buscar" do
+    # Las dos puertas, Claude Code y la publicación esperan a alguien. Decirlo
+    # es mejor que dejar el hueco: quien no lo sabe busca un botón que no está.
+    initiative = Initiative.find_by!(code: "ev-031")
+    initiative.update_columns(current_stage: "gate_1", current_stage_status: "active")
+
+    open "ev-031"
+
+    assert_text "Esta etapa la mueve una persona"
+    assert_no_button "▶ poner a trabajar a TANK"
+  end
+
+  test "mientras un agente trabaja no se ofrece relanzarlo" do
+    # El índice único lo rechazaría de todos modos; no ofrecerlo evita proponer
+    # algo que el sistema va a negar.
+    initiative = Initiative.find_by!(code: "ev-031")
+    initiative.update_columns(current_stage: "tank", current_stage_status: "active")
+    AgentRun.create!(initiative: initiative, agent: :tank, purpose: :context,
+                     iteration: initiative.iteration, code: "tank/ev-031-context-9",
+                     status: :running, started_at: Time.current)
+
+    open "ev-031"
+
+    assert_text "está trabajando"
+    assert_no_button "▶ poner a trabajar a TANK"
+  end
+
   private
     def open(code)
       visit client_initiative_path("vivla", code)

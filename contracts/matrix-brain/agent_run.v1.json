@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://identiaconsulting.com/contracts/matrix-brain/agent_run.v1.json",
   "title": "matrix → brain · petición de ejecución de agente",
-  "description": "Cuerpo de POST /v1/agents/{key}/run. El brain recibe config y context como diccionarios opacos y sin campo de versión; este esquema es de matrix, y matrix valida antes de enviar. La compatibilidad se mantiene de forma aditiva: todo campo nuevo llega con default.",
+  "description": "Cuerpo de POST /v1/agents/{key}/run. El brain recibe config y context como diccionarios y sin campo de versión; este esquema es de matrix, y matrix valida antes de enviar. La compatibilidad se mantiene de forma aditiva: todo campo nuevo llega con default.",
   "type": "object",
   "required": [
     "contract_version",
@@ -17,9 +17,13 @@
     },
     "config": {
       "type": "object",
-      "description": "Parámetros del agente. El esquema real por agente lo publica el brain en GET /v1/agents como config_schema; aquí se declara lo común.",
+      "description": "Las ENTRADAS DEL TRABAJO: qué evolutivo, de qué cliente, con qué material y con qué parámetros de llamada. El esquema real por agente lo publica el brain en GET /v1/agents como config_schema.\n\nEl contexto del evolutivo vive AQUÍ y no en `context`, enmendando lo que F0 dejó escrito. `AgentContext` del brain es una clase compartida con Pepper, Natasha, Clark y Vision, tiene cuatro campos y NO declara extra=forbid: descarta en silencio lo que no reconoce, así que todo esto se habría tirado sin aviso. La regla que se deduce del propio brain —y que Pepper ya seguía— es que `config` son las entradas del trabajo y `context` la infraestructura de ejecución. De paso, cada config_model lo valida con Pydantic en vez de recibir un dict opaco.",
       "required": [
-        "model"
+        "model",
+        "client",
+        "initiative",
+        "stage",
+        "qa_cycle"
       ],
       "properties": {
         "model": {
@@ -37,21 +41,7 @@
             "adaptive"
           ],
           "description": "Omitirlo deja el default del modelo, que en Claude Sonnet 5 ya es adaptativo."
-        }
-      },
-      "additionalProperties": true
-    },
-    "context": {
-      "type": "object",
-      "description": "El contexto del evolutivo. OJO: AgentContext del brain tiene cuatro campos (request_id, dedupe_seen_urls, agent_token, source) y no declara extra=forbid, asi que descarta en silencio cualquier otra clave. Ampliarlo de forma aditiva es trabajo de F9.",
-      "required": [
-        "client",
-        "initiative",
-        "stage",
-        "qa_cycle"
-      ],
-      "additionalProperties": false,
-      "properties": {
+        },
         "client": {
           "type": "object",
           "description": "La frontera de cliente. Ningún agente puede leer ni citar material de otro cliente: es restricción del modelo, no filtro de la vista.",
@@ -97,6 +87,28 @@
             }
           }
         },
+        "stage": {
+          "enum": [
+            "need",
+            "tank",
+            "neo",
+            "seraph_dod",
+            "morfeo",
+            "trinity",
+            "gate_1",
+            "claude_code",
+            "seraph_verification",
+            "gate_2",
+            "link",
+            "publication"
+          ]
+        },
+        "qa_cycle": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Ciclos de QA consumidos. Solo el veredicto ✕ los consume; ? y ⊗ no."
+        },
         "repositories": {
           "type": "array",
           "description": "Los repositorios que toca el evolutivo. Un evolutivo multi-repo obliga a secuencia de despliegue y a criterio de compatibilidad.",
@@ -127,28 +139,6 @@
               }
             }
           }
-        },
-        "stage": {
-          "enum": [
-            "need",
-            "tank",
-            "neo",
-            "seraph_dod",
-            "morfeo",
-            "trinity",
-            "gate_1",
-            "claude_code",
-            "seraph_verification",
-            "gate_2",
-            "link",
-            "publication"
-          ]
-        },
-        "qa_cycle": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 2,
-          "description": "Ciclos de QA consumidos. Solo el veredicto ✕ los consume; ? y ⊗ no."
         },
         "sources": {
           "type": "array",
@@ -266,8 +256,27 @@
             }
           }
         },
+        "matrix": {
+          "type": "object",
+          "description": "Los ajustes de `agent_configs` que enseña la pantalla de AGENTES. Hablan vocabulario de matrix —umbrales, topes, política de revisión—, no del brain, y por eso viajan bajo su propia clave en vez de mezclados con los parámetros de llamada. Mezclarlos era una bomba de relojería: en cuanto una sección se llamó `model`, pisó el alias del contrato con un hash y la petición dejó de validar.",
+          "default": {},
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "description": "INFRAESTRUCTURA DE EJECUCIÓN, no material de trabajo: lo que el brain necesita para correr y correlacionar, no para pensar. Son los campos que `AgentContext` reconoce; cualquier otro lo descartaría en silencio, que es justo por lo que el contexto del evolutivo se mudó a `config`.",
+      "default": {},
+      "additionalProperties": false,
+      "properties": {
         "request_id": {
           "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "De dónde salió la ejecución, para poder enlazarla de vuelta: `initiative:ev-031`."
         }
       }
     }

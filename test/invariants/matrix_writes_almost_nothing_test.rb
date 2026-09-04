@@ -58,7 +58,18 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     # Levantar la mano sobre un paso que no se puede recorrer…
     "raised_hands#create",
     # …y que OTRA persona autorice cerrarlo sin esa prueba.
-    "exemptions#create"
+    "exemptions#create",
+
+    # ── Poner a trabajar a un agente (F9) ───────────────────────────────────
+    #
+    # También `create`, y también un acto: lanzar deja una fila en `agent_runs`
+    # con quién, cuándo, qué costó y cómo acabó. La propiedad de esta lista
+    # —ni un solo `update`— sigue intacta con doce escrituras.
+    #
+    # No hay `agent_runs#destroy` ni `#update` a propósito. Una ejecución que
+    # salió mal no se borra: se relanza, y las dos quedan. Borrarla escondería
+    # el coste que ya se pagó y el motivo por el que hubo que repetirla.
+    "agent_runs#create"
   ].freeze
 
   test "la aplicación solo escribe donde está declarado" do

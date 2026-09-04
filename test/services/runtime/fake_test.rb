@@ -56,8 +56,20 @@ class Runtime::FakeTest < ActiveSupport::TestCase
     end
   end
 
-  test "el runtime real no finge funcionar: llega en F9" do
-    assert_raises(NotImplementedError) { Runtime::Brain.run({}) }
+  # Este test decía «el runtime real no finge funcionar: llega en F9», y llegó.
+  # Lo que sigue siendo cierto —y merece guarda— es que no salga a la red sin
+  # saber a dónde: un `AI_SERVICE_URL` vacío tiene que fallar diciéndolo, no
+  # intentar hablar con nadie.
+  test "el runtime real no sale a la red sin saber a donde" do
+    with_env("AI_SERVICE_URL" => nil, "AI_SERVICE_API_KEY" => "k") do
+      error = assert_raises(Runtime::Error) { Runtime::Brain.connection("agent:matrix-tank") }
+      assert_match "AI_SERVICE_URL", error.message
+    end
+
+    with_env("AI_SERVICE_URL" => "http://brain.test", "AI_SERVICE_API_KEY" => nil) do
+      error = assert_raises(Runtime::Error) { Runtime::Brain.connection("agent:matrix-tank") }
+      assert_match "AI_SERVICE_API_KEY", error.message
+    end
   end
 
   private
@@ -73,14 +85,5 @@ class Runtime::FakeTest < ActiveSupport::TestCase
 
     def request_for(agent, purpose)
       Runtime::Request.for(agent_run(agent: agent, purpose: purpose))
-    end
-
-    def with_env(values)
-      previous = values.transform_values { |_| nil }
-                       .merge(values.keys.index_with { |k| ENV[k] })
-      values.each { |k, v| ENV[k] = v }
-      yield
-    ensure
-      previous.each { |k, v| ENV[k] = v }
     end
 end

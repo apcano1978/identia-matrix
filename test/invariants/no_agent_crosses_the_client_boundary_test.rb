@@ -22,10 +22,10 @@ class NoAgentCrossesTheClientBoundaryTest < ActiveSupport::TestCase
                            status: :running)
 
     payload = Runtime::Request.for(run).payload
-    names = payload.dig("context", "repositories").map { |r| r["name"] }
+    names = payload.dig("config", "repositories").map { |r| r["name"] }
 
     assert_equal initiative.repositories.pluck(:name).sort, names.sort
-    assert_equal "vivla", payload.dig("context", "client", "slug")
+    assert_equal "vivla", payload.dig("config", "client", "slug")
   end
 
   test "la frontera se puede comprobar con un where, sin navegar asociaciones" do

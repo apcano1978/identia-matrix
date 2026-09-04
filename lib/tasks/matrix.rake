@@ -14,7 +14,7 @@ namespace :matrix do
       what: "el patrón de citas",
       value: -> { Citations::Grammar::SCHEMA_PATTERN } },
     { file: "agent_run.v1.json",
-      path: %w[properties context properties human_notes items properties code pattern],
+      path: %w[properties config properties human_notes items properties code pattern],
       what: "el patrón del código de nota",
       value: -> { Citations::Grammar::NOTE_CODE_SCHEMA_PATTERN } }
   ].freeze

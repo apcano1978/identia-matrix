@@ -35,16 +35,20 @@ class ContractsTest < ActiveSupport::TestCase
 
   # --- matrix → brain · petición de ejecución -------------------------------
 
-  def agent_run_payload(context: {}, config: {})
+  # El material del evolutivo va en `config` desde F9: `AgentContext` del brain
+  # es una clase compartida que no declara extra=forbid y lo habría descartado
+  # en silencio. En `context` queda solo la infraestructura de ejecución.
+  def agent_run_payload(config: {}, context: {})
     {
       contract_version: 1,
-      config: { model: "chat-default" }.merge(config),
-      context: {
+      config: {
+        model: "chat-default",
         client: { slug: "vivla", platform_id: 42 },
         initiative: { code: "ev-031", title: "Unificar precios y calendario" },
         stage: "neo",
         qa_cycle: 1
-      }.merge(context)
+      }.merge(config),
+      context: context
     }
   end
 
@@ -53,7 +57,7 @@ class ContractsTest < ActiveSupport::TestCase
   end
 
   test "la peticion admite el evolutivo multi-repo completo" do
-    payload = agent_run_payload(context: {
+    payload = agent_run_payload(config: {
       repositories: [
         { name: "booking-core", pinned_sha: "4f2a9c1", indexed_files_count: 3412 },
         { name: "owner-web",    pinned_sha: "e91b330", indexed_files_count: 1880 },
@@ -77,33 +81,41 @@ class ContractsTest < ActiveSupport::TestCase
 
   test "la peticion exige la frontera de cliente" do
     payload = agent_run_payload
-    payload[:context].delete(:client)
+    payload[:config].delete(:client)
 
     refute Contracts.valid?(:matrix_brain_agent_run, payload)
   end
 
   test "la peticion rechaza un codigo de evolutivo que no sea ev-nnn" do
-    payload = agent_run_payload(context: { initiative: { code: "proj-2291", title: "x" } })
+    payload = agent_run_payload(config: { initiative: { code: "proj-2291", title: "x" } })
 
     refute Contracts.valid?(:matrix_brain_agent_run, payload)
   end
 
   test "la peticion rechaza una etapa que no esta en las doce" do
-    payload = agent_run_payload(context: { stage: "revision" })
+    payload = agent_run_payload(config: { stage: "revision" })
 
     refute Contracts.valid?(:matrix_brain_agent_run, payload)
   end
 
   test "la peticion rechaza mas de dos ciclos de QA" do
-    refute Contracts.valid?(:matrix_brain_agent_run, agent_run_payload(context: { qa_cycle: 3 }))
+    refute Contracts.valid?(:matrix_brain_agent_run, agent_run_payload(config: { qa_cycle: 3 }))
   end
 
-  test "la peticion rechaza claves de contexto no declaradas" do
+  test "la peticion rechaza claves no declaradas, en las dos mitades" do
     # El brain descarta en silencio lo que no reconoce. Este contrato existe
     # justo para que ese descarte se detecte aquí y no en producción.
-    payload = agent_run_payload(context: { presupuesto: 1000 })
+    refute Contracts.valid?(:matrix_brain_agent_run,
+                            agent_run_payload(config: { presupuesto: 1000 }))
+    refute Contracts.valid?(:matrix_brain_agent_run,
+                            agent_run_payload(context: { presupuesto: 1000 }))
+  end
 
-    refute Contracts.valid?(:matrix_brain_agent_run, payload)
+  test "en `context` solo cabe infraestructura de ejecucion" do
+    # Los cuatro campos que `AgentContext` reconoce de verdad. Meter aquí el
+    # evolutivo era escribir en un cajón sin fondo.
+    assert_valid_contract(:matrix_brain_agent_run,
+                          agent_run_payload(context: { source: "initiative:ev-031" }))
   end
 
   # --- brain → matrix · resultado -------------------------------------------
@@ -167,7 +179,7 @@ class ContractsTest < ActiveSupport::TestCase
     #
     # Se arregla con: bin/rails matrix:sync_contracts
     declarado = Contracts.definition(:matrix_brain_agent_run)
-                         .dig("properties", "context", "properties", "human_notes",
+                         .dig("properties", "config", "properties", "human_notes",
                               "items", "properties", "code", "pattern")
 
     assert_equal Citations::Grammar::NOTE_CODE_SCHEMA_PATTERN, declarado,

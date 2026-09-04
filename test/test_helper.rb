@@ -21,6 +21,8 @@ module ActiveSupport
     }.then { |w| w.is_a?(Symbol) ? w : w.to_i })
 
     fixtures :all
+
+    include EnvHelpers
   end
 end
 

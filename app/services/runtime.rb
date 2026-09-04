@@ -21,6 +21,11 @@ module Runtime
 
   class Error < StandardError; end
   class MissingFixture < Error; end
+  # «El brain no contesta» y «el brain contestó algo que no vale» son dos
+  # averías distintas, las arregla gente distinta, y llegan separadas para que
+  # la pantalla pueda decir cuál es.
+  class Unreachable < Error; end
+  class Unexpected < Error; end
 
   module_function
 

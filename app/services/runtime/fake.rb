@@ -30,12 +30,16 @@ module Runtime::Fake
   # El fixture habla de ev-031 y de vivla porque son los de la maqueta. Cuando
   # se ejecuta sobre otro evolutivo, el cuerpo lo dice: un dossier que afirma
   # ser de otro cliente sería material para confundirse en una demo.
+  # Del `config`, que es donde vive el contexto del evolutivo desde F9. Antes
+  # estaba en `context`, y ese cambio se notó AQUÍ primero: el cuerpo salía con
+  # el cliente y el evolutivo en blanco, que es exactamente el fallo que este
+  # fixture existe para no tener en una demo.
   def interpolate(body, request)
-    context = request.payload["context"]
+    config = request.payload["config"]
 
-    body.gsub("{{initiative}}", context.dig("initiative", "code").to_s)
-        .gsub("{{title}}", context.dig("initiative", "title").to_s)
-        .gsub("{{client}}", context.dig("client", "slug").to_s)
+    body.gsub("{{initiative}}", config.dig("initiative", "code").to_s)
+        .gsub("{{title}}", config.dig("initiative", "title").to_s)
+        .gsub("{{client}}", config.dig("client", "slug").to_s)
   end
 
   def pause

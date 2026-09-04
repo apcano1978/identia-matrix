@@ -1,0 +1,32 @@
+<%# Poner a trabajar al agente de la etapa actual (F9).
+    Vive al pie del PIPELINE porque es esa columna la que dice en qué etapa
+    está el evolutivo, y lanzar es exactamente moverlo de una a la siguiente. %>
+<% work = Pipeline::STAGE_WORK[initiative.current_stage] %>
+<% live = initiative.agent_runs.live.first %>
+
+<div class="flex-none px-3 py-2.5 border-t border-terminal-border">
+  <% if live %>
+    <%# No hay botón mientras hay una ejecución viva, y tampoco haría falta: el
+        índice único la rechazaría. Que no aparezca evita ofrecer algo que el
+        sistema va a negar. %>
+    <p class="text-t10 text-terminal-fg-3">
+      <span class="text-antique-gold"><%= live.agent.upcase %></span>
+      está trabajando · <%= live.code %>
+    </p>
+  <% elsif work.blank? %>
+    <%# Las etapas sin agente son las que espera una PERSONA: las dos puertas,
+        la ejecución de Claude Code y la publicación. Decirlo evita que alguien
+        busque un botón que no existe. %>
+    <p class="text-t10 text-terminal-fg-4">
+      Esta etapa la mueve una persona, no un agente.
+    </p>
+  <% else %>
+    <%= button_to "▶ poner a trabajar a #{work[:agent].upcase}",
+                  client_initiative_agent_run_path(@client, initiative),
+                  class: "w-full border border-terminal-border-gold bg-antique-gold
+                          px-3 py-1.5 text-t105 text-terminal-bg" %>
+    <p class="mt-1.5 text-t10 text-terminal-fg-4">
+      Escribe <%= work[:purpose].humanize.downcase %> y lo deja publicado.
+    </p>
+  <% end %>
+</div>
