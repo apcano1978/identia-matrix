@@ -8,7 +8,7 @@ Bundler.require(*Rails.groups)
 
 module IdentiaMatrix
   class Application < Rails::Application
-    config.load_defaults 8.0
+    config.load_defaults 8.1
 
     # `runtime/fixtures` y no `fixtures`: la lista se resuelve contra `lib/`, así
     # que "fixtures" habría ignorado un `lib/fixtures` que no existe y el
