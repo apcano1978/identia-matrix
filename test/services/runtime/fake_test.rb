@@ -39,7 +39,13 @@ class Runtime::FakeTest < ActiveSupport::TestCase
   end
 
   test "sin retardo en test" do
-    elapsed = Benchmark.realtime { Runtime.run(agent_run) }
+    # `Process.clock_gettime` y no `Benchmark.realtime`: Rails 8.1 dejó de
+    # depender de la gema `benchmark`, así que la constante ya no está cargada
+    # por arte de magia. El reloj monotónico no necesita require, no lo afecta
+    # un cambio de hora del sistema, y es lo que usa el propio Rails por dentro.
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Runtime.run(agent_run)
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
     assert_operator elapsed, :<, 0.5
   end

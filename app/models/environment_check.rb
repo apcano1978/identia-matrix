@@ -51,6 +51,12 @@ class EnvironmentCheck
   # cosas distintas y se enseñan por separado: sin worker, un job encolado se
   # queda en la cola para siempre y desde la aplicación no se nota.
   def sidekiq
+    # `sidekiq/api` no se carga solo. Hasta Sidekiq 8.1.6 llegaba por otro
+    # camino y esto funcionaba de rebote; 8.1.7 —el mínimo que exige Rails
+    # 8.1— ya no lo trae, y sin el require la pantalla de diagnóstico decía
+    # `NameError` justo cuando se la consulta para saber qué está roto.
+    require "sidekiq/api"
+
     processes = Sidekiq::ProcessSet.new
     count = processes.size
 

@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "rails", "~> 8.0.4"
+gem "rails", "~> 8.1.3"
 # Pipeline de assets moderno [https://github.com/rails/propshaft]
 gem "propshaft"
 # Postgres como base de datos de Active Record
@@ -34,7 +34,11 @@ gem "pundit", "~> 2.5"
 
 # Trabajo en segundo plano. Las ejecuciones de agente son lentas (minutos) y
 # nunca deben ocurrir en el ciclo de petición.
-gem "sidekiq", "~> 8.0"
+# ⚠ 8.1.7 es el MÍNIMO con Rails 8.1, no una preferencia: 8.1 cambia la firma de
+# `stopping?` para que reciba el job (rails/rails#57472) y las versiones anteriores
+# fallan por aridad. Sidekiq lo arregló en 8.1.7 ("Forward compatibility with
+# Active Job 8.1"). Bajar de aquí rompe todos los jobs.
+gem "sidekiq", "~> 8.1.7"
 gem "sidekiq-cron", "~> 2.0"
 gem "redis", "~> 5.3"
 
