@@ -40,7 +40,7 @@ gem "pundit", "~> 2.5"
 # Active Job 8.1"). Bajar de aquí rompe todos los jobs.
 gem "sidekiq", "~> 8.1.7"
 gem "sidekiq-cron", "~> 2.0"
-gem "redis", "~> 5.3"
+gem "redis", "~> 6.0"
 
 # Cliente HTTP contra identia-brain (agentes) e identia-platform (proyección).
 gem "faraday", "~> 2.9"
