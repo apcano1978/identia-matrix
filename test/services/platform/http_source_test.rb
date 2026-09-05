@@ -38,14 +38,25 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
 
   def pagina(clave, filas) = { clave => filas, "pagination" => { "page" => 1, "pages" => 1, "count" => filas.size, "next_page" => nil } }
 
+  # Un proyecto activo por cliente: lo que hace falta para que un lead exista
+  # para matrix. Lo que se prueba en cada test es OTRA cosa —la traducción, los
+  # sujetos, el contrato—, y sin esto no llegarían ni a empezar.
+  def con_proyecto(*client_ids)
+    pagina("projects", client_ids.map.with_index(1) do |id, i|
+      { "id" => 9000 + i, "ref" => "PRJ-2026-#{9000 + i}", "nombre" => "Un proyecto",
+        "client_id" => id, "estado" => "en_curso" }
+    end)
+  end
+
   # ── La traducción ──────────────────────────────────────────────────────────
 
   test "un lead de platform se traduce a un cliente de matrix" do
-    clientes, = con_api("leads" => pagina("leads", [
-      { "id" => 42, "nombre" => "Vivla", "sector" => "proptech", "ciudad" => "Madrid",
-        "estado" => "convertido", "archived" => false,
-        "primary_contact" => { "rol" => "cto" } }
-    ])) { Platform::HttpSource.new.clients }
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Vivla", "sector" => "proptech", "ciudad" => "Madrid",
+                            "estado" => "convertido", "archived" => false,
+                            "primary_contact" => { "rol" => "cto" } }
+                        ])) { Platform::HttpSource.new.clients }
 
     assert_equal({ platform_id: 42, name: "Vivla", sector: "proptech", city: "Madrid",
                    status: "convertido", archived: false, primary_contact_role: "cto" },
@@ -55,9 +66,10 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
   test "el cliente llega con el ROL del contacto y sin su nombre" do
     # Cero PII (F7 §5). Aquí se ve por qué se cumple sin esfuerzo: no hay
     # columna donde caer.
-    clientes, = con_api("leads" => pagina("leads", [
-      { "id" => 42, "nombre" => "Vivla", "primary_contact" => { "rol" => "cto" } }
-    ])) { Platform::HttpSource.new.clients }
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Vivla", "primary_contact" => { "rol" => "cto" } }
+                        ])) { Platform::HttpSource.new.clients }
 
     assert_equal "cto", clientes.first[:primary_contact_role]
     assert_not clientes.first.key?(:primary_contact_name)
@@ -76,10 +88,50 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
     assert_equal "Unificar precios", proyecto[:name]
   end
 
+  # ── Quién existe para matrix ───────────────────────────────────────────────
+
+  test "un lead sin proyecto activo NO es un cliente de matrix" do
+    # En platform el cliente *es* el lead, así que su índice trae el embudo
+    # comercial entero. Matrix es lo contrario de un CRM: un lead en
+    # negociación no tiene nada que evolucionar.
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Con trabajo" },
+                          { "id" => 43, "nombre" => "En conversación" }
+                        ])) { Platform::HttpSource.new.clients }
+
+    assert_equal [ "Con trabajo" ], clientes.map { |c| c[:name] }
+  end
+
+  test "el criterio de activo lo pone platform: se pide `projects` sin ampliarlo" do
+    # `projects` sin `include_closed` ya devuelve solo planificado, en_curso o
+    # pausado, y sin archivar. Duplicar esa lista aquí sería tener dos
+    # definiciones de «activo» que algún día dirán cosas distintas.
+    _, llamadas = con_api("projects" => pagina("projects", []),
+                          "leads" => pagina("leads", [])) do
+      Platform::HttpSource.new.clients
+    end
+
+    proyectos = llamadas.find { |l| l[:path] == "projects" }
+    assert_not_nil proyectos, "no se preguntó qué proyectos hay"
+    assert_not proyectos[:params].key?(:include_closed),
+               "pedir los cerrados devolvería leads sin trabajo en marcha"
+  end
+
+  test "sin ningún proyecto activo no hay clientes, y no revienta" do
+    clientes, = con_api("projects" => pagina("projects", []),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Vivla" }
+                        ])) { Platform::HttpSource.new.clients }
+
+    assert_empty clientes
+  end
+
   # ── El reparto de sujetos ──────────────────────────────────────────────────
 
   test "el catálogo va con `system` y las fuentes con `tank`" do
     _, llamadas = con_api(
+      "projects" => pagina("projects", []),
       "leads" => pagina("leads", []),
       "meetings" => pagina("meetings", [])
     ) do
@@ -138,17 +190,24 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
   test "recorre todas las páginas del índice, siguiendo next_page" do
     # Para indexar un cliente entero hace falta recorrerlo completo: el tope
     # duro del otro lado son 200 filas.
+    # Los dos índices paginan: el de proyectos, que dice quién tiene trabajo, y
+    # el de leads. Que el primero se quedara corto escondería clientes.
     api = Class.new do
-      def get(_path, params = {})
-        cuerpo =
-          if params[:page] == 1
-            { "leads" => [ { "id" => 1, "nombre" => "Uno" } ],
-              "pagination" => { "page" => 1, "pages" => 2, "count" => 2, "next_page" => 2 } }
+      def get(path, params = {})
+        primera = params[:page] == 1
+        filas =
+          if path == "projects"
+            [ { "id" => primera ? 91 : 92, "ref" => "PRJ-2026-#{primera ? 91 : 92}",
+                "client_id" => primera ? 1 : 2, "nombre" => "Un proyecto" } ]
           else
-            { "leads" => [ { "id" => 2, "nombre" => "Dos" } ],
-              "pagination" => { "page" => 2, "pages" => 2, "count" => 2, "next_page" => nil } }
+            [ { "id" => primera ? 1 : 2, "nombre" => primera ? "Uno" : "Dos" } ]
           end
-        Platform::Api::Response.new(status: 200, body: cuerpo)
+
+        Platform::Api::Response.new(
+          status: 200,
+          body: { path => filas,
+                  "pagination" => { "page" => params[:page], "pages" => 2, "count" => 2,
+                                    "next_page" => primera ? 2 : nil } })
       end
     end.new
 
@@ -166,7 +225,9 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
     invalido = pagina("leads", [ { "nombre" => "Sin id" } ])
 
     assert_raises(Contracts::ValidationError) do
-      con_api("leads" => invalido) { Platform::HttpSource.new.clients }
+      con_api("projects" => con_proyecto(42), "leads" => invalido) do
+        Platform::HttpSource.new.clients
+      end
     end
   end
 

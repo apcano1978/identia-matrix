@@ -3,43 +3,48 @@
 <%# La maqueta no tiene pantalla de login, así que esta se deriva de sus tokens
     en vez de inventar un lenguaje nuevo: fondo terminal, isótipo y mono.
     No hay registro, ni «recordarme», ni recuperar contraseña — matrix no tiene
-    usuarios propios y no puede restablecer una credencial que no es suya. %>
+    usuarios propios y no puede restablecer una credencial que no es suya.
+
+    Es la ÚNICA pantalla que va un escalón por encima de la escala terminal: el
+    resto son densas porque tienen que caber enteras, y esta es una caja sola en
+    medio del monitor. Sus tamaños viven en `login-title` y `terminal-field-lg`,
+    que no toca ninguna otra pantalla. %>
 
 <div class="min-h-screen flex items-center justify-center px-6">
-  <div class="w-full max-w-[360px]">
+  <div class="w-full max-w-[460px]">
 
     <div class="flex flex-col items-center">
-      <%= render "shared/isotype", width: 30, height: 32 %>
-      <h1 class="eyebrow mt-4 text-terminal-fg">I D E N T I A - M A T R I X</h1>
-      <p class="mt-2 text-t105 text-terminal-muted">
+      <%= render "shared/isotype", width: 40, height: 43 %>
+      <h1 class="login-title mt-5 text-terminal-fg">I D E N T I A - M A T R I X</h1>
+      <p class="mt-2 text-t12 text-terminal-muted">
         acceso con tu cuenta de identia-platform
       </p>
     </div>
 
     <% if flash[:alert] %>
       <p class="mt-6 border border-terminal-border-fail bg-[rgba(201,128,112,.09)]
-                px-3 py-2 text-t11 text-glyph-fail" id="alert">
+                px-4 py-3 text-t12 text-glyph-fail" id="alert">
         <%= flash[:alert] %>
       </p>
     <% end %>
 
-    <%= form_with url: session_path, class: "mt-7 flex flex-col gap-px" do |form| %>
+    <%= form_with url: session_path, class: "mt-8 flex flex-col gap-px" do |form| %>
       <%= form.email_field :email_address, required: true, autofocus: true,
                            autocomplete: "username", placeholder: "correo",
                            value: params[:email_address],
-                           class: "terminal-field focus:terminal-field-focus" %>
+                           class: "terminal-field-lg focus:terminal-field-focus" %>
       <%= form.password_field :password, required: true, maxlength: 72,
                               autocomplete: "current-password",
                               placeholder: "contraseña",
-                              class: "terminal-field focus:terminal-field-focus" %>
+                              class: "terminal-field-lg focus:terminal-field-focus" %>
 
       <%= form.submit "entrar ⏎",
-                      class: "mt-5 w-full cursor-pointer border border-terminal-border-gold
-                              bg-[rgba(196,155,94,.12)] px-3 py-2 text-t11
+                      class: "mt-6 w-full cursor-pointer border border-terminal-border-gold
+                              bg-[rgba(196,155,94,.12)] px-4 py-3 text-t12
                               text-antique-gold hover:bg-[rgba(196,155,94,.2)]" %>
     <% end %>
 
-    <p class="mt-6 text-center text-t95 text-terminal-disabled">
+    <p class="mt-7 text-center text-t105 text-terminal-disabled">
       solo entran las cuentas <span class="text-terminal-muted">admin</span> y
       <span class="text-terminal-muted">superadmin</span> de platform
     </p>

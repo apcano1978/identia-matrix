@@ -35,8 +35,23 @@ class Platform::HttpSource
 
   def name = "platform"
 
+  # **Un cliente de matrix es un lead CON TRABAJO EN MARCHA**, no cualquier lead.
+  # En platform el cliente *es* el lead (F7 §2.3), así que su índice trae el
+  # embudo comercial entero —incluidos los perdidos—, y matrix es lo contrario
+  # de un CRM: un sistema de evolutivos sobre código que ya existe. Un lead en
+  # negociación no tiene nada que evolucionar.
+  #
+  # El criterio de «activo» NO se decide aquí: `projects` sin `include_closed`
+  # ya devuelve solo los activos —planificado, en_curso o pausado, y sin
+  # archivar—. Lo pone platform, que es de quien es el dato; duplicarlo sería
+  # tener dos definiciones que algún día dirán cosas distintas.
+  #
+  # No se acota por `@client_platform_id` a propósito: quién existe es un hecho
+  # global, y acotarlo marcaría como ausentes a todos los demás (ver `initialize`).
   def clients
-    index(:system, "leads").map do |lead|
+    con_trabajo = index(:system, "projects").filter_map { |project| project["client_id"] }.to_set
+
+    index(:system, "leads").select { |lead| con_trabajo.include?(lead["id"]) }.map do |lead|
       {
         platform_id: lead["id"],
         name: lead["nombre"],

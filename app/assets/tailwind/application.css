@@ -311,8 +311,10 @@
   color: var(--color-terminal-fg-3);
 }
 
-/* El campo de un formulario sobre fondo terminal. Solo lo usa el login: es la
-   única pantalla de la aplicación que pide algo escrito. */
+/* El campo de un formulario sobre fondo terminal. Lo usan SEIS pantallas —el
+   acceso, el alta de evolutivo, el alta de repositorio y las tres de las
+   puertas, la firma de GATE 1 incluida—, así que tocarlo no es un cambio de
+   una pantalla. Para agrandar solo el acceso está `terminal-field-lg`. */
 @utility terminal-field {
   width: 100%;
   padding: 9px 11px;
@@ -326,6 +328,31 @@
 @utility terminal-field-focus {
   outline: 0;
   border-color: var(--color-antique-gold);
+}
+
+/* =============================================================================
+   LA PANTALLA DE ACCESO
+   -----------------------------------------------------------------------------
+   Un escalón por encima del resto de la aplicación, y solo ella.
+
+   El resto de pantallas son densas a propósito: una tabla de evolutivos vive de
+   caber entera. El acceso es lo contrario —una sola caja en medio de la
+   pantalla— y con la escala de trabajo se lee diminuta justo cuando más grande
+   es el monitor, porque no hay nada alrededor que le dé medida.
+
+   Va en utilidades propias en vez de subir `terminal-field` o la escala global:
+   lo primero cambiaría las otras cinco pantallas con campos, y lo segundo las
+   tres retículas que salen medidas de la maqueta.                          ---- */
+
+@utility login-title {
+  @apply eyebrow;
+  font-size: var(--text-t115);
+}
+
+@utility terminal-field-lg {
+  @apply terminal-field;
+  padding: 12px 14px;
+  font-size: var(--text-t13);
 }
 
 /* =============================================================================
