@@ -61,7 +61,7 @@ Rails.application.configure do
   # —no hay mailers—, pero un `example.com` olvidado es de las cosas que se
   # descubren tarde y por un enlace roto.
   config.action_mailer.default_url_options = {
-    host: ENV.fetch("MATRIX_HOST", "matrix.identiaconsulting.com"), protocol: "https"
+    host: ENV.fetch("MATRIX_HOST", "matrix.identialabs.com"), protocol: "https"
   }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.

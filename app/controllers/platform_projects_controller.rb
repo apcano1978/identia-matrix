@@ -4,7 +4,7 @@
 # DoD o el cierre técnico que produjo matrix. La forma más barata que cumple eso
 # es un enlace resoluble, no una API:
 #
-#   https://matrix.identiaconsulting.com/p/proj-2291
+#   https://matrix.identialabs.com/p/proj-2291
 #
 # Platform no necesita saber nada de matrix salvo la plantilla de esa URL, que
 # construye con la `ref` que ya tiene en la mano. Y matrix no expone ninguna API

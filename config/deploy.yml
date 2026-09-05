@@ -22,12 +22,24 @@ servers:
     cmd: bundle exec sidekiq -C config/sidekiq.yml
 
 # kamal-proxy es único en el host y enruta por la cabecera Host, así que
-# convivir con identiaconsulting.com no requiere nada especial — salvo que el
-# registro A de este subdominio EXISTA antes del primer despliegue: Let's
-# Encrypt valida por HTTP-01 y sin DNS no emite el certificado.
+# convivir con identiaconsulting.com no requiere nada especial: son `service`
+# distintos y cada uno lleva su propio certificado. Desplegar esto NO reinicia el
+# proxy ni toca el certificado de platform.
+#
+# OJO con el dominio: es `identialabs.com`, otro dominio raíz. Y `*.identialabs.com`
+# tiene un comodín al parking de DonDominio, así que este subdominio YA resuelve
+# —a un 302 del parking—: hace falta un registro A específico que le gane.
+#
+# ⚠ El certificado NO se pide al desplegar, sino en el PRIMER handshake TLS. Un
+# despliegue sin DNS termina en verde y luego HTTPS falla, y cada intento consume
+# una de las cinco validaciones fallidas por hostname y hora que da Let's Encrypt.
+# Por eso el primer despliegue va con `ssl: false` (ver DEPLOY-CHECKLIST).
+#
+# Valida por HTTP-01 (puerto 80) o TLS-ALPN-01 (443): los dos tienen que estar
+# abiertos, no solo el 80.
 proxy:
   ssl: true
-  host: matrix.identiaconsulting.com
+  host: matrix.identialabs.com
   app_port: 80          # Thruster escucha en el 80 dentro del contenedor
   healthcheck:
     # `production.rb` excluye /up del force_ssl justo para esto.
@@ -76,9 +88,25 @@ env:
     # despliegue antes de F7.
     MATRIX_AUTH_SOURCE: platform
 
-    # La API interna de platform, por el bridge de Docker — la misma forma que
-    # tiene el brain. En desarrollo es host.docker.internal:3000.
-    PLATFORM_API_URL: http://172.17.0.1:3000
+    # La API interna de platform, por su dominio público.
+    #
+    # NO por el bridge, aunque el brain sí se alcance así: platform sirve por
+    # Thruster detrás de kamal-proxy y **no publica ningún puerto en el host** —
+    # comprobado desde dentro del VPS, `172.17.0.1:3000` no responde nadie—. El
+    # brain puede publicarlo porque tiene `proxy: false`; platform despliega en
+    # rolling, y dos contenedores peleándose por el mismo bind es justo lo que no
+    # se quiere durante un despliegue.
+    #
+    # Medido desde un contenedor del VPS: 200 en 0,115 s. El tráfico sale al
+    # proxy y vuelve, con el certificado que ya tiene.
+    #
+    # En desarrollo sigue siendo host.docker.internal:3000 (.env.development).
+    PLATFORM_API_URL: https://identiaconsulting.com
+
+    # El dominio propio. `production.rb` lo lee para componer URLs absolutas y
+    # tenía un default puesto a mano; declararlo aquí evita que los dos sitios
+    # digan cosas distintas el día que cambie.
+    MATRIX_HOST: matrix.identialabs.com
 
     # El brain, por el bridge de Docker — la misma forma que usa platform. En
     # desarrollo es host.docker.internal:8000.
