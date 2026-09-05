@@ -72,7 +72,7 @@ group :development, :test do
 
   # Fijado a 5.x a propósito: minitest 6 eliminó minitest/mock (Object#stub),
   # que usan los tests de runtime de agente. Mismo pin que identia-platform.
-  gem "minitest", "~> 5.25"
+  gem "minitest", "~> 6.0"
 end
 
 group :development do
