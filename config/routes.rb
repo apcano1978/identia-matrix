@@ -28,7 +28,16 @@ Rails.application.routes.draw do
     expected_username = ENV["SIDEKIQ_USERNAME"].to_s
     expected_password = ENV["SIDEKIQ_PASSWORD"].to_s
 
-    if expected_username.empty? || expected_password.empty?
+    # Al COMPILAR LA IMAGEN, `RAILS_ENV` ya es production pero los secretos de
+    # Kamal todavía no existen: solo se inyectan en runtime. Sin esta condición
+    # la guarda tumba `assets:precompile` y la imagen no llega a construirse.
+    #
+    # Es el mismo caso —y la misma condición— que
+    # `config/initializers/active_record_encryption.rb`, que ya lo contemplaba.
+    # Esta guarda se escribió después y no lo heredó.
+    building_image = ENV["SECRET_KEY_BASE_DUMMY"].present?
+
+    if !building_image && (expected_username.empty? || expected_password.empty?)
       raise "SIDEKIQ_USERNAME y SIDEKIQ_PASSWORD son obligatorias en producción: " \
             "sin ellas /sidekiq queda abierto con credenciales vacías"
     end

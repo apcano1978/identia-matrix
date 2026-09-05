@@ -26,6 +26,14 @@ module IdentiaMatrix
     # reachable directly: access stays under Pundit policies.
     config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
+    # Matrix NO procesa imágenes. Lo que adjunta es markdown —el cuerpo de un
+    # artefacto— y logs de CI; no hay una sola llamada a `.variant(` en el
+    # repositorio. Sin declararlo, Active Storage avisa en cada build de que
+    # falta `image_processing` y sugiere añadirla: una gema y una dependencia
+    # nativa en el Dockerfile para algo que no se hace. Se dice la verdad en vez
+    # de callar el aviso.
+    config.active_storage.variant_processor = :disabled
+
     # Agent runs take minutes. Nothing that calls an agent may run inside a
     # request, so Active Job goes to Sidekiq everywhere.
     config.active_job.queue_adapter = :sidekiq
