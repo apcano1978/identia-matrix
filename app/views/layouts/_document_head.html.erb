@@ -9,7 +9,11 @@
 
 <%= yield :head %>
 
+<%# El mismo icono que identia-platform, byte a byte: es una sola marca. Se
+    sirve desde `public/` y no por el pipeline, igual que allí. %>
+<link rel="icon" href="/icon.png" type="image/png">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.png">
 
 <%# Misma familia tipográfica y misma fuente de servicio que identia-platform.
     JetBrains Mono es la voz dominante de matrix; Outfit y Source Serif 4
