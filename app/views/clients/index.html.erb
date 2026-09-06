@@ -14,7 +14,8 @@
                      tone: :gate2 %>
 
   <div class="grid grid-cols-3 items-start gap-[13px] mt-3">
-    <%= render partial: "clients/card", collection: @clients, as: :client %>
+    <%= render partial: "clients/card", collection: @clients, as: :client,
+               locals: { admitted_ids: @admitted_ids } %>
   </div>
 
   <%== pagy_nav(@pagy) if @pagy.pages > 1 %>

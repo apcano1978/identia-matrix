@@ -8,7 +8,12 @@ module Platform::Source
   def current(client: nil)
     case ENV.fetch("MATRIX_PLATFORM_SOURCE", default_source)
     when "fake" then Platform::FakeSource
-    when "platform" then Platform::HttpSource.new(client_platform_id: client&.platform_id)
+    when "platform"
+      # Las admisiones se resuelven aquí porque `HttpSource` no toca la base de
+      # datos. Se leen en cada pasada a propósito: admitir a un cliente tiene que
+      # surtir efecto en el siguiente latido sin reiniciar nada.
+      Platform::HttpSource.new(client_platform_id: client&.platform_id,
+                               admitted_ids: ClientAdmission.platform_ids)
     else
       raise ArgumentError,
             "MATRIX_PLATFORM_SOURCE debe ser `fake` o `platform`"

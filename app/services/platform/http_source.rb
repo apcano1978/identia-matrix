@@ -29,8 +29,12 @@ class Platform::HttpSource
   # tiene acceso son hechos globales, sus índices no traen cuerpo y salen
   # baratos. Acotarlos haría además que sincronizar un cliente marcara como
   # ausentes a todos los demás.
-  def initialize(client_platform_id: nil)
+  # `admitted_ids` llega YA RESUELTO desde fuera —`Platform::Source`— y no se
+  # consulta aquí: esta clase habla HTTP y no toca la base de datos, que es lo
+  # que permite que `Projection` no sepa si detrás hay un fichero o una llamada.
+  def initialize(client_platform_id: nil, admitted_ids: [])
     @client_platform_id = client_platform_id
+    @admitted_ids = admitted_ids.to_set
   end
 
   def name = "platform"
@@ -48,10 +52,15 @@ class Platform::HttpSource
   #
   # No se acota por `@client_platform_id` a propósito: quién existe es un hecho
   # global, y acotarlo marcaría como ausentes a todos los demás (ver `initialize`).
+  # **Y las excepciones se nombran una a una.** `ClientAdmission` deja entrar a un
+  # cliente concreto que todavía no tiene proyecto, para poder reunir su
+  # documentación mientras el trabajo se prepara. Es una lista de nombres
+  # propios y no un criterio más ancho: ensanchar el criterio devolvería el
+  # embudo comercial entero, que es de lo que este filtro existe para librarnos.
   def clients
-    con_trabajo = index(:system, "projects").filter_map { |project| project["client_id"] }.to_set
+    admisibles = clients_with_work | @admitted_ids
 
-    index(:system, "leads").select { |lead| con_trabajo.include?(lead["id"]) }.map do |lead|
+    index(:system, "leads").select { |lead| admisibles.include?(lead["id"]) }.map do |lead|
       {
         platform_id: lead["id"],
         name: lead["nombre"],
@@ -62,6 +71,23 @@ class Platform::HttpSource
         # SOLO EL ROL, sin nombre. Es la regla de cero PII de F7 §5, y aquí se
         # ve por qué se puede cumplir sin esfuerzo: no hay columna donde caer.
         primary_contact_role: lead.dig("primary_contact", "rol")
+      }
+    end
+  end
+
+  # El catálogo SIN filtrar, con la marca de quién tiene trabajo. No lo usa la
+  # proyección —que solo quiere clientes— sino `matrix:leads`, que existe para
+  # enseñar precisamente lo que `#clients` deja fuera, y para dar el
+  # `platform_id` con el que admitir a alguien.
+  def lead_catalog
+    con_trabajo = clients_with_work
+
+    index(:system, "leads").map do |lead|
+      {
+        platform_id: lead["id"],
+        name: lead["nombre"],
+        status: lead["estado"],
+        has_work: con_trabajo.include?(lead["id"])
       }
     end
   end
@@ -122,6 +148,12 @@ class Platform::HttpSource
   end
 
   private
+
+  # Quién tiene trabajo en marcha. El criterio de «activo» NO se decide aquí:
+  # `projects` sin `include_closed` ya devuelve solo los activos.
+  def clients_with_work
+    index(:system, "projects").filter_map { |project| project["client_id"] }.to_set
+  end
 
   # El índice descubre qué hay y qué cambió; el detalle trae el cuerpo. Es la
   # regla de forma de F7 §3.1, y aquí está su razón de ser: sin ella, un latido

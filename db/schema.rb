@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -161,6 +161,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_140000) do
     t.index ["repository_id"], name: "index_citations_on_repository_id"
     t.index ["source_kind"], name: "index_citations_on_source_kind"
     t.index ["target_type", "target_id"], name: "index_citations_on_target"
+  end
+
+  create_table "client_admissions", force: :cascade do |t|
+    t.string "admitted_by", null: false
+    t.datetime "created_at", null: false
+    t.bigint "platform_id", null: false
+    t.string "reason", null: false
+    t.datetime "updated_at", null: false
+    t.index ["platform_id"], name: "index_client_admissions_on_platform_id", unique: true
   end
 
   create_table "definitions_of_done", force: :cascade do |t|

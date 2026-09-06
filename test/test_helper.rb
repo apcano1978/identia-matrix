@@ -23,6 +23,7 @@ module ActiveSupport
     fixtures :all
 
     include EnvHelpers
+    include RakeHelpers
   end
 end
 

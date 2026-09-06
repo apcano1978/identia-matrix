@@ -103,6 +103,54 @@ class Platform::HttpSourceTest < ActiveSupport::TestCase
     assert_equal [ "Con trabajo" ], clientes.map { |c| c[:name] }
   end
 
+  test "un lead admitido SÍ es un cliente de matrix aunque no tenga proyecto" do
+    # La excepción se nombra una a una. Es lo que permite reunir la
+    # documentación de un cliente mientras su proyecto se prepara, sin devolver
+    # el embudo comercial entero.
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Con trabajo" },
+                          { "id" => 43, "nombre" => "En preparación" }
+                        ])) { Platform::HttpSource.new(admitted_ids: [ 43 ]).clients }
+
+    assert_equal [ "Con trabajo", "En preparación" ], clientes.map { |c| c[:name] }
+  end
+
+  test "admitir a quien ya tiene trabajo no lo duplica" do
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Con trabajo" }
+                        ])) { Platform::HttpSource.new(admitted_ids: [ 42 ]).clients }
+
+    assert_equal [ "Con trabajo" ], clientes.map { |c| c[:name] }
+  end
+
+  test "sin admisiones el filtro es exactamente el de antes" do
+    # La lista vacía es el caso por defecto: quien no pase `admitted_ids` tiene
+    # que ver el mismo catálogo que veía antes de que esto existiera.
+    clientes, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Con trabajo" },
+                          { "id" => 43, "nombre" => "En conversación" }
+                        ])) { Platform::HttpSource.new(admitted_ids: []).clients }
+
+    assert_equal [ "Con trabajo" ], clientes.map { |c| c[:name] }
+  end
+
+  test "el catálogo de leads los trae TODOS, marcando quién tiene trabajo" do
+    # Es lo que enseña `matrix:leads`, y por eso no filtra: existe para ver lo
+    # que `#clients` deja fuera y dar el `platform_id` con el que admitir.
+    catalogo, = con_api("projects" => con_proyecto(42),
+                        "leads" => pagina("leads", [
+                          { "id" => 42, "nombre" => "Con trabajo", "estado" => "convertido" },
+                          { "id" => 43, "nombre" => "En conversación", "estado" => "negociacion" }
+                        ])) { Platform::HttpSource.new.lead_catalog }
+
+    assert_equal [ { platform_id: 42, name: "Con trabajo", status: "convertido", has_work: true },
+                   { platform_id: 43, name: "En conversación", status: "negociacion", has_work: false } ],
+                 catalogo
+  end
+
   test "el criterio de activo lo pone platform: se pide `projects` sin ampliarlo" do
     # `projects` sin `include_closed` ya devuelve solo planificado, en_curso o
     # pausado, y sin archivar. Duplicar esa lista aquí sería tener dos

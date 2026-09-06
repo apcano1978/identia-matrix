@@ -2,17 +2,29 @@
 <% open = initiatives.reject(&:at_publication?) %>
 <% leading = open.min_by { |i| i.stage_changed_at || i.opened_at } %>
 
+<% preparing = client.in_preparation?(local_assigns[:admitted_ids]) %>
+
 <%# El borde en oro marca al cliente que tiene algo esperando a una persona. Es
-    la misma señal que el dashboard, vista desde el otro lado. %>
+    la misma señal que el dashboard, vista desde el otro lado.
+
+    Y DISCONTINUO al que está en preparación: el mismo idioma que la tarjeta de
+    fuentes heredadas —lo que todavía no está acotado se dibuja con trazo
+    partido—, aquí para decir que el cliente está pero el trabajo aún no. %>
 <%= link_to client_path(client),
             class: "flex flex-col p-[14px_15px] border #{
-              leading&.awaiting_human? ? 'border-antique-gold bg-[rgba(196,155,94,.09)]'
-                                       : 'border-terminal-border bg-terminal-sunken'}" do %>
+              if preparing then 'border-dashed border-terminal-border-strong bg-terminal-sunken'
+              elsif leading&.awaiting_human? then 'border-antique-gold bg-[rgba(196,155,94,.09)]'
+              else 'border-terminal-border bg-terminal-sunken'
+              end}" do %>
   <div class="flex items-baseline gap-2 w-full">
     <span class="font-sans text-t15 font-semibold tracking-[.06em] text-terminal-fg">
       <%= client.name %>
     </span>
-    <span class="ml-auto"><%= situation_tag(leading, size: "text-t10", short: true) if leading %></span>
+    <% if preparing %>
+      <span class="ml-auto eyebrow text-terminal-fg-3">EN PREPARACIÓN</span>
+    <% else %>
+      <span class="ml-auto"><%= situation_tag(leading, size: "text-t10", short: true) if leading %></span>
+    <% end %>
   </div>
 
   <div class="mt-1 text-t10 text-terminal-fg-3">
@@ -20,6 +32,16 @@
   </div>
 
   <div class="h-px bg-terminal-border my-[11px]"></div>
+
+  <%# Sin evolutivos la tarjeta se queda muda, y en preparación eso no es un
+      hueco sino el estado correcto: hay que decirlo en vez de dejar el sitio en
+      blanco. %>
+  <% if preparing && initiatives.empty? %>
+    <p class="text-t105 text-terminal-fg-3 leading-[1.6]">
+      Admitido antes de tener proyecto. Su documentación se sincroniza desde
+      platform; el evolutivo espera a que haya repositorio.
+    </p>
+  <% end %>
 
   <div class="flex flex-col gap-[9px] w-full">
     <% initiatives.each do |initiative| %>

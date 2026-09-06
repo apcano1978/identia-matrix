@@ -101,6 +101,35 @@ class ClientsTest < ApplicationSystemTestCase
     assert_current_path client_repository_path("vivla", "booking-core")
   end
 
+  test "el cliente admitido antes de tener proyecto se pinta EN PREPARACIÓN" do
+    # La tarjeta de un cliente sin evolutivos se queda muda, y en preparación
+    # eso no es un hueco: es el estado correcto y hay que decirlo.
+    cliente = Platform::Record.writing do
+      Platform::Client.create!(platform_id: 8_101, slug: "en-preparacion",
+                               name: "Acme Preparada", sector: "industrial")
+    end
+    ClientAdmission.create!(platform_id: cliente.platform_id,
+                            reason: "reuniendo documentación", admitted_by: "antonio")
+
+    visit clients_path
+
+    within(card_for("Acme Preparada")) do
+      assert_text "EN PREPARACIÓN"
+      assert_text "Admitido antes de tener proyecto"
+    end
+
+    # Y en su ficha, con el formulario de evolutivo negándose como debe.
+    visit client_path(cliente)
+    assert_selector "h1", text: "Acme Preparada"
+    assert_text "EN PREPARACIÓN"
+    assert_text "Para abrir un evolutivo hace falta al menos un repositorio"
+    assert_text "Su documentación no espera a eso"
+  end
+
+  test "un cliente con trabajo no lleva la marca de preparación" do
+    within(card_for("VIVLA")) { assert_no_text "EN PREPARACIÓN" }
+  end
+
   private
     def open_vivla
       click_on "VIVLA"

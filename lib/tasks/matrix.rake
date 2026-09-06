@@ -114,6 +114,101 @@ namespace :matrix do
     AVISO
   end
 
+  desc "Lista los leads de platform y dice cuáles tienen trabajo. Ej: matrix:leads[acme]"
+  task :leads, [ :texto ] => :environment do |_task, args|
+    refuse_fake_source!
+
+    # El catálogo SIN el filtro de `HttpSource#clients`: esta tarea existe para
+    # ver lo que ese filtro deja fuera, y para dar el `platform_id` —que no se
+    # puede adivinar y sin el cual admitir a alguien exigiría entrar en la base
+    # de datos del otro sistema.
+    admitidos = ClientAdmission.platform_ids
+    filtro = args[:texto].to_s.strip.downcase
+    filas = Platform::Source.current.lead_catalog
+                            .select { |lead| filtro.empty? || lead[:name].to_s.downcase.include?(filtro) }
+
+    if filas.empty?
+      puts filtro.empty? ? "Platform no devolvió ningún lead." : "Ningún lead contiene «#{filtro}»."
+      next
+    end
+
+    filas.each do |lead|
+      estado =
+        if lead[:has_work] then "con trabajo"
+        elsif admitidos.include?(lead[:platform_id]) then "admitido · en preparación"
+        else "sin proyecto · no está en matrix"
+        end
+
+      puts "#{lead[:platform_id].to_s.rjust(5)}  #{lead[:name].to_s.ljust(34)} " \
+           "#{lead[:status].to_s.ljust(14)} #{estado}"
+    end
+
+    puts
+    puts 'Para dejar entrar a uno sin proyecto: bin/rails "matrix:admit[<id>,<motivo>]"'
+  end
+
+  desc "Admite en matrix a un cliente que aún no tiene proyecto. Ej: matrix:admit[42,preparando el evolutivo]"
+  task :admit, [ :platform_id, :reason ] => :environment do |_task, args|
+    refuse_fake_source!
+
+    platform_id = args.fetch(:platform_id).to_i
+    reason = args[:reason].to_s.strip
+    abort "Falta el motivo: matrix:admit[<id>,<por qué>]" if reason.empty?
+
+    if (ya = ClientAdmission.find_by(platform_id: platform_id))
+      abort "Ya estaba admitido: #{ya}"
+    end
+
+    admission = ClientAdmission.create!(
+      platform_id: platform_id, reason: reason,
+      admitted_by: ENV["ADMITTED_BY"].presence || ENV["USER"].presence || "manual")
+
+    puts "Admitido · #{admission}"
+
+    # Se sincroniza en el acto y no se espera al latido de quince minutos: quien
+    # admite a un cliente lo hace para ponerse a trabajar con él ahora.
+    puts Platform::Sync.discover
+    client = Platform::Client.find_by(platform_id: platform_id)
+
+    if client.nil?
+      abort "Platform no devolvió ningún lead con id #{platform_id}: revisa el id con matrix:leads."
+    end
+
+    puts Platform::Sync.call(client)
+    puts "#{client.slug} · su documentación ya está en matrix. El evolutivo espera a que haya repositorio."
+  end
+
+  desc "Lista los clientes admitidos sin proyecto, con su motivo."
+  task admissions: :environment do
+    admissions = ClientAdmission.latest_first.to_a
+
+    if admissions.empty?
+      puts "Ninguna admisión. El catálogo son los clientes con trabajo en marcha."
+      next
+    end
+
+    admissions.each do |admission|
+      client = Platform::Client.find_by(platform_id: admission.platform_id)
+      estado =
+        if client.nil? then "aún sin proyectar"
+        elsif client.in_preparation? then "en preparación"
+        else "ya tiene proyecto · la admisión sobra"
+        end
+
+      puts "#{admission.platform_id.to_s.rjust(5)}  #{(client&.slug || '—').ljust(22)} " \
+           "#{estado.ljust(28)} #{admission.reason}"
+    end
+  end
+
+  # Las tres tareas de admisión hablan con platform de verdad. Contra el seed no
+  # significan nada: la maqueta no tiene leads que admitir.
+  def refuse_fake_source!
+    return if Platform::Source.real?
+
+    abort "MATRIX_PLATFORM_SOURCE es `fake`: no hay leads de platform que mirar. " \
+          "Ponlo a `platform` para hablar con identia-platform de verdad."
+  end
+
   desc "Ancla e indexa los repositorios de un evolutivo. Ej: matrix:index[ev-031]"
   task :index, [ :code ] => :environment do |_task, args|
     initiative = Initiative.find_by!(code: args.fetch(:code))

@@ -8,17 +8,13 @@ require "rake"
 class PruneProjectionTest < ActiveSupport::TestCase
   include DomainBuilders
 
-  # Las tareas se cargan UNA vez: `load_tasks` reevalúa el fichero entero, y
-  # hacerlo por test redefine las constantes del rake con un aviso por cada una.
-  # Lo que sí hay que hacer por test es `reenable`, o rake se salta la segunda
-  # invocación por considerarla ya cumplida.
-  @@tasks_loaded = false
-
+  # Las tareas se cargan UNA vez POR PROCESO —`RakeHelpers`—, y no por clase: la
+  # segunda carga no solo repite avisos de constante, encadena las acciones y
+  # hace que el cuerpo de cada tarea se ejecute dos veces. Lo que sí hay que
+  # hacer por test es `reenable`, o rake se salta la segunda invocación por
+  # considerarla ya cumplida.
   def setup
-    unless @@tasks_loaded
-      IdentiaMatrix::Application.load_tasks
-      @@tasks_loaded = true
-    end
+    load_rake_tasks_once
     Rake::Task["matrix:prune_projection"].reenable
     ENV["MATRIX_PLATFORM_SOURCE"] = "platform"
     ENV.delete("CONFIRM")

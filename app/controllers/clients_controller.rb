@@ -10,9 +10,13 @@ class ClientsController < ApplicationController
   def index
     @pagy, @clients = pagy(
       Platform::Client.active.order(:platform_id)
-                      .includes(:repositories,
+                      .includes(:repositories, :platform_projects,
                                 initiatives: { initiative_repositories: :repository }),
       limit: PER_PAGE)
+
+    # Resuelto una vez y pasado a las tarjetas: preguntarlo por fila serían
+    # veinticinco consultas para pintar una marca.
+    @admitted_ids = ClientAdmission.platform_ids
   end
 
   def show

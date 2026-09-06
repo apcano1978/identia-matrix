@@ -34,6 +34,27 @@ class Platform::Client < Platform::Record
 
   scope :active, -> { where(archived: false) }
 
+  # **En preparación**: está en matrix porque alguien lo admitió, no porque tenga
+  # trabajo en marcha. Es la fase previa al evolutivo, cuando se está reuniendo
+  # la documentación y el proyecto todavía no existe en platform.
+  #
+  # Se DERIVA y no se guarda en columna: el dato es de platform y cambia solo, en
+  # cuanto el proyecto aparezca. Y son las dos condiciones, no una: sin la
+  # admisión, «sin proyectos vivos» describiría también a un cliente que terminó
+  # el suyo, que es un caso distinto y lo cuenta `missing_since`.
+  #
+  # `admitted_ids` se puede pasar ya resuelto para no preguntar una vez por fila
+  # en el índice; sin él, la pregunta se hace sola.
+  def admitted?(admitted_ids = nil)
+    return admitted_ids.include?(platform_id) if admitted_ids
+
+    ClientAdmission.exists?(platform_id: platform_id)
+  end
+
+  def in_preparation?(admitted_ids = nil)
+    admitted?(admitted_ids) && platform_projects.none? { |project| project.missing_since.nil? }
+  end
+
   # La URL habla en slug, no en id: `param: :slug` en las rutas cambia el nombre
   # del segmento pero NO lo que `client_path(client)` mete dentro. Sin esto, los
   # enlaces salen con el id y el `find_by!(slug:)` no encuentra nada.
