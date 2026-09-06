@@ -225,6 +225,21 @@ namespace :matrix do
   #
   # La frontera entre los dos casos NO se deja al criterio de quien la ejecuta:
   # la tarea se niega en cuanto de un cliente cuelga cualquier cosa de matrix.
+  # ⚠ En producción la confirmación va DENTRO de la orden, con `env`:
+  #
+  #   kamal app exec -p 'bin/rails matrix:prune_projection'                    # ensayo
+  #   kamal app exec -p 'env CONFIRM=1 bin/rails matrix:prune_projection'      # borra
+  #
+  # Las dos formas evidentes fallan, cada una por su lado:
+  #
+  # · `CONFIRM=1 bin/rails ...` da un 127. El entrypoint de la imagen acaba en
+  #   `exec "$@"`, así que busca un programa llamado `CONFIRM=1`. `env` existe
+  #   justo para esto: se ejecuta él, pone la variable y llama a rails.
+  # · `-e CONFIRM:1` da «No command provided». La opción de kamal es un hash de
+  #   Thor y se traga con avidez todo lo que venga detrás y lleve dos puntos —y
+  #   `matrix:prune_projection` los lleva—, así que la orden desaparece.
+  #
+  # Y `-p`, o se ejecuta una vez por rol: web y sidekiq.
   desc "Poda de la proyección los clientes que la fuente ya no reconoce. CONFIRM=1 para borrar"
   task prune_projection: :environment do
     unless Platform::Source.real?
