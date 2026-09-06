@@ -46,8 +46,11 @@ module Artifacts
       def call(initiative:, kind:, body:, produced_at:, produced_by_run:,
                derives_from: nil, version: nil, round: nil, number: nil)
         client = initiative.platform_client
+        # El número lo da el evolutivo, no su código: `Initiative#number` es la
+        # única autoridad, y componerlo desde el código obligaba a que el código
+        # tuviera forma de `ev-NNN` justo cuando la clave deja de exigirla.
         code = Key.code(kind: kind, round: round,
-                        number: number || Key.number_from_initiative(initiative.code))
+                        number: number || initiative.number)
         version ||= next_version_for(initiative, code)
         key = Key.build(client: client.slug, initiative: initiative.code,
                         code: code, version: version)

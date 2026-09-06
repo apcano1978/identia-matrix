@@ -48,10 +48,20 @@ module Artifacts
     ROUNDED = [ :verify ].freeze
 
     SLUG    = /[a-z0-9]+(?:-[a-z0-9]+)*/
+    # El segundo segmento es un SLUG, no `ev-\d{3,}`.
+    #
+    # ES UN ENSANCHAMIENTO, NO UNA RUPTURA, y esa es toda la razón por la que
+    # una clave congelada en F0 se puede tocar en F11: `ev-031` casa con SLUG,
+    # así que ninguna de las claves ya emitidas deja de parsear. Lo que antes
+    # era válido lo sigue siendo — la misma clase de enmienda que las aditivas
+    # de los contratos, y la contraria a las que cerraron la ventana.
+    #
+    # Lo que NO cambia es de dónde sale el NÚMERO del código de un artefacto:
+    # de `initiative.code`, nunca de este segmento. Ver number_from_initiative.
     PATTERN = %r{
       \A#{SCHEME}://
       (?<client>#{SLUG})/
-      (?<initiative>ev-\d{3,})/
+      (?<initiative>#{SLUG})/
       (?<code>#{SLUG})/
       v(?<version>\d+)\.md\z
     }x
@@ -98,6 +108,12 @@ module Artifacts
     # El número que le toca a un artefacto según su tipo. Los que heredan del
     # evolutivo lo sacan de su código (ev-031 → 31); `pkg` lo pide a su
     # secuencia, que en F0 todavía no existe.
+    #
+    # ⚠ SU ENTRADA ES UN `code`, NUNCA EL SEGMENTO DE UNA CLAVE. Desde que el
+    # segundo segmento es un SLUG, los dos se parecen y son cosas distintas: el
+    # segmento puede ser `precio-festivos` y de ahí no sale ningún número. Sigue
+    # exigiendo `ev-NNN` a propósito — el día que alguien le pase un
+    # `Parsed#initiative`, revienta en vez de inventarse un número.
     def number_from_initiative(initiative_code)
       match = /\Aev-(?<number>\d{3,})\z/.match(initiative_code.to_s)
       raise ArgumentError, "código de evolutivo inválido: #{initiative_code.inspect}" if match.nil?

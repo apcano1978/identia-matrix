@@ -84,12 +84,47 @@ class Artifacts::KeyTest < ActiveSupport::TestCase
     [
       "artifacts://vivla/ev-031/dod-031/v2",          # sin extensión
       "artifacts://vivla/ev-031/dod-031.md",          # sin versión
-      "artifacts://vivla/proj-2291/dod-031/v2.md",    # el evolutivo no es un proyecto de platform
       "s3://vivla/ev-031/dod-031/v2.md",              # otro esquema
-      "artifacts://vivla/ev-031/booking-core/dod-031/v2.md" # repositorio en la ruta
+      "artifacts://vivla/ev-031/booking-core/dod-031/v2.md", # repositorio en la ruta
+      "artifacts://vivla/Ev-031/dod-031/v2.md",       # mayúsculas: un slug es kebab
+      "artifacts://vivla/ev_031/dod-031/v2.md"        # guion bajo: tampoco
     ].each do |key|
       refute Artifacts::Key.valid?(key), "debería rechazar: #{key}"
     end
+  end
+
+  # F11 · el segundo segmento pasa de `ev-\d{3,}` a SLUG, para que un artefacto
+  # se llame `artifacts://matrix-interna/rediseno-interfaz/...` y no por número.
+  test "una clave con nombre parsea, y las emitidas con codigo siguen parseando" do
+    assert Artifacts::Key.valid?("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
+    assert Artifacts::Key.valid?("artifacts://vivla/ev-031/dod-031/v2.md")
+
+    parsed = Artifacts::Key.parse!("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
+    assert_equal "matrix-interna",   parsed.client
+    assert_equal "rediseno-interfaz", parsed.initiative
+  end
+
+  # ES LO QUE SE PAGA POR EL ENSANCHAMIENTO, y conviene que esté escrito.
+  #
+  # Hasta F11 la clave rechazaba `artifacts://vivla/proj-2291/...` porque el
+  # segundo segmento tenía forma de evolutivo y `proj-2291` no la tiene. Con un
+  # SLUG libre eso deja de poder distinguirse en la forma: la clave ya no sabe
+  # sola si el segmento nombra un evolutivo o cualquier otra cosa.
+  #
+  # No es un descuido y no se compensa estrechando el patrón —eso rompería
+  # `rediseno-interfaz`—: se compensa donde se puede comprobar de verdad, que es
+  # resolviendo contra la tabla. La clave dice la FORMA; quién existe lo dice el
+  # evolutivo.
+  test "la forma ya no distingue un evolutivo de cualquier otro slug" do
+    assert Artifacts::Key.valid?("artifacts://vivla/proj-2291/dod-031/v2.md")
+  end
+
+  # Y el número NO sale del segmento: sale del `code` del evolutivo. Los dos se
+  # parecen desde que el segmento es un slug, y son cosas distintas.
+  test "el numero no se saca del segmento de la clave" do
+    parsed = Artifacts::Key.parse!("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
+
+    assert_raises(ArgumentError) { Artifacts::Key.number_from_initiative(parsed.initiative) }
   end
 
   test "la raiz del evolutivo es lo que publica la etapa 12" do
