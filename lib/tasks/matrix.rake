@@ -209,4 +209,80 @@ namespace :matrix do
 
     puts "Sin divergencias."
   end
+
+  # 🪓 La ÚNICA forma legítima de borrar filas de la proyección.
+  #
+  # La regla del sistema es que la proyección no se borra: lo que desaparece del
+  # origen se marca con `missing_since`, porque una cita ya emitida tiene que
+  # seguir resolviendo dentro de un artefacto que nadie puede reescribir
+  # (`Platform::Record#destroy` lo impide, invariante 1).
+  #
+  # Esta tarea existe para el caso contrario: filas que **nunca debieron
+  # entrar**. Ocurrió el 5 de septiembre de 2026, cuando `HttpSource#clients`
+  # todavía se traía el embudo comercial entero y matrix se llenó de nueve
+  # clientes teniendo trabajo en dos. Ahí no hay historia que preservar, y
+  # dejarlos marcados como ausentes tampoco los quitaba de la lista.
+  #
+  # La frontera entre los dos casos NO se deja al criterio de quien la ejecuta:
+  # la tarea se niega en cuanto de un cliente cuelga cualquier cosa de matrix.
+  desc "Poda de la proyección los clientes que la fuente ya no reconoce. CONFIRM=1 para borrar"
+  task prune_projection: :environment do
+    unless Platform::Source.real?
+      abort "MATRIX_PLATFORM_SOURCE es `fake`: esto podaría la maqueta contra sí misma."
+    end
+
+    vivos = Platform::HttpSource.new.clients.map { |cliente| cliente[:platform_id] }
+    puts "La fuente reconoce #{vivos.size} clientes: #{vivos.inspect}"
+
+    # Sin esta guarda, un platform caído o un token mal puesto —que devuelven
+    # listas vacías, no errores— borrarían la proyección entera.
+    abort "ABORTADO: la fuente no devolvió ninguno. No se poda a ciegas." if vivos.empty?
+
+    sobran = Platform::Client.where.not(platform_id: vivos).order(:platform_id)
+    if sobran.empty?
+      puts "Nada que podar: los #{Platform::Client.count} clientes de matrix siguen vivos."
+      next
+    end
+
+    puts
+    puts "Sobran #{sobran.count}:"
+    sobran.each { |cliente| puts "  #{cliente.platform_id}  #{cliente.name}" }
+
+    ids = sobran.pluck(:id)
+
+    # La frontera. Si de alguno cuelga trabajo, esto no es podar una proyección
+    # sucia: es borrar historia, y entonces la respuesta correcta vuelve a ser
+    # `missing_since`.
+    trabajo = { "evolutivos" => Initiative, "artefactos" => Artifact,
+                "repositorios" => Repository, "notas humanas" => HumanNote,
+                "escaladas" => Escalation, "config de agentes" => AgentConfig,
+                "credenciales" => RepositoryCredential }
+              .transform_values { |modelo| modelo.where(platform_client_id: ids).count }
+              .reject { |_, cuantos| cuantos.zero? }
+
+    unless trabajo.empty?
+      abort "\nABORTADO: de esos clientes cuelga trabajo de matrix (#{trabajo.inspect}). " \
+            "Eso no se poda: márcalos ausentes con una sincronización."
+    end
+
+    unless ENV["CONFIRM"] == "1"
+      puts
+      puts "Nada borrado. Para hacerlo:  CONFIRM=1 bin/rails matrix:prune_projection"
+      next
+    end
+
+    puts
+    ActiveRecord::Base.transaction do
+      # En orden de claves foráneas. `delete_all` y no `destroy_all`: el segundo
+      # va fila a fila y `Platform::Record#destroy` lo prohíbe, con razón.
+      { "reuniones" => Platform::Meeting, "documentos" => Platform::Document,
+        "proyectos" => Platform::Project, "eventos" => Event }.each do |nombre, modelo|
+        puts "  #{nombre}: #{modelo.where(platform_client_id: ids).delete_all}"
+      end
+      puts "  clientes: #{Platform::Client.where(id: ids).delete_all}"
+    end
+
+    puts
+    puts "Quedan #{Platform::Client.count}: #{Platform::Client.order(:platform_id).pluck(:name).inspect}"
+  end
 end
