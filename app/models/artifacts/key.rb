@@ -34,7 +34,14 @@ module Artifacts
       pkg: "pkg",               # TRINITY · paquete de trabajo
       verify: "verify",         # SERAPH · informe de verificación
       guide: "guia-pruebas",    # SERAPH · guía de pruebas manuales
-      close: "close"            # LINK · cierre documental
+      close: "close",           # LINK · cierre documental
+      # ARQUITECTO · el acta de decisiones de la etapa 1. ANEXADO AL FINAL en
+      # F11, y ahí tiene que quedarse: de estas claves sale KINDS, y de KINDS el
+      # enum `Artifact#kind`, que es una columna entera y por tanto posicional.
+      #
+      # El prefijo no coincide con el nombre del tipo, igual que en `guide`:
+      # ev-031 produce `arquitecto-031`, que es lo que nombra la cita.
+      acta: "arquitecto"
     }.freeze
 
     KINDS = PREFIXES.keys.freeze

@@ -48,15 +48,50 @@ module Citations
   #      [src:note/2026-08-17-ap]
   #      [src:note/2026-08-17-ap-2]
   #
-  # Se pudieron hacer porque todavía no existe ningún artefacto real: solo el
-  # seed, que se regenera. LA VENTANA SE CIERRA EN F9, cuando el primer agente
-  # produzca uno de verdad; después, ni siquiera aditivas. Esta es la última.
+  # Se pudieron hacer porque todavía no existía ningún artefacto real: solo el
+  # seed, que se regenera. LA VENTANA SE CERRÓ EL 4 DE SEPTIEMBRE DE 2026, cuando
+  # TANK produjo el primero de verdad.
+  #
+  # 4. `acta` como décimo tipo, y el ancla `#abierta-N`, en F11:
+  #      [src:acta/arquitecto-031#abierta-1]
+  #
+  #    ⚠ ESTA SE HACE CON LA VENTANA YA CERRADA, y hace falta decir por qué no
+  #    es una excepción de conveniencia. Al releer la regla apareció que **no
+  #    todas las enmiendas aditivas son iguales**:
+  #
+  #    · Añadir un TIPO QUE NO EXISTÍA no puede cambiar cómo se interpreta
+  #      ninguna cita ya emitida, porque no hay texto anterior que empiece por
+  #      `[src:acta/`. No es una promesa: hay un test que lo comprueba cita a
+  #      cita sobre el corpus entero (test/models/citations/amendments_test.rb).
+  #
+  #    · Tocar la FORMA DE UN TIPO EXISTENTE sí puede, y ahí el peligro es real:
+  #      es exactamente lo que hizo delicada la enmienda 3, donde un sufijo
+  #      suelto habría hecho parsear `note/<fecha>-antonio` SIN autor.
+  #
+  #    Lo que sigue sin caber: cambiar la forma de un tipo existente, hacer
+  #    opcional algo obligatorio, o mover un sufijo de sitio.
   module Grammar
-    # Los nueve tipos de fuente. El nivel de procedencia NO se almacena: se
+    # Los diez tipos de fuente. El nivel de procedencia NO se almacena: se
     # deriva de aquí. Un dato derivable no puede desincronizarse.
-    ORIGIN_KINDS  = %w[code doc meet note].freeze
+    #
+    # `acta` es de nivel ORIGEN: recoge decisiones de una persona, tomadas en una
+    # conversación. El ARQUITECTO transcribe; quien decide es quien contesta.
+    ORIGIN_KINDS  = %w[code doc meet note acta].freeze
     DERIVED_KINDS = %w[spec dod verify pkg close].freeze
-    KINDS = (ORIGIN_KINDS + DERIVED_KINDS).freeze
+
+    # ⚠ KINDS NO SE COMPONE DE LAS DOS LISTAS, y tiene que quedarse así.
+    #
+    # De aquí sale el enum `Citation#source_kind`, que es una COLUMNA ENTERA y
+    # por tanto POSICIONAL. Compuesto —`ORIGIN_KINDS + DERIVED_KINDS`—, añadir
+    # `acta` al final de los de origen lo habría metido en la posición 4 y habría
+    # desplazado `spec, dod, verify, pkg, close` de 4-8 a 5-9: todas las citas ya
+    # almacenadas cambiarían de tipo en silencio, dentro de artefactos que nadie
+    # puede reescribir.
+    #
+    # Escrito a mano y con lo nuevo ANEXADO AL FINAL, el orden es un hecho del
+    # repositorio y no un efecto colateral de en qué lista se declaró un tipo.
+    # Hay un test que fija los enteros uno a uno.
+    KINDS = %w[code doc meet note spec dod verify pkg close acta].freeze
 
     # Los tipos que exigen calificador de repositorio en el locator.
     REPOSITORY_QUALIFIED_KINDS = %w[code verify].freeze
@@ -65,11 +100,23 @@ module Citations
     DATED_KINDS = %w[meet note].freeze
 
     # Los tipos cuyo locator es el `code` de un artefacto. NO es lo mismo que
-    # DERIVED_KINDS: `verify` también es derivado, pero su locator es
-    # <repo>:<run> y su destino es una línea de un log de CI, no un documento.
-    # Esa diferencia estaba escondida y se hizo visible al escribir la
-    # resolución en F4.
-    ARTIFACT_KINDS = (DERIVED_KINDS - REPOSITORY_QUALIFIED_KINDS).freeze
+    # DERIVED_KINDS, y desde F11 la diferencia va en las DOS direcciones:
+    #
+    # · `verify` es derivado y NO es artefacto: su locator es <repo>:<run> y su
+    #   destino es una línea de un log de CI, no un documento. Esa diferencia
+    #   estaba escondida y se hizo visible al escribir la resolución en F4.
+    # · `acta` es de ORIGEN y SÍ es artefacto: el ARQUITECTO la publica como
+    #   cualquier otro documento, y su locator es un `code` (`arquitecto-031`).
+    #
+    # Por eso deja de derivarse de DERIVED_KINDS. Derivada, `acta` se habría
+    # quedado fuera y `Citations::Resolve` habría devuelto `nil` SIN ERROR: la
+    # cita parsea y no resuelve contra nada, que es la peor forma de fallar.
+    #
+    # Y la salida fácil —meter `acta` en DERIVED_KINDS «para que resuelva»— es
+    # peor: `Citations::DerivedRatio` contaría las decisiones de una persona como
+    # material que el sistema se inventó a sí mismo, y movería el umbral de
+    # deriva de MORFEO sin que nada se pusiera rojo.
+    ARTIFACT_KINDS = %w[spec dod pkg close acta].freeze
 
     # Las piezas se declaran como CADENAS, no como Regexp, porque de ellas se
     # construyen dos cosas que no pueden divergir: los patrones de Ruby y el
@@ -102,6 +149,12 @@ module Citations
     # resolución apuntaría al sitio equivocado sin que ningún test se enterase.
     MEET_SLUG  = "(?:-(?<meeting_slug>[a-z0-9]+(?:-[a-z0-9]+)*))?"
     ANCHOR     = '(?:#(?<anchor>L\d+|p\d+|§\d+|c\d+|deploy))?'
+    # El ancla del acta va APARTE y no dentro de ANCHOR, que es lo que parecía
+    # más corto. Metida ahí, `#abierta-1` habría pasado a ser válida también en
+    # `doc`, `note`, `spec`, `dod` y las demás: siete formas nuevas aceptadas de
+    # rebote por una enmienda que solo pedía una. El ensanchamiento se queda
+    # confinado al tipo nuevo, que es lo que lo hace estrictamente aditivo.
+    DECISION_ANCHOR = '(?:#(?<anchor>(?:abierta|cerrada|descartada)-\d+))?'
     SHA        = "(?<sha>[0-9a-f]{7})"
     CLOCK      = '(?<clock>[0-2]\d:[0-5]\d)'
 
@@ -116,7 +169,13 @@ module Citations
       # note/<YYYY-MM-DD>[-autor[-ordinal]][#anchor]
       "(?<kind>note)/#{DATE}#{AUTHOR}#{ANCHOR}",
       # doc|spec|dod|pkg|close/<slug>[#anchor]
-      "(?<kind>doc|spec|dod|pkg|close)/#{SLUG}#{ANCHOR}"
+      "(?<kind>doc|spec|dod|pkg|close)/#{SLUG}#{ANCHOR}",
+      # acta/<slug>[#abierta-N|#cerrada-N|#descartada-N]
+      #
+      # Va el QUINTO y no antes: ningún cuerpo anterior contiene `acta`, así que
+      # no puede ensombrecer a ninguno ni ser ensombrecido. Es la comprobación
+      # de que la enmienda no toca lo ya escrito.
+      "(?<kind>acta)/#{SLUG}#{DECISION_ANCHOR}"
     ].freeze
 
     PATTERNS = BODIES.map { |body| Regexp.new("\\A\\[src:#{body}\\]\\z") }.freeze

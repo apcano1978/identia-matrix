@@ -36,7 +36,7 @@ class Citations::GrammarTest < ActiveSupport::TestCase
     end
   end
 
-  # --- Las dos enmiendas aditivas -------------------------------------------
+  # --- Las enmiendas aditivas -----------------------------------------------
 
   test "close es el noveno tipo de fuente, y es DERIVADO" do
     ref = Citations::Parse.call!("[src:close/close-002#§3]")
@@ -45,7 +45,31 @@ class Citations::GrammarTest < ActiveSupport::TestCase
     assert_equal "close-002",  ref.locator
     assert_equal "§3",         ref.anchor
     assert ref.derived?
-    assert_equal 9, Citations::Grammar::KINDS.size
+  end
+
+  # EL ORDEN DE KINDS ES UN CONTRATO CON LA BASE DE DATOS, no una lista.
+  #
+  # `citations.source_kind` es una columna ENTERA: el enum sale de aquí por
+  # posición. Reordenar o intercalar reinterpreta en silencio todas las citas ya
+  # almacenadas, dentro de artefactos que nadie puede reescribir.
+  #
+  # Por eso se fijan los enteros uno a uno y no solo el tamaño: `acta` se anexó
+  # al final en F11, y añadirlo a ORIGIN_KINDS «donde le toca por nivel» lo
+  # habría metido en la posición 4 y habría desplazado cinco tipos.
+  test "los enteros de KINDS estan fijados, y lo nuevo va al final" do
+    assert_equal({ "code" => 0, "doc" => 1, "meet" => 2, "note" => 3, "spec" => 4,
+                   "dod" => 5, "verify" => 6, "pkg" => 7, "close" => 8, "acta" => 9 },
+                 Citations::Grammar::KINDS.each_with_index.to_h)
+  end
+
+  # `acta` es el décimo tipo, y el único de ORIGEN que además es un artefacto.
+  test "acta es de origen aunque se publique como artefacto" do
+    ref = Citations::Parse.call!("[src:acta/arquitecto-031#abierta-1]")
+
+    assert_equal "acta", ref.kind
+    assert ref.origin?
+    refute ref.derived?
+    assert_includes Citations::Grammar::ARTIFACT_KINDS, "acta"
   end
 
   test "una reunión admite sufijo, y el locator sigue siendo la fecha" do

@@ -211,7 +211,8 @@
                   "pkg",
                   "verify",
                   "guide",
-                  "close"
+                  "close",
+                  "acta"
                 ]
               },
               "code": {
