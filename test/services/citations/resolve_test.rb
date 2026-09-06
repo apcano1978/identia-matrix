@@ -41,6 +41,7 @@ class Citations::ResolveTest < ActiveSupport::TestCase
   test "una cita de nota resuelve contra la nota de ese día y ese autor" do
     note = HumanNote.create!(initiative: @initiative,
                              platform_client: @client,
+                             project: project_for(@client),
                              author_user: build_platform_user,
                              code: "2026-05-08-ap",
                              body: "Lo que cambió antes de reanudar.")
@@ -109,15 +110,32 @@ class Citations::ResolveTest < ActiveSupport::TestCase
     build_document(client: @client, slug: "acta-precios")
     reference = Citations::Parse.call!("[src:doc/acta-precios#p2]")
 
-    assert_nil Citations::Resolve.call(reference, client: nil)
+    assert_nil Citations::Resolve.call(reference, project: project_for(nil))
   end
 
-  test "acepta el cliente como objeto o como id, y da lo mismo" do
+  # F11 · EXIGE EL OBJETO, no el id, y es deliberado.
+  #
+  # Documento y reunión son la proyección de platform y siguen filtrándose por
+  # `platform_client_id`: con un id habría que cargar el proyecto en cada cita, y
+  # `Citations::Attach` resuelve muchas de golpe al parsear un cuerpo. Antes de
+  # F11 esta firma aceptaba las dos formas, y aquí se cierra a una.
+  test "exige el proyecto como objeto: lo necesita para llegar a su cliente" do
     document = build_document(client: @client, slug: "acta-precios")
     reference = Citations::Parse.call!("[src:doc/acta-precios#p2]")
 
-    assert_equal document, Citations::Resolve.call(reference, client: @client)
-    assert_equal document, Citations::Resolve.call(reference, client: @client.id)
+    assert_equal document, Citations::Resolve.call(reference, project: project_for(@client))
+  end
+
+  # Un proyecto propio no tiene cliente, así que no alcanza ninguna proyección.
+  # No es un hueco: es que matrix no acepta documentos propios hasta F12.
+  test "un proyecto propio no resuelve citas de documento ni de reunion" do
+    build_document(client: @client, slug: "acta-precios")
+    propio = build_own_project
+
+    assert_nil Citations::Resolve.call(
+      Citations::Parse.call!("[src:doc/acta-precios#p2]"), project: propio)
+    assert_nil Citations::Resolve.call(
+      Citations::Parse.call!("[src:meet/2026-05-02@22:40]"), project: propio)
   end
 
   test "una cita derivada resuelve contra la ÚLTIMA versión del artefacto" do
@@ -166,11 +184,11 @@ class Citations::ResolveTest < ActiveSupport::TestCase
 
   private
     def resolve(raw)
-      Citations::Resolve.call(Citations::Parse.call!(raw), client: @client)
+      Citations::Resolve.call(Citations::Parse.call!(raw), project: project_for(@client))
     end
 
     def repository_for(raw)
       Citations::Resolve.repository_for(Citations::Parse.call!(raw),
-                                        client: @client)
+                                        project: project_for(@client))
     end
 end

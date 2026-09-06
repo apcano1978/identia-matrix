@@ -98,6 +98,6 @@ class Citations::ResolveConflictTest < ActiveSupport::TestCase
 
   private
     def cite(artifact, raw)
-      Citations::Attach.one(citable: artifact, raw: raw, client: @client.id)
+      Citations::Attach.one(citable: artifact, raw: raw, project: project_for(@client))
     end
 end

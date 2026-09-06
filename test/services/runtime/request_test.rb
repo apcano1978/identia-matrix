@@ -39,7 +39,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     AgentConfig.create!(agent: run.agent,
                         settings: { "model" => { "engine" => "sonnet" } })
     AgentConfig.create!(agent: run.agent,
-                        platform_client_id: run.initiative.platform_client_id,
+                        project_id: run.initiative.project_id,
                         settings: { "model" => { "spec_length" => "verbose" } })
 
     config = Runtime::Request.for(run).payload["config"]
@@ -101,8 +101,9 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     client = run.initiative.platform_client
     author = build_platform_user(name: "Antonio Pérez")
     HumanNote.create!(initiative: run.initiative, platform_client: client,
+                      project: run.initiative.project,
                       author_user: author, body: "Se reinicia tras la escalada.",
-                      code: HumanNote.code_for(author, client: client))
+                      code: HumanNote.code_for(author, project: project_for(client)))
 
     notes = Runtime::Request.for(run).payload.dig("config", "human_notes")
 
@@ -203,8 +204,9 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     def note_for(initiative, author, body)
       client = initiative.platform_client
       HumanNote.create!(initiative: initiative, platform_client: client,
+                        project: initiative.project,
                         author_user: author, body: body,
-                        code: HumanNote.code_for(author, client: client))
+                        code: HumanNote.code_for(author, project: project_for(client)))
     end
 
     def agent_run

@@ -84,14 +84,17 @@ class Platform::User < Platform::Record
     initiative_roles.find { |row| row.initiative_id == initiative.id }
   end
 
-  # Si esta persona puede leer el material de un cliente concreto.
+  # Si esta persona puede leer el material de un proyecto concreto.
   #
-  # Hoy la respuesta es la misma para todos los clientes: quien entra en matrix
-  # los ve todos. **El cliente entra por la firma de todos modos**, igual que en
+  # Hoy la respuesta es la misma para todos: quien entra en matrix los ve todos.
+  # **El proyecto entra por la firma de todos modos**, igual que en
   # `Citations::Resolve`, y por el mismo motivo: el día que haya alcance por
-  # cliente —una persona de platform asignada solo a los suyos— hay un único
-  # sitio que tocar, y ninguna llamada que revisar.
-  def may_read_client?(_client) = may_access_matrix?
+  # proyecto —una persona asignada solo a los suyos— hay un único sitio que
+  # tocar, y ninguna llamada que revisar.
+  #
+  # Recibe el proyecto y no el cliente desde F11: es la frontera nueva, y un
+  # proyecto propio no tiene cliente al que preguntar.
+  def may_read_project?(_project) = may_access_matrix?
 
   # Lo que se congela en `gate_signatures.identity` al firmar. Sin nombre no se
   # queda en blanco: el correo identifica igual.

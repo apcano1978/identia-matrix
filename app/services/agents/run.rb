@@ -76,7 +76,7 @@ module Agents
           iteration: initiative.iteration,
           qa_cycle: initiative.qa_cycles_consumed,
           config: AgentConfig.effective_for(
-            agent: agent, client: initiative.platform_client_id),
+            agent: agent, project: initiative.project_id),
           code: next_code, status: :running, started_at: Time.current)
       rescue ActiveRecord::RecordNotUnique
         raise AlreadyRunning,

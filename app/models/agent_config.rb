@@ -1,4 +1,4 @@
-# La configuración de un agente. Nula por cliente = global.
+# La configuración de un agente. Nula por proyecto = global.
 #
 # La efectiva es `global.deep_merge(override)`: el override de un cliente ajusta
 # lo que necesita y hereda el resto, para que cambiar el global no deje a los
@@ -13,9 +13,13 @@ class AgentConfig < ApplicationRecord
   enum :agent, { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5 },
        prefix: true, validate: true
 
-  validates :agent, uniqueness: { scope: :platform_client_id }
+  # El ámbito es el PROYECTO desde F11, igual que `effective_for`. Con el nulo
+  # significando «global» en las dos, y apoyado en que Postgres no hace colisionar
+  # NULL en un índice único — que es como existe la fila de la configuración
+  # global. El índice de la base de datos sigue a esta validación al contraer.
+  validates :agent, uniqueness: { scope: :project_id }
 
-  scope :global, -> { where(platform_client_id: nil) }
+  scope :global, -> { where(project_id: nil) }
 
   # Los ajustes que un cliente NO puede sobrescribir (F2 §1.5). La maqueta las
   # marca como no configurables y tiene razón: son las tres que sostienen
@@ -40,7 +44,7 @@ class AgentConfig < ApplicationRecord
     "seraph" => %w[qa_cycle.max_qa_cycles]
   }.freeze
 
-  def global? = platform_client_id.nil?
+  def global? = project_id.nil?
 
   def self.locked_for(agent) = LOCKED_KEYS.fetch(agent.to_s, [])
 
@@ -80,11 +84,16 @@ class AgentConfig < ApplicationRecord
   private_class_method :prune_empty
 
   # La configuración con la que se ejecuta el agente para un cliente dado.
-  def self.effective_for(agent:, client: nil)
+  # `project` acepta el objeto o su id, igual que `Citations::Resolve` y
+  # `HumanNote.code_for`. Antes de F11 solo aceptaba un id crudo y era la
+  # excepción de las tres: quien pasaba un objeto se llevaba el global sin
+  # enterarse.
+  def self.effective_for(agent:, project: nil)
     base = global.find_by(agent: agent)&.settings || {}
-    return base.deep_dup if client.blank?
+    project_id = project.respond_to?(:id) ? project.id : project
+    return base.deep_dup if project_id.blank?
 
-    override = find_by(agent: agent, platform_client_id: client)&.settings || {}
+    override = find_by(agent: agent, project_id: project_id)&.settings || {}
     base.deep_merge(override)
   end
 end

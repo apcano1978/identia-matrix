@@ -90,7 +90,7 @@ class Repositories::GithubSource
   end
 
   def token
-    @token ||= RepositoryCredential.current_for(@repository.platform_client,
+    @token ||= RepositoryCredential.current_for(@repository.project,
                                                 @location.host)&.token
   end
 end

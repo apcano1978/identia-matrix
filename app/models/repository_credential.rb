@@ -21,12 +21,15 @@ class RepositoryCredential < ApplicationRecord
   validates :host, presence: true
   validates :token, presence: true
 
-  # La vigente de un cliente para un host. Por `created_at` y con `id` de
+  # La vigente de un PROYECTO para un host. Por `created_at` y con `id` de
   # desempate: dos emitidas en la misma transacción comparten instante.
+  #
+  # Por proyecto y no por cliente desde F11: un proyecto propio necesita
+  # credencial para su propio repositorio y no tiene cliente detrás.
   scope :latest_first, -> { order(created_at: :desc, id: :desc) }
 
-  def self.current_for(client, host)
-    where(platform_client: client, host: host).latest_first.first
+  def self.current_for(project, host)
+    where(project: project, host: host).latest_first.first
   end
 
   # Nunca el valor. Lo que se enseña de una credencial es que existe y desde

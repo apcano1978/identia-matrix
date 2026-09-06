@@ -66,7 +66,11 @@ class MatrixSequenceTest < ActiveSupport::TestCase
 
   private
 
+  # Sombrea al de DomainBuilders a propósito: aquí hace falta un nombre distinto
+  # en cada llamada. Lo que NO puede olvidar es el proyecto — sin él la frontera
+  # de `Initiatives::Open` rechaza el repositorio, y el mensaje habla de otra cosa.
   def build_repository(client:, name: "repo-#{SecureRandom.hex(3)}")
-    Repository.create!(platform_client: client, name: name, default_branch: "main")
+    Repository.create!(platform_client: client, project: project_for(client),
+                       name: name, default_branch: "main")
   end
 end

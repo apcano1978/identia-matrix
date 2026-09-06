@@ -11,6 +11,6 @@ class ArtifactPolicy < ApplicationPolicy
   def show?
     return false if user.blank?
 
-    user.may_access_matrix? && user.may_read_client?(record.platform_client)
+    user.may_access_matrix? && user.may_read_project?(record.project)
   end
 end

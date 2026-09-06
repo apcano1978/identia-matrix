@@ -74,7 +74,7 @@ class Citations::CodeGroupsTest < ActiveSupport::TestCase
 
   private
     def cite(raw)
-      Citations::Attach.one(citable: @artifact, raw: raw, client: @client.id)
+      Citations::Attach.one(citable: @artifact, raw: raw, project: project_for(@client))
     end
 
     def seed_mockup_citations

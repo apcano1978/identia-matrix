@@ -32,10 +32,11 @@ class AgentConfigsController < ApplicationController
 
   private
     def save(agent, client)
-      config = AgentConfig.find_or_initialize_by(agent: agent,
-                                                 platform_client_id: client&.id)
-      # F11 · doble escritura. El nulo sigue significando «global» en las dos.
-      config.project_id = client && Project.find_by(platform_client_id: client.id)&.id
+      # El nulo sigue significando «global». Mientras `platform_client_id`
+      # exista se escriben las dos, pero la que manda ya es el proyecto.
+      project_id = client && Project.find_by(platform_client_id: client.id)&.id
+      config = AgentConfig.find_or_initialize_by(agent: agent, project_id: project_id)
+      config.platform_client_id = client&.id
       config.settings = settings_for(agent, client)
       config.updated_by_user = Current.user
       config.save!

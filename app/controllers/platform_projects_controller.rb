@@ -40,10 +40,13 @@ class PlatformProjectsController < ApplicationController
     def readable?(platform_project)
       return false if platform_project.blank?
 
-      clients = platform_project.initiatives.map(&:platform_client).uniq
-      return Current.user&.may_access_matrix? if clients.empty?
+      # Agrupa por PROYECTO desde F11, no por cliente. Hoy es 1:1, pero el
+      # código deja de suponerlo: un proyecto de platform podrá tener detrás más
+      # de un proyecto de matrix el día que se separen.
+      projects = platform_project.initiatives.map(&:project).uniq
+      return Current.user&.may_access_matrix? if projects.empty?
 
-      clients.all? { |client| Current.user&.may_read_client?(client) }
+      projects.all? { |project| Current.user&.may_read_project?(project) }
     end
 
     def initiative_path_for(initiative)

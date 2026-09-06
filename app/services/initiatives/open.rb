@@ -57,10 +57,11 @@ class Initiatives::Open
     raise Refused, "hace falta un título" if title.blank?
     raise Refused, "hace falta al menos un repositorio" if repositories.empty?
 
-    intrusos = repositories.reject { |repository| repository.platform_client_id == client.id }
+    intrusos = repositories.reject { |repository| repository.project_id == project&.id }
     return if intrusos.empty?
 
-    raise Refused, "esos repositorios no son de #{client.slug}: #{intrusos.map(&:name).join(', ')}"
+    raise Refused, "esos repositorios no son de #{project&.slug || client.slug}: " \
+                   "#{intrusos.map(&:name).join(', ')}"
   end
 
   def create_initiative

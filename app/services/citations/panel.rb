@@ -12,8 +12,7 @@ module Citations
                           .includes(:repository, :target).to_a
 
       new(citations: citations,
-          ratio: DerivedRatio.call(citations,
-                                   client: artifact.platform_client_id),
+          ratio: DerivedRatio.call(citations, project: artifact.project),
           code_groups: CodeGroups.call(citations),
           excerpt: excerpt_for(citations),
           conflicts: conflicts_for(citations))

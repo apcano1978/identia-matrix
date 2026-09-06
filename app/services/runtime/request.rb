@@ -83,7 +83,7 @@ module Runtime::Request
   def config_for(agent_run)
     initiative = agent_run.initiative
     settings = AgentConfig.effective_for(
-      agent: agent_run.agent, client: initiative.platform_client_id)
+      agent: agent_run.agent, project: initiative.project_id)
 
     {
       "model" => model_for(agent_run.agent, settings),
@@ -195,8 +195,12 @@ module Runtime::Request
   # La memoria acumulada: lo que decidieron los evolutivos ANTERIORES sobre los
   # mismos repositorios. Es lo que permite que el tercero arranque sabiendo lo
   # que los dos primeros ya resolvieron, y la razón de que matrix exista.
+  #
+  # Acotada al PROYECTO desde F11, y aquí el estrechamiento importa de verdad:
+  # con el cliente, dos proyectos suyos se prestaban specs sin que nadie lo
+  # hubiera decidido — que es exactamente lo que el invariante 10 prohíbe.
   def prior_artifacts_of(initiative)
-    Artifact.where(platform_client_id: initiative.platform_client_id)
+    Artifact.where(project_id: initiative.project_id)
             .where.not(initiative_id: initiative.id)
             .where(initiative_id: sibling_initiative_ids(initiative))
             .latest_first

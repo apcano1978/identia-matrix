@@ -84,15 +84,25 @@ class VocabularyTest < ActiveSupport::TestCase
   # Restringir el escaneo es lo que puede apagar esta guarda, y una guarda apagada
   # pasa en verde. Estos dos casos comprueban que el matcher sigue sabiendo
   # distinguir: marca la forma mala y deja pasar la buena.
-  test "el matcher marca la forma ambigua y deja pasar la calificada" do
-    mala  = "    Project.find_by(platform_project_ref: ref)\n"
-    buena = "    belongs_to :platform_project, class_name: \"Platform::Project\"\n"
+  test "el matcher marca la forma ambigua y deja pasar las tres calificadas" do
+    mala = "    Project.find_by(platform_project_ref: ref)\n"
+    buenas = [
+      "    belongs_to :platform_project, class_name: \"Platform::Project\"\n",
+      # La raíz de matrix, nombrada desde dentro de `module Platform`. Es la
+      # forma que hay que escribir ahí, y la guarda la marcaba: se descubrió
+      # ejecutando B4, con este mismo test.
+      "      ::Project.create!(platform_client_id: client.id)\n",
+      "    ref = platform_project.platform_project_ref\n"
+    ]
 
     FORBIDDEN.each_key do |pattern|
       assert infringes?(mala, pattern),
              "la guarda tiene que marcar `Project` a secas: si no, no está mirando nada"
-      refute infringes?(buena, pattern),
-             "la forma calificada no debería infringir #{pattern.source}"
+
+      buenas.each do |buena|
+        refute infringes?(buena, pattern),
+               "la forma calificada no debería infringir: #{buena.strip}"
+      end
     end
   end
 
@@ -150,8 +160,13 @@ class VocabularyTest < ActiveSupport::TestCase
                     "solo #{modelos.size} modelos cargados: la guarda no está mirando el dominio"
 
     mal = modelos.flat_map do |modelo|
+      # Singulares y PLURALES. La primera versión solo miraba las de
+      # pertenencia, y `has_many :projects` dentro de `module Platform` se
+      # coló apuntando a `Platform::Project`: Rails lo infiere del namespace,
+      # no de la palabra.
       [
-        [ :project, Project ], [ :platform_project, Platform::Project ]
+        [ :project, Project ], [ :platform_project, Platform::Project ],
+        [ :projects, Project ], [ :platform_projects, Platform::Project ]
       ].filter_map do |nombre, esperada|
         reflection = modelo.reflect_on_association(nombre)
         next if reflection.nil? || reflection.klass == esperada
@@ -171,10 +186,17 @@ class VocabularyTest < ActiveSupport::TestCase
   private
 
   def infringes?(line, pattern)
-    # `platform_project`, `platform_projects` y `Platform::Project` son las formas
-    # CORRECTAS: se neutralizan antes de buscar la incorrecta, o cada una de ellas
-    # contaría como infracción de sí misma.
-    candidate = line.gsub(/platform_projects?/, "").gsub("Platform::Project", "")
+    # `platform_project`, `platform_projects`, `Platform::Project` y **`::Project`**
+    # son las formas CORRECTAS: se neutralizan antes de buscar la incorrecta, o
+    # cada una contaría como infracción de sí misma.
+    #
+    # `::Project` es la que se olvida, y es justo la que hay que escribir dentro
+    # de `module Platform` para nombrar la raíz de matrix sin ambigüedad. Sin
+    # neutralizarla, la guarda prohibiría la única forma correcta que queda ahí
+    # dentro — y eso no es una guarda estricta, es una guarda rota.
+    candidate = line.gsub(/platform_projects?/, "")
+                    .gsub("Platform::Project", "")
+                    .gsub("::Project", "")
 
     candidate.match?(pattern)
   end

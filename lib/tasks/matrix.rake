@@ -232,10 +232,10 @@ namespace :matrix do
     client = Platform::Client.find_by!(slug: args.fetch(:client))
     host = args[:host].presence || "github.com"
 
-    anterior = RepositoryCredential.current_for(client, host)
+    proyecto = Project.find_by!(platform_client_id: client.id)
+    anterior = RepositoryCredential.current_for(proyecto, host)
     credential = RepositoryCredential.create!(
-      platform_client: client, host: host, token: token,
-      project: Project.find_by(platform_client_id: client.id),
+      platform_client: client, host: host, token: token, project: proyecto,
       note: "emitida a mano#{anterior ? ' · rota la anterior' : ''}")
 
     puts "#{client.slug} · #{credential}"

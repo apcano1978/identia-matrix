@@ -13,11 +13,11 @@ class AgentsController < ApplicationController
     @global = AgentConfig.global.find_by(agent: @agent)&.settings || {}
     @override = if @client
       AgentConfig.find_by(agent: @agent,
-                          platform_client_id: @client.id)&.settings || {}
+                          project_id: project_of(@client))&.settings || {}
     else
       {}
     end
-    @effective = AgentConfig.effective_for(agent: @agent, client: @client&.id)
+    @effective = AgentConfig.effective_for(agent: @agent, project: project_of(@client))
 
     @clients = Platform::Client.active.order(:platform_id)
     @runs = AgentRun.where(agent: @agent).includes(:initiative)
@@ -25,4 +25,10 @@ class AgentsController < ApplicationController
   end
 
   def show = redirect_to(agents_path(key: params[:key]))
+
+  private
+    # La pantalla sigue eligiendo CLIENTE —convertirla en proyectos es F16— pero
+    # la configuración ya cuelga del proyecto. La traducción vive aquí, en un
+    # sitio, en vez de repartirse por la vista.
+    def project_of(client) = client && Project.find_by(platform_client_id: client.id)&.id
 end

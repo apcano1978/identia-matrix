@@ -40,7 +40,40 @@ module Platform::Sync
     source = Platform::Source.current
     report = Platform::Projection.import(source, only: %i[clients users])
 
+    ensure_projects
     Result.new(client: nil, report: report, closed_sessions: revalidate_users)
+  end
+
+  # F11 · el proyecto de matrix de cada cliente.
+  #
+  # **Va aquí y no perezosamente en las altas**, y la razón es la simetría: al
+  # otro extremo, `matrix:prune_projection` borra el proyecto junto al cliente.
+  # El proyecto de un cliente nace con él y muere con él; crearlo en un sitio y
+  # borrarlo en otro es exactamente como se desincronizan las cosas.
+  #
+  # Sin esto, un cliente que aparezca en platform mañana entra en matrix sin
+  # proyecto, y el primer repositorio o evolutivo que se le abra falla con un
+  # error de base de datos en la pantalla de alta — en cuanto `project_id` sea
+  # obligatorio. Es un fallo que solo se ve en producción, porque en desarrollo
+  # los proyectos los siembra `DesignSeed`.
+  #
+  # El slug se HEREDA y no se deriva: es el primer segmento de las claves de
+  # artefacto, y `Platform::Slug` podría dar otro al resolver una colisión.
+  #
+  # No es de `Platform::Projection`: eso es el upsert genérico de lo que llega de
+  # platform, y un proyecto de matrix no llega de platform. Es de aquí, que es
+  # la pieza que «decide el ámbito y deja constancia».
+  # ⚠ `::Project` CON LOS DOS PUNTOS DELANTE, y no es manía. Estamos dentro de
+  # `module Platform`: aquí `Project` a secas resuelve a `Platform::Project`, que
+  # es el contrato comercial de platform y no la raíz de matrix. Se escribió así
+  # la primera vez y lo cazó `vocabulary_test` — que existe exactamente para esto.
+  def ensure_projects
+    sin_proyecto = Platform::Client.where.missing(:projects)
+
+    sin_proyecto.find_each do |client|
+      ::Project.create!(platform_client_id: client.id, slug: client.slug,
+                        name: client.name, opened_at: Time.current)
+    end
   end
 
   # Lo de un cliente. Nunca una pasada que mezcle dos.

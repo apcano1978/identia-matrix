@@ -96,12 +96,12 @@ class PlatformProjectDeepLinkTest < ActionDispatch::IntegrationTest
     # restaurarlo es blunt, pero es lo que hay: el controlador carga su propia
     # instancia desde la sesión, así que un doble sobre un objeto no sirve.
     def denying_client_access
-      original = Platform::User.instance_method(:may_read_client?)
-      Platform::User.define_method(:may_read_client?) { |_client| false }
+      original = Platform::User.instance_method(:may_read_project?)
+      Platform::User.define_method(:may_read_project?) { |_project| false }
 
       yield
     ensure
-      Platform::User.define_method(:may_read_client?, original)
+      Platform::User.define_method(:may_read_project?, original)
     end
 
     def with_two_initiatives

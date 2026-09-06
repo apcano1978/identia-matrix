@@ -506,7 +506,7 @@ module DesignSeed
     existing = Artifact.find_by(storage_key: key)
     if existing
       Citations::Attach.body(citable: existing, body: body,
-                             client: initiative.platform_client_id)
+                             project: initiative.project)
       return existing
     end
 
@@ -625,7 +625,7 @@ module DesignSeed
     return nil if artifact.blank?
 
     Citations::Attach.one(citable: artifact, raw: raw, quote: quote,
-                          client: initiative.platform_client_id)
+                          project: initiative.project)
   end
 
   # ── El event stream ────────────────────────────────────────────────────────

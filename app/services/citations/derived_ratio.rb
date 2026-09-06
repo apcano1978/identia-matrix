@@ -9,8 +9,8 @@ module Citations
   # un aviso y no un bloqueo.
   #
   # La política vive bajo MORFEO —`morfeo.revision.derived_ratio_threshold`—
-  # porque es una decisión de revisión, y así hereda el override por cliente sin
-  # que este servicio tenga que saber nada de clientes.
+  # porque es una decisión de revisión, y así hereda el override por proyecto sin
+  # que este servicio tenga que saber nada de proyectos.
   class DerivedRatio
     # El 25 % de la maqueta, que avisa con exactamente 3 de 12. De respaldo:
     # `AgentConfig.effective_for` devuelve `{}` cuando no hay nada sembrado, y
@@ -34,19 +34,19 @@ module Citations
       def for(artifact)
         return empty if artifact.blank?
 
-        call(artifact.citations, client: artifact.platform_client_id)
+        call(artifact.citations, project: artifact.project)
       end
 
-      def call(citations, client: nil)
+      def call(citations, project: nil)
         citations = citations.to_a
         derived = citations.count(&:derived?)
 
         Ratio.new(origin: citations.size - derived, derived: derived,
-                  total: citations.size, threshold: threshold_for(client))
+                  total: citations.size, threshold: threshold_for(project))
       end
 
-      def threshold_for(client)
-        settings = AgentConfig.effective_for(agent: :morfeo, client: client)
+      def threshold_for(project)
+        settings = AgentConfig.effective_for(agent: :morfeo, project: project)
 
         settings.dig("revision", "derived_ratio_threshold") || DEFAULT_THRESHOLD
       end

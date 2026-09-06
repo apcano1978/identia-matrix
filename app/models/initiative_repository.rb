@@ -1,15 +1,18 @@
 # El cruce de los dos ejes: una celda de la matriz evolutivo × repositorio.
 #
-# Aquí se impone la frontera de cliente (invariante 10). Un evolutivo de un
-# cliente no puede tocar el repositorio de otro, y eso es una restricción del
-# MODELO, no un filtro de vista: es obligación contractual y una vista se puede
-# esquivar con una consola.
+# Aquí se impone la frontera de proyecto (invariante 10). Un evolutivo no puede
+# tocar el repositorio de otro proyecto, y eso es una restricción del MODELO, no
+# un filtro de vista: es obligación contractual y una vista se puede esquivar con
+# una consola.
+#
+# Desde F11 la frontera es el proyecto y no el cliente, y es MÁS ESTRECHA: dos
+# proyectos del mismo cliente tampoco pueden prestarse repositorios.
 class InitiativeRepository < ApplicationRecord
   belongs_to :initiative
   belongs_to :repository
 
   validates :repository_id, uniqueness: { scope: :initiative_id }
-  validate :repository_belongs_to_same_client
+  validate :repository_belongs_to_same_project
 
   before_create :stamp_first_linked_at
 
@@ -18,12 +21,12 @@ class InitiativeRepository < ApplicationRecord
   def pinned? = pinned_sha.present?
 
   private
-    def repository_belongs_to_same_client
+    def repository_belongs_to_same_project
       return if initiative.blank? || repository.blank?
-      return if initiative.platform_client_id == repository.platform_client_id
+      return if initiative.project_id == repository.project_id
 
       errors.add(:repository,
-                 "pertenece a otro cliente: la frontera de cliente es dura")
+                 "pertenece a otro proyecto: la frontera de proyecto es dura")
     end
 
     def stamp_first_linked_at

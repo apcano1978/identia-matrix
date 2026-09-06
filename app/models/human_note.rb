@@ -12,14 +12,17 @@ class HumanNote < ApplicationRecord
   has_many :escalations, dependent: :nullify
   has_many :citations, as: :target, dependent: :nullify
 
-  # La unicidad se acota AL CLIENTE, no al sistema entero. `Citations::Resolve`
-  # ya busca dentro de `platform_client_id`, así que una cita solo tiene que ser
-  # inequívoca dentro de su cliente — el invariante 10 impide que cruce esa
+  # La unicidad se acota AL PROYECTO, no al sistema entero. `Citations::Resolve`
+  # ya busca dentro de `project_id`, así que una cita solo tiene que ser
+  # inequívoca dentro de su proyecto — el invariante 10 impide que cruce esa
   # frontera. El ámbito global era más estricto de lo necesario y no compraba
   # nada: hacía que rechazar una firma en ev-014 por la mañana y autorizar una
   # exención en ev-031 por la tarde reventara, aunque fueran de clientes
   # distintos.
-  validates :code, presence: true, uniqueness: { scope: :platform_client_id },
+  #
+  # Era el cliente hasta F11 (migración `20260904103000`). Se estrecha con la
+  # frontera: el índice de la base de datos la sigue al contraer.
+  validates :code, presence: true, uniqueness: { scope: :project_id },
                    format: { with: /\A\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\z/ }
   validates :body, presence: true
 
@@ -39,23 +42,23 @@ class HumanNote < ApplicationRecord
   # que la primera nota del día sigue siendo `2026-08-17-ap` y las citas ya
   # emitidas no cambian de forma.
   #
-  # El cliente entra por la FIRMA y no por el evolutivo: la unicidad se acota a
-  # él, y quien llama tiene que decir de quién habla. Es la misma disciplina que
+  # El proyecto entra por la FIRMA y no por el evolutivo: la unicidad se acota a
+  # él, y quien llama tiene que decir de cuál habla. Es la misma disciplina que
   # `Citations::Resolve`.
-  def self.code_for(author, client:, on: Date.current)
+  def self.code_for(author, project:, on: Date.current)
     base = "#{on.iso8601}-#{initials_for(author)}"
-    client_id = client.respond_to?(:id) ? client.id : client
+    project_id = project.respond_to?(:id) ? project.id : project
 
-    return base unless taken?(base, client_id)
+    return base unless taken?(base, project_id)
 
     (2..).each do |ordinal|
       candidate = "#{base}-#{ordinal}"
-      return candidate unless taken?(candidate, client_id)
+      return candidate unless taken?(candidate, project_id)
     end
   end
 
-  def self.taken?(code, client_id)
-    exists?(code: code, platform_client_id: client_id)
+  def self.taken?(code, project_id)
+    exists?(code: code, project_id: project_id)
   end
 
   # Entre dos y cuatro letras, que es lo que la gramática admite. Con un solo

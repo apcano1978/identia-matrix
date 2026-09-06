@@ -70,8 +70,11 @@ class Dashboard::Filter
       when "status"
         term.value == "qa_cycle" ? board.qa_cycle.include?(initiative)
                                  : initiative.current_stage == term.value
+      # El token sigue llamándose `client:` a propósito: es lo que la gente
+      # escribe y lo que pone el placeholder. Convertirlo en `project:` es
+      # trabajo de F16, cuando el panel se rehaga entero.
       when "client"
-        initiative.platform_client.slug == term.value
+        initiative.project&.platform_client&.slug == term.value
       end
     end
 end

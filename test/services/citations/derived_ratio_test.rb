@@ -60,13 +60,13 @@ class Citations::DerivedRatioTest < ActiveSupport::TestCase
     refute ratio_of(derived: 3, origin: 9).over?, "3 de 12 ya no llega al 50 %"
   end
 
-  test "un cliente puede endurecer el umbral con su override" do
+  test "un proyecto puede endurecer el umbral con su override" do
     AgentConfig.create!(agent: :morfeo,
                         settings: { "revision" => { "derived_ratio_threshold" => 0.5 } })
-    AgentConfig.create!(agent: :morfeo, platform_client: @client,
+    AgentConfig.create!(agent: :morfeo, project: project_for(@client),
                         settings: { "revision" => { "derived_ratio_threshold" => 0.1 } })
 
-    assert_in_delta 0.1, Citations::DerivedRatio.threshold_for(@client.id)
+    assert_in_delta 0.1, Citations::DerivedRatio.threshold_for(project_for(@client))
     assert ratio_of(derived: 3, origin: 9).over?
   end
 

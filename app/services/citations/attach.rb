@@ -16,11 +16,11 @@ module Citations
     class << self
       # Todas las citas de un cuerpo de markdown, en el orden en que aparecen.
       # Idempotente: una segunda pasada no duplica.
-      def body(citable:, body:, client:)
+      def body(citable:, body:, project:)
         references, = Parse.scan(body.to_s)
 
         references.uniq(&:raw).map.with_index do |reference, position|
-          upsert(citable: citable, reference: reference, client: client,
+          upsert(citable: citable, reference: reference, project: project,
                  position: position)
         end.compact
       end
@@ -28,13 +28,13 @@ module Citations
       # Una cita suelta, de las que no salen de un cuerpo: la traza de un
       # criterio del DoD, la evidencia de un veredicto, el lado derivado de un
       # conflicto.
-      def one(citable:, raw:, client:, position: nil, quote: nil)
+      def one(citable:, raw:, project:, position: nil, quote: nil)
         return nil if citable.blank? || raw.blank?
 
         reference = Parse.call(raw)
         return nil if reference.blank?
 
-        upsert(citable: citable, reference: reference, client: client,
+        upsert(citable: citable, reference: reference, project: project,
                position: position || citable.citations.count, quote: quote)
       end
 
@@ -50,10 +50,10 @@ module Citations
       # porque su fuente no puede haber cambiado.
       def resolve_pending(scope = Citation.where(target_id: nil))
         scope.includes(:citable).filter_map do |citation|
-          client_id = client_id_for(citation)
-          next if client_id.blank?
+          project = project_for(citation)
+          next if project.blank?
 
-          target = Resolve.call(citation.reference, client: client_id)
+          target = Resolve.call(citation.reference, project: project)
           next if target.blank?
 
           citation.update!(target: target)
@@ -62,14 +62,14 @@ module Citations
       end
 
       private
-        # De quién es la cita. Cuelga de un artefacto, de un criterio o de un
-        # veredicto, y solo el primero lleva el cliente encima.
-        def client_id_for(citation)
+        # De qué proyecto es la cita. Cuelga de un artefacto, de un criterio o
+        # de un veredicto, y solo el primero lleva el proyecto encima.
+        def project_for(citation)
           citable = citation.citable
 
-          return citable.platform_client_id if citable.respond_to?(:platform_client_id)
+          return citable.project if citable.respond_to?(:project)
 
-          citable.try(:initiative)&.platform_client_id
+          citable.try(:initiative)&.project
         end
 
         # CURA la fila existente en vez de saltarla. La diferencia importa: con
@@ -77,7 +77,7 @@ module Citations
         # desarrollo ya sembrada conservaría para siempre las citas viejas con
         # `target` nulo, y ningún test lo detectaría porque los tests arrancan
         # limpios.
-        def upsert(citable:, reference:, client:, position:, quote: nil)
+        def upsert(citable:, reference:, project:, position:, quote: nil)
           citation = citable.citations.find_or_initialize_by(raw: reference.raw)
 
           citation.source_kind = reference.kind
@@ -85,8 +85,8 @@ module Citations
           citation.fragment    = reference.anchor
           citation.commit_sha  = reference.commit_sha
           citation.position    = position
-          citation.repository  = Resolve.repository_for(reference, client: client)
-          citation.target      = Resolve.call(reference, client: client)
+          citation.repository  = Resolve.repository_for(reference, project: project)
+          citation.target      = Resolve.call(reference, project: project)
           citation.quote       = quote if quote.present?
 
           citation.save!

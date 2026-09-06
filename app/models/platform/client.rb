@@ -25,10 +25,21 @@ class Platform::Client < Platform::Record
                          inverse_of: :platform_client,
                          dependent: :restrict_with_exception
 
-  # F11 · los proyectos de este cliente. `repositories` e `initiatives` pasan a
-  # colgar de ellos, y de aquí en adelante esta es la única de las tres que
-  # importa: las otras dos se retiran al contraer.
-  has_many :projects, foreign_key: :platform_client_id,
+  # F11 · los proyectos de matrix de este cliente. `repositories` e `initiatives`
+  # pasan a colgar de ellos, y de aquí en adelante esta es la única de las tres
+  # que importa: las otras dos se retiran al contraer.
+  #
+  # ⚠ `class_name: "::Project"` CON LOS DOS PUNTOS, y sin ellos esto está mal de
+  # una forma que no da la cara: dentro de `module Platform`, Rails infiere
+  # `Platform::Project` para `:projects`, así que la asociación apuntaría al
+  # contrato comercial de platform en vez de a la raíz de matrix. Se escribió
+  # así la primera vez, y el síntoma apareció tres capas más allá —un choque de
+  # slug en `Platform::Sync.ensure_projects`— sin decir nada de la causa.
+  #
+  # Es exactamente la trampa que la cabecera de arriba documenta para las claves
+  # foráneas, aplicada al nombre de la clase.
+  has_many :projects, class_name: "::Project",
+                      foreign_key: :platform_client_id,
                       inverse_of: :platform_client,
                       dependent: :restrict_with_exception
 

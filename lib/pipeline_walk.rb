@@ -47,6 +47,7 @@ module PipelineWalk
       @variant = variant
       @code = code
       @client = Platform::Client.find_by(slug: client_slug)
+      @project = Project.find_by(platform_client_id: @client&.id)
       @io = io
       @log = []
       @passes = Hash.new(0)
@@ -69,11 +70,12 @@ module PipelineWalk
       def prepare
         initiative = Initiative.find_or_create_by!(code: @code) do |created|
           created.platform_client = @client
+          created.project = @project
           created.title = "Recorrido de prueba · #{variant}"
           created.opened_at = Time.current
         end
 
-        @client.repositories.order(:name).each_with_index do |repository, index|
+        @project.repositories.order(:name).each_with_index do |repository, index|
           InitiativeRepository.find_or_create_by!(
             initiative: initiative, repository: repository
           ) { |link| link.pinned_sha = repository.head_sha || "0000000" }
@@ -195,7 +197,7 @@ module PipelineWalk
           DodCriterion.create!(
             definition_of_done: dod, key: finding["reference"],
             statement: finding["statement"],
-            repository: @client.repositories.find_by(name: finding["repository"]),
+            repository: @project.repositories.find_by(name: finding["repository"]),
             critical: finding["repository"].blank?,
             mandatory_kind: finding["reference"] == "c0" ? :multi_repo_compatibility : nil)
         end
@@ -457,7 +459,7 @@ module PipelineWalk
           initiative: initiative, platform_client: @client,
           project: initiative.project,
           author_user: signer, body: body,
-          code: HumanNote.code_for(signer, client: @client))
+          code: HumanNote.code_for(signer, project: @project))
       end
 
       def cost_cents(result)

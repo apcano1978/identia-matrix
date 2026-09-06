@@ -19,7 +19,7 @@ class HumanNoteTest < ActiveSupport::TestCase
     author = build_platform_user(name: "Antonio Pérez")
 
     assert_equal "2026-08-17-ap",
-                 HumanNote.code_for(author, client: client, on: Date.new(2026, 8, 17))
+                 HumanNote.code_for(author, project: project_for(client), on: Date.new(2026, 8, 17))
   end
 
   test "la segunda nota del mismo autor y dia recibe ordinal, y no revienta" do
@@ -69,7 +69,7 @@ class HumanNoteTest < ActiveSupport::TestCase
     assert_equal "2026-08-17", reference.locator
     assert_equal "ap", reference.author
     assert_equal "2", reference.note_slug
-    assert_equal note, Citations::Resolve.call(reference, client: client)
+    assert_equal note, Citations::Resolve.call(reference, project: project_for(client))
   end
 
   test "dos notas del mismo dia resuelven cada una a la suya" do
@@ -88,12 +88,12 @@ class HumanNoteTest < ActiveSupport::TestCase
     def write_note(client, author, on)
       HumanNote.create!(
         initiative: build_initiative(client: client),
-        platform_client: client, author_user: author,
-        code: HumanNote.code_for(author, client: client, on: on),
+        platform_client: client, project: project_for(client), author_user: author,
+        code: HumanNote.code_for(author, project: project_for(client), on: on),
         body: "Una nota")
     end
 
     def resolve(raw, client)
-      Citations::Resolve.call(Citations::Parse.call!(raw), client: client)
+      Citations::Resolve.call(Citations::Parse.call!(raw), project: project_for(client))
     end
 end

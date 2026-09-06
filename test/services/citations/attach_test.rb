@@ -94,7 +94,7 @@ class Citations::AttachTest < ActiveSupport::TestCase
   test "one ata una cita suelta con su fuente resuelta" do
     citation = Citations::Attach.one(citable: @artifact,
                                      raw: "[src:doc/acta-precios#p2]",
-                                     client: @client.id)
+                                     project: project_for(@client))
 
     assert_equal @document, citation.target
     assert_equal 0, citation.position
@@ -102,7 +102,7 @@ class Citations::AttachTest < ActiveSupport::TestCase
 
   test "one guarda la frase citada cuando quien emite la cita la declara" do
     citation = Citations::Attach.one(
-      citable: @artifact, raw: "[src:doc/acta-precios#p2]", client: @client.id,
+      citable: @artifact, raw: "[src:doc/acta-precios#p2]", project: project_for(@client),
       quote: "una única autoridad de precio")
 
     assert_equal "una única autoridad de precio", citation.quote
@@ -110,14 +110,14 @@ class Citations::AttachTest < ActiveSupport::TestCase
 
   test "one devuelve nulo ante un texto que no es una cita" do
     assert_nil Citations::Attach.one(citable: @artifact, raw: "no es una cita",
-                                     client: @client.id)
+                                     project: project_for(@client))
     assert_nil Citations::Attach.one(citable: @artifact, raw: nil,
-                                     client: @client.id)
+                                     project: project_for(@client))
   end
 
   private
     def attach(body)
       Citations::Attach.body(citable: @artifact, body: body,
-                             client: @client.id)
+                             project: project_for(@client))
     end
 end

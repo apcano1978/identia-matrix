@@ -66,7 +66,7 @@ module Guides
           platform_client: initiative.platform_client,
           project: initiative.project,
           author_user: @user,
-          code: HumanNote.code_for(@user, client: initiative.platform_client),
+          code: HumanNote.code_for(@user, project: initiative.project),
           body: "Autorizado cerrar el paso #{format('%02d', @step.position)} " \
                 "sin recorrerlo: #{@reason}")
       end

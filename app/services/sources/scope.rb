@@ -9,9 +9,15 @@ module Sources
   # por defecto. Un documento vive una sola vez, en platform, y aparece en
   # tantos evolutivos como haga falta sin duplicarse en ninguno.
   #
-  # Todas las consultas parten de `platform_client_id` y no de asociaciones:
-  # esta pantalla existe precisamente para hacer inspeccionable esa frontera, y
-  # sería raro que fuera el único sitio que la cruza.
+  # Las consultas parten de `platform_client_id` y no de asociaciones: esta
+  # pantalla existe precisamente para hacer inspeccionable esa frontera, y sería
+  # raro que fuera el único sitio que la cruza.
+  #
+  # ⚠ Y SIGUE SIENDO EL CLIENTE, no el proyecto, después de F11. No es un resto
+  # por limpiar: `Platform::Document` y `Platform::Meeting` son la proyección de
+  # platform y llegan sin noción de proyecto. Lo único que cambió es de dónde
+  # sale el cliente — del proyecto, que es la raíz. Un proyecto propio no tiene,
+  # y entonces no hereda ninguna fuente: correcto hasta F12.
   class Scope
     Group = Data.define(:sources, :refs) do
       def size = sources.size
@@ -68,7 +74,7 @@ module Sources
         def rest(model, initiative, taken)
           ids = taken.select { |type, _| type == model.name }.map(&:last)
 
-          scope = model.where(platform_client_id: initiative.platform_client_id)
+          scope = model.where(platform_client_id: initiative.project&.platform_client_id)
           scope = scope.where.not(id: ids) if ids.any?
 
           Group.new(sources: scope.order(:platform_id).to_a, refs: {})

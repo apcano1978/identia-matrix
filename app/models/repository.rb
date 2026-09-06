@@ -18,7 +18,7 @@ class Repository < ApplicationRecord
   has_many :work_package_repositories, dependent: :destroy
 
   validates :name, presence: true,
-                   uniqueness: { scope: :platform_client_id },
+                   uniqueness: { scope: :project_id },
                    format: { with: /\A[a-z0-9]+(?:[-_.][a-z0-9]+)*\z/ }
   validates :default_branch, presence: true
 

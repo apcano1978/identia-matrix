@@ -125,7 +125,7 @@ module Artifacts
             # documento haría que un cambio futuro de la cabecera pudiera
             # inventar citas en silencio.
             Citations::Attach.body(citable: artifact, body: body,
-                                   client: initiative.platform_client_id)
+                                   project: initiative.project)
 
             artifact
           end
