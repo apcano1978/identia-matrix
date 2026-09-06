@@ -130,7 +130,7 @@ class AgentsTest < ApplicationSystemTestCase
 
   test "la configuracion efectiva aplica el override" do
     open_agent "neo"
-    click_on "vivla"
+    open_client "vivla"
 
     within("[data-section='model']") { assert_text "verbose" }
   end
@@ -141,5 +141,15 @@ class AgentsTest < ApplicationSystemTestCase
     def open_agent(key)
       click_on key
       assert_selector "h1", text: key.upcase
+    end
+
+    # Y lo mismo para el cliente, por una razón MÁS SUTIL que la de arriba: la
+    # sección `model` existe en las dos pantallas, así que un `within` sobre ella
+    # la encuentra en la vieja sin esperar y afirma contra la configuración
+    # global. El panel es lo único que nombra al cliente, y por eso es lo que
+    # sirve de barrera. Sin esto el test falla según el orden de ejecución.
+    def open_client(slug)
+      click_on slug
+      assert_text "global vs #{slug}"
     end
 end
