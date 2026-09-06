@@ -13,11 +13,41 @@ module DomainBuilders
   def build_client(slug: nil, **attributes)
     slug ||= "cliente-#{next_platform_id}"
 
-    Platform::Record.writing do
+    cliente = Platform::Record.writing do
       Platform::Client.create!(
         platform_id: next_platform_id, slug: slug, name: slug.titleize,
         **attributes)
     end
+
+    # F11 · un cliente de matrix siempre tiene su proyecto, y nace con él. Los
+    # tests que ya existían siguen pasando `client:` y no se enteran: es lo que
+    # concentra la mudanza de la raíz en este fichero en vez de repartirla por los
+    # treinta que hablan de `platform_client`.
+    project_for(cliente)
+    cliente
+  end
+
+  # El proyecto de un cliente, creándolo si hace falta. `find_or_create` y no
+  # `create`: hay tests que fabrican el `Platform::Client` a mano, sin builder, y
+  # tienen el mismo derecho a colgarle trabajo.
+  #
+  # El slug se HEREDA, igual que en la migración: es el primer segmento de las
+  # claves de artefacto, y derivarlo otra vez podría dar otro.
+  def project_for(client)
+    return nil if client.nil?
+
+    Project.find_by(platform_client_id: client.id) ||
+      Project.create!(platform_client_id: client.id, slug: client.slug,
+                      name: client.name, opened_at: Time.current)
+  end
+
+  # Un proyecto PROPIO: sin cliente detrás. Es lo que F11 hace posible, y lo que
+  # «matrix interna» estrena.
+  def build_own_project(slug: nil, **attributes)
+    slug ||= "propio-#{next_platform_id}"
+
+    Project.create!(slug: slug, name: slug.titleize, opened_at: Time.current,
+                    **attributes)
   end
 
   def build_platform_user(role: :admin, **attributes)
@@ -50,14 +80,18 @@ module DomainBuilders
     end
   end
 
-  def build_repository(client: nil, name: "identia-platform", **attributes)
-    Repository.create!(platform_client: client || build_client, name: name,
-                       **attributes)
+  def build_repository(client: nil, project: nil, name: "identia-platform", **attributes)
+    client ||= project&.platform_client || build_client
+
+    Repository.create!(platform_client: client, project: project || project_for(client),
+                       name: name, **attributes)
   end
 
-  def build_initiative(client: nil, code: nil, **attributes)
+  def build_initiative(client: nil, project: nil, code: nil, **attributes)
+    client ||= project&.platform_client || build_client
+
     Initiative.create!(
-      platform_client: client || build_client,
+      platform_client: client, project: project || project_for(client),
       code: code || "ev-#{format('%03d', next_platform_id % 1000)}",
       title: "Un evolutivo", opened_at: Time.current, **attributes)
   end
@@ -103,7 +137,7 @@ module DomainBuilders
 
     Artifact.create!(
       initiative: initiative, platform_client: initiative.platform_client,
-      kind: kind, code: code, version: version,
+      project: initiative.project, kind: kind, code: code, version: version,
       storage_key: Artifacts::Key.build(
         client: initiative.platform_client.slug,
         initiative: initiative.code, code: code, version: version),
@@ -148,6 +182,7 @@ module DomainBuilders
     HumanNote.create!(
       initiative: initiative,
       platform_client_id: initiative.platform_client_id,
+      project_id: initiative.project_id,
       author_user: author || build_platform_user,
       code: "2026-08-05-ap#{next_platform_id}",
       body: "Lo que cambió antes de reanudar.")

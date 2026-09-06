@@ -15,6 +15,12 @@ class Initiative < ApplicationRecord
   MAX_QA_CYCLES = 2
 
   belongs_to :platform_client, class_name: "Platform::Client"
+
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+
+  # se endurece al contraer, que es cuando `platform_client` se va.
+
+  belongs_to :project, optional: true
   belongs_to :platform_project, class_name: "Platform::Project", optional: true
 
   has_many :initiative_repositories, dependent: :destroy

@@ -6,6 +6,9 @@
 # platform ni un evolutivo.
 class Repository < ApplicationRecord
   belongs_to :platform_client, class_name: "Platform::Client"
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+  # se endurece al contraer, que es cuando `platform_client` se va.
+  belongs_to :project, optional: true
 
   has_many :initiative_repositories, dependent: :destroy
   has_many :initiatives, through: :initiative_repositories

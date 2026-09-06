@@ -27,6 +27,7 @@ class Pipeline::Escalate
       escalation = Escalation.create!(
         initiative: initiative,
         platform_client_id: initiative.platform_client_id,
+        project_id: initiative.project_id,
         reason: @reason, opened_at: Time.current,
         opened_by_user: @opened_by_user,
         opened_by_verification: @verification_report,

@@ -44,6 +44,11 @@ class Initiatives::Open
 
   attr_reader :client, :title, :repositories, :actor, :platform_project
 
+  # F11 · el proyecto del cliente. Mientras las dos columnas conviven se deriva
+  # aquí; al contraer, el alta recibirá el proyecto y el cliente será lo que
+  # cuelgue de él, no al revés.
+  def project = @project ||= Project.find_by(platform_client_id: client.id)
+
   # **La frontera de cliente, comprobada aquí y no en la vista.** Un formulario
   # manipulado puede mandar el id del repositorio de otro cliente, y enlazarlo
   # metería material ajeno en el ámbito de un evolutivo — que es lo que el
@@ -61,6 +66,7 @@ class Initiatives::Open
   def create_initiative
     Initiative.create!(
       platform_client: client,
+      project: project,
       platform_project: platform_project,
       code: Matrix::Sequence.next_initiative_code,
       title: title,
@@ -93,7 +99,7 @@ class Initiatives::Open
   def record_event(initiative)
     Event.create!(
       occurred_at: Time.current, actor: actor, kind: "initiative_opened",
-      initiative: initiative, platform_client: client,
+      initiative: initiative, platform_client: client, project: project,
       message: "#{initiative.code} · alta · #{repositories.map(&:name).join(', ')}",
       payload: { repositories: repositories.map(&:name),
                  platform_project_ref: platform_project&.platform_project_ref })

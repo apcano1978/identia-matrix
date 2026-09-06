@@ -4,62 +4,67 @@ require "test_helper"
 
 # La regla dura del vocabulario de matrix, verificada.
 #
-#   REPOSITORIO  Repository   un repositorio de código · eje de memoria
-#   EVOLUTIVO    Initiative   la unidad de trabajo     · eje de pipeline
-#   PROYECTO     Platform::Project   lo que platform llama proyecto
+#   REPOSITORIO  Repository          un repositorio de código · eje de memoria
+#   EVOLUTIVO    Initiative          la unidad de trabajo     · eje de pipeline
+#   PROYECTO     Project             la raíz de matrix        · la frontera
+#   PROYECTO     Platform::Project   lo que platform llama proyecto: un contrato
+#                                    comercial. Otra cosa, con el mismo nombre.
 #
-# La palabra `project` NO se usa en el código de matrix bajo ningún concepto.
-# Solo aparece bajo el namespace Platform o con el prefijo platform_.
+# ── LA REGLA SE INVIRTIÓ EN F11, Y NO SE BORRÓ ────────────────────────────────
 #
-# Este test existe porque la ambigüedad tiene tres puertas de entrada, y todas
-# son fáciles de cruzar sin darse cuenta:
+# Hasta F11 la palabra `project` no se usaba en matrix bajo ningún concepto: solo
+# aparecía bajo el namespace Platform o con el prefijo platform_. Esa regla nació
+# porque «proyecto» significaba UNA cosa —el contrato comercial de platform— y
+# usarla para otra era la ambigüedad que había que evitar.
 #
-#  1. Dentro de `module Platform`, la constante `Project` a secas RESUELVE. Un
-#     `Project.find(1)` escrito ahí funciona y lee como si fuera del dominio.
-#  2. La maqueta aprobada llama `project` a la vista del evolutivo (goProject,
-#     crumbs.project, state.view === "project"). Portarla literalmente importa
-#     el problema.
-#  3. platform tiene su propio `projects.ref`; al cachearlo, la columna tiene
-#     que llamarse platform_project_ref, no ref.
+# Desde F11 significa DOS, así que la regla ya no puede ser «no la escribas». Pasa
+# a ser **«nunca `Project` sin decir de cuál»**, y de las tres puertas de entrada
+# que el test original documentaba solo sigue viva la primera:
+#
+#  1. Dentro de `module Platform`, la constante `Project` A SECAS RESUELVE a
+#     `Platform::Project`. Un `Project.find(1)` escrito ahí compila, funciona, y
+#     lee como si hablara de la raíz de matrix. Sigue siendo un error, y es el
+#     único que queda que no puede detectar el compilador.
+#  2. ~~La maqueta llama `project` a la vista del evolutivo.~~ Sigue siendo un
+#     error —un evolutivo es un `Initiative`— pero ya no se caza por la palabra:
+#     lo cazan las aserciones estructurales de abajo, que exigen que cada
+#     asociación resuelva a la clase que le toca.
+#  3. ~~La columna tiene que llamarse platform_project_ref.~~ Igual: la comprueba
+#     el esquema, no una regex.
+#
+# ⚠ **Y al invertirla, el escaneo pasa a mirar MUCHO menos código.** Ese es el
+# riesgo de este fichero: una guarda que mira poco se apaga sin que nadie lo note.
+# Por eso hay un control positivo —un caso que TIENE que marcar— y tres
+# afirmaciones estructurales que no dependen de leer texto.
 class VocabularyTest < ActiveSupport::TestCase
-  # Los directorios donde vive código nuestro. No se mira db/schema.rb (lo
-  # genera Rails) ni vendor.
-  SCANNED = %w[app lib config/routes.rb].freeze
-
-  # Rutas donde `project` SÍ es legítimo, porque son la proyección de platform.
-  ALLOWED_PATHS = [
-    %r{\Aapp/models/platform/},
-    %r{\Aapp/services/platform/},
-    %r{\Aapp/serializers/platform/},
-    %r{\Aapp/policies/platform/},
-    %r{\Aapp/views/platform/}
+  # Solo el namespace de la proyección. Fuera de él, `Project` es la raíz de
+  # matrix y escribirlo es lo correcto.
+  SCANNED = %w[
+    app/models/platform
+    app/services/platform
+    app/serializers/platform
+    app/policies/platform
+    app/views/platform
+    lib/platform
   ].freeze
 
-  # Formas prohibidas. Cada una con el error concreto que representa.
+  # La única forma que sigue prohibida, y solo dentro de Platform.
   FORBIDDEN = {
-    /\bProject\b(?<!Platform::Project)/ => "la constante Project a secas",
-    /\bproject_id\b/                    => "la clave foránea project_id sin prefijo",
-    /\bprojects_controller\b/           => "un controlador projects_controller",
-    /\bprojects_path\b/                 => "un helper de ruta projects_path",
-    /\bhas_many :projects\b/            => "una asociación :projects",
-    /\bbelongs_to :project\b/           => "una asociación :project"
+    /\bProject\b/ => "la constante Project a secas dentro de `module Platform`, " \
+                     "donde resuelve a Platform::Project y lee como si fuera la raíz de matrix"
   }.freeze
 
-  test "la palabra project no aparece sin calificar" do
+  test "dentro de Platform, Project a secas es un error" do
     offenses = []
 
     scanned_files.each do |path|
       relative = path.relative_path_from(Rails.root).to_s
-      next if ALLOWED_PATHS.any? { |allowed| allowed.match?(relative) }
 
       path.each_line.with_index(1) do |line, number|
         next if comment_or_string_exempt?(line)
 
         FORBIDDEN.each do |pattern, description|
-          # `platform_project` y `platform_projects` son la forma correcta:
-          # se neutralizan antes de buscar la incorrecta.
-          candidate = line.gsub(/platform_projects?/, "").gsub("Platform::Project", "")
-          next unless candidate.match?(pattern)
+          next unless infringes?(line, pattern)
 
           offenses << "#{relative}:#{number} · #{description}\n    #{line.strip}"
         end
@@ -67,49 +72,132 @@ class VocabularyTest < ActiveSupport::TestCase
     end
 
     assert_empty offenses, <<~MSG
-      El vocabulario de matrix no admite la palabra `project` sin calificar.
-      Un evolutivo es un Initiative; un proyecto de platform es un
-      Platform::Project y su clave, platform_project_id.
+      Dentro de `module Platform`, escribe `Platform::Project` con su namespace.
+      A secas resuelve igual y dice otra cosa: la raíz de matrix es `Project`.
 
       #{offenses.join("\n")}
     MSG
   end
 
-  test "las tablas del esquema respetan el vocabulario" do
-    schema = Rails.root.join("db/schema.rb")
-    skip "todavía no hay esquema" unless schema.exist?
-
-    tables = schema.read.scan(/create_table "([^"]+)"/).flatten
-
-    bad = tables.select { |table| table == "projects" }
-    assert_empty bad, "la tabla `projects` no existe en matrix: sería platform_projects"
-  end
-
-  test "platform_project y Platform::Project son formas legitimas" do
-    # La regla prohíbe `project` sin calificar, no la proyección de platform.
-    # Si esto se pusiera rojo, la guarda sería inservible: bloquearía justo el
-    # nombre correcto.
-    line = "  belongs_to :platform_project, class_name: \"Platform::Project\"\n"
-    candidate = line.gsub(/platform_projects?/, "").gsub("Platform::Project", "")
+  # ── EL CONTROL POSITIVO ─────────────────────────────────────────────────────
+  #
+  # Restringir el escaneo es lo que puede apagar esta guarda, y una guarda apagada
+  # pasa en verde. Estos dos casos comprueban que el matcher sigue sabiendo
+  # distinguir: marca la forma mala y deja pasar la buena.
+  test "el matcher marca la forma ambigua y deja pasar la calificada" do
+    mala  = "    Project.find_by(platform_project_ref: ref)\n"
+    buena = "    belongs_to :platform_project, class_name: \"Platform::Project\"\n"
 
     FORBIDDEN.each_key do |pattern|
-      refute_match pattern, candidate, "la forma calificada no debería infringir #{pattern.source}"
+      assert infringes?(mala, pattern),
+             "la guarda tiene que marcar `Project` a secas: si no, no está mirando nada"
+      refute infringes?(buena, pattern),
+             "la forma calificada no debería infringir #{pattern.source}"
     end
   end
 
+  # ── LO ESTRUCTURAL ──────────────────────────────────────────────────────────
+  #
+  # Tres afirmaciones que no dependen de leer texto, y que son las que de verdad
+  # sostienen la regla ahora que hay dos proyectos.
+
+  test "las dos tablas existen, y son dos" do
+    tables = ActiveRecord::Base.connection.tables
+
+    assert_includes tables, "projects",
+                    "la raíz de matrix vive en `projects` desde F11"
+    assert_includes tables, "platform_projects",
+                    "y la proyección del contrato comercial sigue siendo otra tabla"
+  end
+
+  test "toda columna project_id apunta a la raíz de matrix" do
+    connection = ActiveRecord::Base.connection
+
+    mal = connection.tables.flat_map do |table|
+      next [] unless connection.columns(table).any? { |column| column.name == "project_id" }
+
+      clave = connection.foreign_keys(table).find { |fk| fk.column == "project_id" }
+
+      if clave.nil?
+        [ "#{table}.project_id no tiene clave foránea" ]
+      elsif clave.to_table != "projects"
+        [ "#{table}.project_id apunta a #{clave.to_table}, no a projects" ]
+      else
+        []
+      end
+    end
+
+    assert_empty mal, <<~MSG
+      `project_id` nombra siempre la raíz de matrix. Lo que apunte a la proyección
+      de platform se llama `platform_project_id`, y así se distinguen sin leerlo.
+
+      #{mal.join("\n  ")}
+    MSG
+  end
+
+  test "cada asociacion resuelve al proyecto que dice su nombre" do
+    # ⚠ `eager_load!` NO es decoración. En el entorno de test `eager_load` está en
+    # false, así que sin esto `descendants` devuelve CERO modelos y este test pasa
+    # en verde sin haber mirado ninguno — se comprobó, y era exactamente lo que
+    # hacía la primera versión. Es el mismo agujero que documenta SourceScan, por
+    # otra puerta: aquí el glob que no encuentra nada es la lista de clases.
+    #
+    # Y por eso además se afirma el mínimo: si un refactor volviera a vaciar la
+    # lista, esto se pone rojo en vez de dejar de proteger en silencio.
+    modelos = models_de_dominio
+
+    assert_operator modelos.size, :>=, 30,
+                    "solo #{modelos.size} modelos cargados: la guarda no está mirando el dominio"
+
+    mal = modelos.flat_map do |modelo|
+      [
+        [ :project, Project ], [ :platform_project, Platform::Project ]
+      ].filter_map do |nombre, esperada|
+        reflection = modelo.reflect_on_association(nombre)
+        next if reflection.nil? || reflection.klass == esperada
+
+        "#{modelo.name}##{nombre} resuelve a #{reflection.klass}, no a #{esperada}"
+      end
+    end
+
+    assert_empty mal, <<~MSG
+      Dentro de `module Platform`, Rails deduce `Project` como `Platform::Project`
+      y fuera como `Project`: la asociación tiene que decir cuál con `class_name:`.
+
+      #{mal.join("\n  ")}
+    MSG
+  end
+
   private
+
+  def infringes?(line, pattern)
+    # `platform_project`, `platform_projects` y `Platform::Project` son las formas
+    # CORRECTAS: se neutralizan antes de buscar la incorrecta, o cada una de ellas
+    # contaría como infracción de sí misma.
+    candidate = line.gsub(/platform_projects?/, "").gsub("Platform::Project", "")
+
+    candidate.match?(pattern)
+  end
+
+  def models_de_dominio
+    Rails.application.eager_load!
+    ApplicationRecord.descendants.reject(&:abstract_class?)
+  end
 
   def scanned_files
     patrones = SCANNED.map do |entry|
       Rails.root.join(entry).file? ? entry : "#{entry}/**/*.{rb,erb,yml,js}"
     end
 
-    scan_sources(*patrones).map { |file| Pathname.new(file) }
+    # El mínimo sube respecto al escaneo antiguo justo porque ahora se mira menos:
+    # con el umbral por defecto, borrar `app/services/platform` entero dejaría el
+    # test en verde.
+    scan_sources(*patrones, minimum: 10).map { |file| Pathname.new(file) }
   end
 
-  # Este propio test nombra las formas prohibidas para poder buscarlas; y los
-  # comentarios que EXPLICAN la regla también las nombran. Ninguno de los dos
-  # es una infracción.
+  # Este propio test nombra la forma prohibida para poder buscarla; y los
+  # comentarios que EXPLICAN la regla también la nombran. Ninguno de los dos es
+  # una infracción.
   def comment_or_string_exempt?(line)
     line.strip.start_with?("#") || line.include?("VOCABULARIO-OK")
   end

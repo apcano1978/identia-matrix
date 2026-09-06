@@ -12,6 +12,12 @@ class RepositoryCredential < ApplicationRecord
 
   belongs_to :platform_client, class_name: "Platform::Client"
 
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+
+  # se endurece al contraer, que es cuando `platform_client` se va.
+
+  belongs_to :project, optional: true
+
   validates :host, presence: true
   validates :token, presence: true
 

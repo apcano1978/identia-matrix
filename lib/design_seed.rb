@@ -40,6 +40,7 @@ module DesignSeed
 
     ActiveRecord::Base.transaction do
       Platform::Projection.import(Platform::FakeSource)
+      seed_projects
       seed_repositories
       Catalog::INITIATIVES.each { |data| seed_initiative(data) }
       seed_adrs
@@ -90,11 +91,30 @@ module DesignSeed
 
   # ── Los dos ejes ───────────────────────────────────────────────────────────
 
+  # F11 · un proyecto por cliente, con el slug HEREDADO.
+  #
+  # No se deriva de nuevo con `Platform::Slug`: el slug de cliente ya es el primer
+  # segmento de todas las claves de artefacto que este seed publica, y derivarlo
+  # otra vez podría dar `vivla-2` y dejarlas huérfanas. Es la misma razón por la
+  # que se congeló en F8.
+  #
+  # Idempotente como el resto del seed: `find_or_create_by` sobre el cliente.
+  def seed_projects
+    Platform::Client.order(:platform_id).each do |client|
+      Project.find_or_create_by!(platform_client_id: client.id) do |project|
+        project.slug = client.slug
+        project.name = client.name
+        project.opened_at = Time.current
+      end
+    end
+  end
+
   def seed_repositories
     Catalog::REPOSITORIES.each do |data|
       client = client_for(data[:client])
       repository = Repository.find_or_initialize_by(
         platform_client_id: client.id, name: data[:name])
+      repository.project = project_for(client)
       repository.update!(data.except(:client, :name).merge(
                            last_synced_at: Time.current))
     end
@@ -106,6 +126,7 @@ module DesignSeed
 
     initiative.assign_attributes(
       platform_client_id: client.id,
+      project_id: project_for(client).id,
       platform_project_id: Platform::Project.find_by(
         platform_id: data[:project])&.id,
       title: data[:title], opened_at: Time.zone.parse(data[:opened_on]),
@@ -224,6 +245,7 @@ module DesignSeed
     Escalation.find_or_create_by!(initiative: initiative,
                                   reason: data[:escalation]) do |escalation|
       escalation.platform_client_id = initiative.platform_client_id
+      escalation.project_id = initiative.project_id
       escalation.opened_at = Time.current - 1.day
     end
   end
@@ -245,9 +267,10 @@ module DesignSeed
     end
 
     Catalog::AGENT_OVERRIDES.each do |data|
+      cliente = client_for(data[:client])
       AgentConfig.find_or_initialize_by(
-        agent: data[:agent], platform_client_id: client_for(data[:client]).id
-      ).update!(settings: data[:settings])
+        agent: data[:agent], platform_client_id: cliente.id
+      ).update!(settings: data[:settings], project_id: project_for(cliente).id)
     end
   end
 
@@ -626,7 +649,8 @@ module DesignSeed
         initiative: code && Initiative.find_by(code: code))
 
       event.occurred_at ||= Time.current - (index + 1).hours
-      event.update!(kind: "activity", message: message)
+      event.update!(kind: "activity", message: message,
+                    project_id: project_for(client_for(client)).id)
     end
   end
 
@@ -641,6 +665,10 @@ module DesignSeed
   # ── Utilidades ─────────────────────────────────────────────────────────────
 
   def client_for(slug) = Platform::Client.find_by!(slug: slug)
+
+  # F11 · el proyecto de un cliente. Gemelo de `client_for`, y por ahora hay uno
+  # por cliente: los propios los crea quien los necesita, no el seed.
+  def project_for(client) = Project.find_by!(platform_client_id: client.id)
 
   def repository_named(name, initiative)
     return nil if name.blank?

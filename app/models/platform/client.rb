@@ -25,6 +25,13 @@ class Platform::Client < Platform::Record
                          inverse_of: :platform_client,
                          dependent: :restrict_with_exception
 
+  # F11 · los proyectos de este cliente. `repositories` e `initiatives` pasan a
+  # colgar de ellos, y de aquí en adelante esta es la única de las tres que
+  # importa: las otras dos se retiran al contraer.
+  has_many :projects, foreign_key: :platform_client_id,
+                      inverse_of: :platform_client,
+                      dependent: :restrict_with_exception
+
   validates :platform_id, presence: true, uniqueness: true
   # El slug va dentro de claves de artefacto inmutables: se congela en la
   # primera sincronización y no se refresca nunca. El nombre sí.

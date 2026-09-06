@@ -4,6 +4,9 @@
 class HumanNote < ApplicationRecord
   belongs_to :initiative
   belongs_to :platform_client, class_name: "Platform::Client"
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+  # se endurece al contraer, que es cuando `platform_client` se va.
+  belongs_to :project, optional: true
   belongs_to :author_user, class_name: "Platform::User"
 
   has_many :escalations, dependent: :nullify

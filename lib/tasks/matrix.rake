@@ -235,6 +235,7 @@ namespace :matrix do
     anterior = RepositoryCredential.current_for(client, host)
     credential = RepositoryCredential.create!(
       platform_client: client, host: host, token: token,
+      project: Project.find_by(platform_client_id: client.id),
       note: "emitida a mano#{anterior ? ' · rota la anterior' : ''}")
 
     puts "#{client.slug} · #{credential}"
@@ -386,9 +387,25 @@ namespace :matrix do
       # En orden de claves foráneas. `delete_all` y no `destroy_all`: el segundo
       # va fila a fila y `Platform::Record#destroy` lo prohíbe, con razón.
       { "reuniones" => Platform::Meeting, "documentos" => Platform::Document,
-        "proyectos" => Platform::Project, "eventos" => Event }.each do |nombre, modelo|
+        "proyectos de platform" => Platform::Project, "eventos" => Event }.each do |nombre, modelo|
         puts "  #{nombre}: #{modelo.where(platform_client_id: ids).delete_all}"
       end
+
+      # F11 · el proyecto de matrix del cliente, que nace con él y muere con él.
+      #
+      # Se borra SIN excepción para la frontera de arriba, y no es un descuido:
+      # esa guarda ya ha comprobado que de estos clientes no cuelga ni un
+      # evolutivo, ni un artefacto, ni un repositorio. Lo que queda es la fila
+      # vacía, y dejarla sería dejar un proyecto sin cliente y sin trabajo que
+      # nadie sabría de dónde salió.
+      #
+      # `where.not(platform_client_id: nil)` es redundante con el `where` de
+      # arriba y se escribe igual: un proyecto PROPIO no tiene cliente y no puede
+      # caer aquí por ningún camino, ni siquiera si alguien cambia el `ids`.
+      podados = Project.where(platform_client_id: ids)
+                       .where.not(platform_client_id: nil).delete_all
+      puts "  proyectos de matrix: #{podados}"
+
       puts "  clientes: #{Platform::Client.where(id: ids).delete_all}"
     end
 

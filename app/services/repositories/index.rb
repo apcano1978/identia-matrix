@@ -83,6 +83,7 @@ class Repositories::Index
     indexed = results.reject(&:skipped)
 
     Event.create!(
+      project_id: @initiative.project_id,
       occurred_at: Time.current, actor: @actor, kind: "repositories_indexed",
       initiative: @initiative, platform_client_id: @initiative.platform_client_id,
       message: "#{@initiative.code} · #{indexed.sum { |r| r.files_count.to_i }} ficheros · " \

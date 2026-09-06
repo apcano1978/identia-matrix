@@ -455,6 +455,7 @@ module PipelineWalk
       def human_note(initiative, body)
         HumanNote.create!(
           initiative: initiative, platform_client: @client,
+          project: initiative.project,
           author_user: signer, body: body,
           code: HumanNote.code_for(signer, client: @client))
       end

@@ -9,6 +9,9 @@
 class Artifact < ApplicationRecord
   belongs_to :initiative
   belongs_to :platform_client, class_name: "Platform::Client"
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+  # se endurece al contraer, que es cuando `platform_client` se va.
+  belongs_to :project, optional: true
   belongs_to :produced_by_run, class_name: "AgentRun", optional: true
 
   # Los bytes del markdown. En F1/F2 van a disco local; el bucket es F5.

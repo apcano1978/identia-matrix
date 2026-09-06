@@ -34,6 +34,7 @@ module Citations
       return if artifact.blank?
 
       Event.create!(
+        project_id: artifact.project_id,
         occurred_at: Time.current, actor: "CONFLICTO", kind: "activity",
         initiative: artifact.initiative,
         platform_client: artifact.platform_client,

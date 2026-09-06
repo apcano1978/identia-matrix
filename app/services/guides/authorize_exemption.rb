@@ -64,6 +64,7 @@ module Guides
         HumanNote.create!(
           initiative: initiative,
           platform_client: initiative.platform_client,
+          project: initiative.project,
           author_user: @user,
           code: HumanNote.code_for(@user, client: initiative.platform_client),
           body: "Autorizado cerrar el paso #{format('%02d', @step.position)} " \
@@ -99,6 +100,7 @@ module Guides
         Event.create!(
           occurred_at: Time.current, actor: @user.to_s, kind: "activity",
           initiative: initiative, platform_client: initiative.platform_client,
+          project: initiative.project,
           message: "GATE 2 · paso #{format('%02d', @step.position)} eximido · " \
                    "autorizado por #{@user}")
         escalation

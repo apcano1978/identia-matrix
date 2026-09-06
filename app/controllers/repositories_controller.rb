@@ -22,7 +22,10 @@ class RepositoriesController < ApplicationController
     client = Platform::Client.find_by!(slug: params[:client_slug])
     authorize Repository, :create?
 
-    repository = client.repositories.new(repository_params)
+    # F11 · el repositorio cuelga ya del proyecto. Mientras las dos columnas
+    # conviven se escriben las dos; al contraer se queda solo la nueva.
+    repository = client.repositories.new(
+      repository_params.merge(project: Project.find_by(platform_client_id: client.id)))
 
     if repository.save
       redirect_to client_repository_path(client, repository), status: :see_other,

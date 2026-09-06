@@ -110,6 +110,7 @@ module Artifacts
                      attributes:, blob:, produced_by_run:, body:)
           ApplicationRecord.transaction do
             artifact = Artifact.create!(
+              project: initiative.project,
               initiative: initiative, platform_client: initiative.platform_client,
               kind: kind, code: code, version: version, storage_key: key,
               checksum: checksum, front_matter: attributes,

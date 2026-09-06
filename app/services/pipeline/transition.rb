@@ -45,6 +45,7 @@ module Pipeline::Transition
       Event.create!(
         occurred_at: Time.current, actor: actor,
         initiative: initiative, platform_client_id: initiative.platform_client_id,
+        project_id: initiative.project_id,
         kind: kind, message: message, payload: payload)
     end
 

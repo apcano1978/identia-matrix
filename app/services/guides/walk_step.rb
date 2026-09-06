@@ -39,6 +39,7 @@ module Guides
         Event.create!(
           occurred_at: Time.current, actor: @user.to_s, kind: "activity",
           initiative: initiative, platform_client: initiative.platform_client,
+          project: initiative.project,
           message: "GATE 2 · paso #{format('%02d', @step.position)} recorrido · " \
                    "única evidencia de #{criterion_label}")
       end

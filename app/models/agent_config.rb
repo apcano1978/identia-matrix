@@ -5,6 +5,9 @@
 # clientes con configuraciones fosilizadas.
 class AgentConfig < ApplicationRecord
   belongs_to :platform_client, class_name: "Platform::Client", optional: true
+  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
+  # se endurece al contraer, que es cuando `platform_client` se va.
+  belongs_to :project, optional: true
   belongs_to :updated_by_user, class_name: "Platform::User", optional: true
 
   enum :agent, { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5 },

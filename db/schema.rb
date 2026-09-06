@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_150100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -59,11 +59,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.integer "agent", null: false
     t.datetime "created_at", null: false
     t.bigint "platform_client_id"
+    t.bigint "project_id"
     t.jsonb "settings", default: {}, null: false
     t.datetime "updated_at", null: false
     t.bigint "updated_by_user_id"
     t.index ["agent", "platform_client_id"], name: "index_agent_configs_on_agent_and_platform_client_id", unique: true
     t.index ["platform_client_id"], name: "index_agent_configs_on_platform_client_id"
+    t.index ["project_id"], name: "index_agent_configs_on_project_id"
     t.index ["updated_by_user_id"], name: "index_agent_configs_on_updated_by_user_id"
   end
 
@@ -99,6 +101,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.integer "kind", null: false
     t.bigint "platform_client_id", null: false
     t.bigint "produced_by_run_id"
+    t.bigint "project_id"
     t.string "storage_key", null: false
     t.datetime "updated_at", null: false
     t.integer "version", default: 1, null: false
@@ -106,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.index ["initiative_id"], name: "index_artifacts_on_initiative_id"
     t.index ["platform_client_id"], name: "index_artifacts_on_platform_client_id"
     t.index ["produced_by_run_id"], name: "index_artifacts_on_produced_by_run_id"
+    t.index ["project_id"], name: "index_artifacts_on_project_id"
     t.index ["storage_key"], name: "index_artifacts_on_storage_key", unique: true
   end
 
@@ -213,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.bigint "opened_by_user_id"
     t.bigint "opened_by_verification_id"
     t.bigint "platform_client_id", null: false
+    t.bigint "project_id"
     t.integer "reason", null: false
     t.datetime "resolved_at"
     t.bigint "resolved_by_user_id"
@@ -221,6 +226,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.index ["initiative_id"], name: "index_escalations_on_initiative_id"
     t.index ["opened_by_user_id"], name: "index_escalations_on_opened_by_user_id"
     t.index ["platform_client_id"], name: "index_escalations_on_platform_client_id"
+    t.index ["project_id"], name: "index_escalations_on_project_id"
     t.index ["resolved_at"], name: "index_escalations_on_resolved_at"
     t.index ["resolved_by_user_id"], name: "index_escalations_on_resolved_by_user_id"
   end
@@ -234,10 +240,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.datetime "occurred_at", null: false
     t.jsonb "payload", default: {}, null: false
     t.bigint "platform_client_id"
+    t.bigint "project_id"
     t.datetime "updated_at", null: false
     t.index ["initiative_id"], name: "index_events_on_initiative_id"
     t.index ["occurred_at"], name: "index_events_on_occurred_at"
     t.index ["platform_client_id"], name: "index_events_on_platform_client_id"
+    t.index ["project_id"], name: "index_events_on_project_id"
   end
 
   create_table "gate_signature_commits", force: :cascade do |t|
@@ -318,11 +326,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.datetime "created_at", null: false
     t.bigint "initiative_id", null: false
     t.bigint "platform_client_id", null: false
+    t.bigint "project_id"
     t.datetime "updated_at", null: false
     t.index ["author_user_id"], name: "index_human_notes_on_author_user_id"
     t.index ["initiative_id"], name: "index_human_notes_on_initiative_id"
     t.index ["platform_client_id", "code"], name: "index_human_notes_on_platform_client_id_and_code", unique: true
     t.index ["platform_client_id"], name: "index_human_notes_on_platform_client_id"
+    t.index ["project_id"], name: "index_human_notes_on_project_id"
   end
 
   create_table "initiative_repositories", force: :cascade do |t|
@@ -372,6 +382,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.datetime "opened_at", null: false
     t.bigint "platform_client_id", null: false
     t.bigint "platform_project_id"
+    t.bigint "project_id"
     t.integer "qa_cycles_consumed", default: 0, null: false
     t.datetime "stage_changed_at"
     t.string "title", null: false
@@ -380,6 +391,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.index ["platform_client_id", "current_stage"], name: "index_initiatives_on_platform_client_id_and_current_stage"
     t.index ["platform_client_id"], name: "index_initiatives_on_platform_client_id"
     t.index ["platform_project_id"], name: "index_initiatives_on_platform_project_id"
+    t.index ["project_id"], name: "index_initiatives_on_project_id"
   end
 
   create_table "matrix_sequences", force: :cascade do |t|
@@ -487,6 +499,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.index ["platform_id"], name: "index_platform_users_on_platform_id", unique: true
   end
 
+  create_table "projects", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "opened_at", null: false
+    t.bigint "platform_client_id"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["platform_client_id"], name: "index_projects_on_platform_client_id"
+    t.index ["slug"], name: "index_projects_on_slug", unique: true
+  end
+
   create_table "repositories", force: :cascade do |t|
     t.string "ci_provider"
     t.string "ci_repo_slug"
@@ -497,10 +520,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.datetime "last_synced_at"
     t.string "name", null: false
     t.bigint "platform_client_id", null: false
+    t.bigint "project_id"
     t.string "remote_url"
     t.datetime "updated_at", null: false
     t.index ["platform_client_id", "name"], name: "index_repositories_on_platform_client_id_and_name", unique: true
     t.index ["platform_client_id"], name: "index_repositories_on_platform_client_id"
+    t.index ["project_id"], name: "index_repositories_on_project_id"
   end
 
   create_table "repository_credentials", force: :cascade do |t|
@@ -508,10 +533,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.string "host", null: false
     t.string "note"
     t.bigint "platform_client_id", null: false
+    t.bigint "project_id"
     t.text "token", null: false
     t.datetime "updated_at", null: false
     t.index ["platform_client_id", "host", "created_at"], name: "idx_repository_credentials_latest"
     t.index ["platform_client_id"], name: "index_repository_credentials_on_platform_client_id"
+    t.index ["project_id"], name: "index_repository_credentials_on_project_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -621,10 +648,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   add_foreign_key "adrs", "repositories"
   add_foreign_key "agent_configs", "platform_clients"
   add_foreign_key "agent_configs", "platform_users", column: "updated_by_user_id"
+  add_foreign_key "agent_configs", "projects"
   add_foreign_key "agent_runs", "initiatives"
   add_foreign_key "artifacts", "agent_runs", column: "produced_by_run_id"
   add_foreign_key "artifacts", "initiatives"
   add_foreign_key "artifacts", "platform_clients"
+  add_foreign_key "artifacts", "projects"
   add_foreign_key "ci_checks", "repositories"
   add_foreign_key "ci_checks", "verification_reports"
   add_foreign_key "citation_conflicts", "artifacts", column: "flagged_artifact_id"
@@ -645,9 +674,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   add_foreign_key "escalations", "platform_clients"
   add_foreign_key "escalations", "platform_users", column: "opened_by_user_id"
   add_foreign_key "escalations", "platform_users", column: "resolved_by_user_id"
+  add_foreign_key "escalations", "projects"
   add_foreign_key "escalations", "verification_reports", column: "opened_by_verification_id"
   add_foreign_key "events", "initiatives"
   add_foreign_key "events", "platform_clients"
+  add_foreign_key "events", "projects"
   add_foreign_key "gate_signature_commits", "gate_signatures"
   add_foreign_key "gate_signature_commits", "platform_users", column: "executed_confirmed_by_id"
   add_foreign_key "gate_signature_commits", "repositories"
@@ -665,6 +696,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   add_foreign_key "human_notes", "initiatives"
   add_foreign_key "human_notes", "platform_clients"
   add_foreign_key "human_notes", "platform_users", column: "author_user_id"
+  add_foreign_key "human_notes", "projects"
   add_foreign_key "initiative_repositories", "initiatives"
   add_foreign_key "initiative_repositories", "repositories"
   add_foreign_key "initiative_roles", "initiatives"
@@ -672,13 +704,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   add_foreign_key "initiative_sources", "initiatives"
   add_foreign_key "initiatives", "platform_clients"
   add_foreign_key "initiatives", "platform_projects"
+  add_foreign_key "initiatives", "projects"
   add_foreign_key "platform_documents", "platform_clients"
   add_foreign_key "platform_documents", "platform_projects"
   add_foreign_key "platform_meetings", "platform_clients"
   add_foreign_key "platform_meetings", "platform_projects"
   add_foreign_key "platform_projects", "platform_clients"
+  add_foreign_key "projects", "platform_clients"
   add_foreign_key "repositories", "platform_clients"
+  add_foreign_key "repositories", "projects"
   add_foreign_key "repository_credentials", "platform_clients"
+  add_foreign_key "repository_credentials", "projects"
   add_foreign_key "sessions", "platform_users"
   add_foreign_key "stage_entries", "initiatives"
   add_foreign_key "test_guides", "artifacts"
