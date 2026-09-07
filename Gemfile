@@ -53,7 +53,7 @@ gem "json_schemer", "~> 2.3"
 gem "commonmarker", "~> 2.0"
 
 # Paginación de listados largos.
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.6"
 
 # Contraseñas de usuario (has_secure_password).
 
