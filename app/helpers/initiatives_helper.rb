@@ -65,22 +65,25 @@ module InitiativesHelper
   # cobertura— que un visor de markdown no puede dar.
   ARTIFACT_TABS = { "dod" => :dod, "verify" => :verify, "guide" => :guide }.freeze
 
+  # ⚠ Por el PROYECTO, no por el cliente del evolutivo. Ver `tray_destination`
+  # en `dashboard_helper`: es el mismo arreglo y por la misma razón, y aquí lo
+  # que se cae con un proyecto propio es la ficha del evolutivo.
   def artifact_tabs(initiative, artifacts, selected)
-    client = initiative.platform_client
+    project = initiative.project
 
     ARTIFACT_TABS.map do |label, kind|
       artifact = artifacts.find { |a| a.kind == kind.to_s }
 
       { label: label, artifact: artifact, current: artifact == selected,
-        path: evidence_path_for(label, client, initiative) }
+        path: evidence_path_for(label, project, initiative) }
     end
   end
 
-  def evidence_path_for(label, client, initiative)
+  def evidence_path_for(label, project, initiative)
     case label
-    when "dod" then project_initiative_definition_of_done_path(client, initiative)
-    when "verify" then project_initiative_verification_path(client, initiative)
-    else project_initiative_guide_path(client, initiative)
+    when "dod" then project_initiative_definition_of_done_path(project, initiative)
+    when "verify" then project_initiative_verification_path(project, initiative)
+    else project_initiative_guide_path(project, initiative)
     end
   end
 

@@ -11,7 +11,48 @@ class ProjectsTest < ApplicationSystemTestCase
     # La barrera del setup. Sin ella el primer clic de cada test puede caer sobre
     # el panel todavía, y el fallo sale en un test distinto cada vez según el
     # orden — que es lo que hace difícil de leer esta familia de fallos.
-    assert_text "6 proyectos"
+    assert_text "DE CLIENTE · 6"
+  end
+
+  # ── Las dos pestañas (B7b) ────────────────────────────────────────────────
+
+  # Los dos contadores van siempre, se pinte la lista que se pinte: una pestaña
+  # que no dice cuántos hay detrás no invita a pulsarla.
+  test "las dos pestañas cuentan las dos, y arranca en la de cliente" do
+    assert_text "DE CLIENTE · 6"
+    assert_text "PROPIOS · 0"
+    assert_selector ".bg-terminal-fg", text: "DE CLIENTE"
+    assert_text "VIVLA"
+  end
+
+  test "y la de propios enseña lo que falta en vez de quedarse en blanco" do
+    click_on "PROPIOS · 0"
+
+    assert_current_path projects_path(tab: "propios")
+    assert_text "Matrix todavía no trabaja sobre nada suyo"
+    assert_no_text "VIVLA"
+  end
+
+  test "un proyecto propio aparece en su pestaña y no en la otra" do
+    Projects::Open.call(slug: "matrix-interna", name: "Matrix interna",
+                        actor: "test")
+
+    visit projects_path(tab: "propios")
+    assert_text "PROPIOS · 1"
+    assert_text "Matrix interna"
+    assert_text "PROPIO"
+
+    visit projects_path
+    assert_no_text "Matrix interna"
+  end
+
+  # Un `tab` que no existe no revienta ni enseña la lista entera: cae en el
+  # defecto, que es el que la maqueta pinta.
+  test "una pestaña inventada cae en la de cliente" do
+    visit projects_path(tab: "inventada")
+
+    assert_selector ".bg-terminal-fg", text: "DE CLIENTE"
+    assert_text "VIVLA"
   end
 
   test "las tarjetas se pintan con sus evolutivos y repositorios" do

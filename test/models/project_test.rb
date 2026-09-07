@@ -64,6 +64,39 @@ class ProjectTest < ActiveSupport::TestCase
     assert_predicate build_own_project(slug: largo), :persisted?
   end
 
+  # El slug es el PRIMER SEGMENTO de la clave de todos los artefactos del
+  # proyecto, y esas claves viven en un bucket sin borrado y dentro de citas ya
+  # escritas. Cambiarlo no renombra nada: deja huérfano todo lo emitido.
+  #
+  # `FrozenSlug` estaba incluido desde B3 y nadie lo afirmaba sobre `Project`.
+  # Desde B7b hay un formulario que crea proyectos, así que la guarda deja de ser
+  # teórica: alguien puede querer «corregir» el nombre corto que escribió mal.
+  test "el slug se congela al crear y no se puede corregir despues" do
+    proyecto = build_own_project(slug: "matrix-intena")
+
+    error = assert_raises(ActiveRecord::ReadOnlyRecord) do
+      proyecto.update!(slug: "matrix-interna")
+    end
+
+    assert_match "las claves de artefacto dependen de él", error.message
+    assert_equal "matrix-intena", proyecto.reload.slug
+  end
+
+  # El título sí es solo un rótulo… y tampoco se edita, porque matrix no tiene
+  # ningún `update` de proyecto. Lo que el modelo permite y la aplicación no
+  # ofrece conviene tenerlo separado: la guarda de arriba es del dominio, la
+  # ausencia de ruta es una decisión de producto y vive en la lista blanca.
+  test "pero el nombre no está congelado: lo que no hay es por dónde cambiarlo" do
+    proyecto = build_own_project
+
+    assert proyecto.update(name: "Otro nombre"),
+           "el modelo no lo prohíbe; la aplicación no ofrece ninguna ruta"
+    assert_empty Rails.application.routes.routes.select { |route|
+      route.defaults[:controller] == "projects" &&
+        %w[update edit destroy].include?(route.defaults[:action])
+    }
+  end
+
   test "un proyecto del que cuelga trabajo no se puede borrar" do
     initiative = build_initiative
 

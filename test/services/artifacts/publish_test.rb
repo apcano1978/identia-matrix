@@ -130,6 +130,37 @@ class Artifacts::PublishTest < ActiveSupport::TestCase
     assert_equal dod.citations.pluck(:raw).sort, referencias.map(&:raw).uniq.sort
   end
 
+  # ── B7b · publicar sobre un proyecto PROPIO ────────────────────────────────
+  #
+  # Es lo que la enmienda del front-matter hace posible. Antes de ella `client`
+  # era obligatorio y esto levantaba un `ArgumentError`: matrix no podía
+  # escribir sobre su propio trabajo, que es justo lo que «matrix interna»
+  # necesita.
+  test "un proyecto propio publica, y su cabecera dice quién es sin cliente" do
+    propio = build_own_project(slug: "matrix-interna", name: "Matrix interna")
+    interno = build_initiative(project: propio, slug: "rediseno-interfaz")
+
+    artifact = Artifacts::Publish.call(
+      initiative: interno, kind: :spec, body: BODY,
+      produced_at: Time.zone.parse("2026-05-02 10:00"),
+      produced_by_run: build_run(initiative: interno)).artifact
+
+    assert_equal "matrix-interna", artifact.stored_front_matter[:project]
+    assert_nil artifact.stored_front_matter[:client]
+    assert artifact.storage_key.start_with?("artifacts://matrix-interna/rediseno-interfaz/"),
+           "el primer segmento de la clave sale del proyecto: #{artifact.storage_key}"
+  end
+
+  # Y en un proyecto DE CLIENTE los dos campos siguen ahí y dicen lo mismo, que
+  # es lo que hace que la enmienda no reinterprete nada de lo ya emitido.
+  test "y en uno de cliente la cabecera sigue nombrando a los dos" do
+    artifact = publish(kind: :spec).artifact
+    cabecera = artifact.stored_front_matter
+
+    assert_equal @initiative.project.slug, cabecera[:project]
+    assert_equal @initiative.platform_client.slug, cabecera[:client]
+  end
+
   private
     def publish(kind: :close, **options)
       Artifacts::Publish.call(initiative: @initiative, kind: kind, body: BODY,

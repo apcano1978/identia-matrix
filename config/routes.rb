@@ -83,7 +83,13 @@ Rails.application.routes.draw do
   # documentos y reuniones— pero dejó de ser la puerta de entrada al trabajo.
   resources :clients, only: %i[index show], param: :slug
 
-  resources :projects, only: %i[index show], param: :slug do
+  # `new` y `create` son de B7b, y solo abren proyectos PROPIOS: el de un cliente
+  # nace y muere con él en `Platform::Sync`. Sin `update` ni `destroy`, como todo
+  # lo demás — el slug de un proyecto está dentro de claves ya emitidas.
+  #
+  # `new` va antes que `show` en el orden que genera `resources`, así que
+  # `/projects/new` no lo captura el `:slug`.
+  resources :projects, only: %i[index new show create], param: :slug do
     # ── Las dos primeras altas de matrix (P1) ────────────────────────────────
     #
     # `create` y nada más, como el resto de lo que matrix escribe: dar de alta

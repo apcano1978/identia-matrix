@@ -13,6 +13,16 @@
       <span class="text-antique-gold"><%= live.agent.upcase %></span>
       está trabajando · <%= live.code %>
     </p>
+  <% elsif initiative.project.own? %>
+    <%# El contrato con el brain exige cliente, y se valida con los dos runtimes
+        —fake incluido—, así que sobre un proyecto propio la ejecución falla
+        dentro de matrix. Se lanza en segundo plano, así que ofrecer el botón
+        dejaría una ejecución fallida sin que nadie viera por qué. Se dice aquí.
+        Lo levanta F11 · B9½, que enseña al brain lo que es un proyecto. %>
+    <p class="text-t10 text-terminal-fg-4">
+      Los agentes todavía no trabajan sobre proyectos propios: el contrato con
+      el brain exige un cliente.
+    </p>
   <% elsif work.blank? %>
     <%# Las etapas sin agente son las que espera una PERSONA: las dos puertas,
         la ejecución de Claude Code y la publicación. Decirlo evita que alguien

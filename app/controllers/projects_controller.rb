@@ -12,12 +12,44 @@ class ProjectsController < ApplicationController
   # cincuenta evolutivos, no para partir la matriz en dos con cinco.
   PER_PAGE = 25
 
+  # Las dos pestañas. Los contadores se cuentan SIEMPRE, aunque solo se pinte
+  # una lista: una pestaña que no dice cuántos hay detrás no invita a pulsarla, y
+  # la de propios va a estar vacía hasta que exista «matrix interna».
+  #
+  # Por defecto, los de cliente: es lo que enseña el rediseño y es lo que hay.
+  TABS = { "propios" => :own, "de-cliente" => :for_clients }.freeze
+
   def index
+    @tab = TABS.key?(params[:tab]) ? params[:tab] : "de-cliente"
+    @counts = { "de-cliente" => Project.for_clients.count,
+                "propios" => Project.own.count }
+
     @pagy, @projects = pagy(
-      Project.order(:slug)
+      Project.public_send(TABS.fetch(@tab)).order(:slug)
              .includes(:platform_client, :repositories,
                        initiatives: { initiative_repositories: :repository }),
       limit: PER_PAGE)
+  end
+
+  # El alta de un proyecto PROPIO. El porqué de que solo sean propios está en
+  # `Projects::Open`; la pantalla lo explica enseñando la otra opción apagada,
+  # que es donde ese porqué le sirve a alguien.
+  def new
+    authorize Project, :create?
+  end
+
+  def create
+    authorize Project, :create?
+
+    project = Projects::Open.call(slug: params[:slug], name: params[:name],
+                                  actor: Current.user.email_address)
+
+    redirect_to project_path(project), status: :see_other,
+                notice: "Proyecto #{project.slug} abierto. Regístrale un repositorio " \
+                        "para poder abrir su primer evolutivo."
+  rescue Projects::Open::Refused, ActiveRecord::RecordInvalid => error
+    redirect_to new_project_path, status: :see_other,
+                alert: "No se ha abierto: #{message_for(error)}."
   end
 
   def show
@@ -47,4 +79,20 @@ class ProjectsController < ApplicationController
     @platform_projects = @project.platform_client&.platform_projects
                                  &.where(missing_since: nil)&.order(:name) || []
   end
+
+  private
+    # La unicidad del slug la defiende el índice de la tabla, no el servicio: es
+    # el único sitio donde dos altas simultáneas no pueden colarse entre la
+    # comprobación y la escritura. Aquí se traduce a algo legible, porque
+    # «Slug ya está en uso» no dice qué hacer.
+    def message_for(error)
+      return error.message unless error.is_a?(ActiveRecord::RecordInvalid)
+
+      if error.record.errors.of_kind?(:slug, :taken)
+        "ya hay un proyecto que se llama #{params[:slug].inspect}, y el nombre " \
+        "corto no se puede repetir: entra en las claves de artefacto"
+      else
+        error.record.errors.full_messages.to_sentence
+      end
+    end
 end

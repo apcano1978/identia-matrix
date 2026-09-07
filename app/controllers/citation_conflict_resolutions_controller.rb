@@ -23,6 +23,9 @@ class CitationConflictResolutionsController < ApplicationController
     def initiative_path_for(initiative)
       return root_path if initiative.blank?
 
-      project_initiative_path(initiative.platform_client, initiative)
+      # Por el PROYECTO. Con el cliente esto redirigía a la URL correcta de
+      # casualidad, y con un proyecto propio devolvía un 500 DESPUÉS de haber
+      # marcado el artefacto para revisión — la misma forma del hallazgo 27.
+      project_initiative_path(initiative.project, initiative)
     end
 end

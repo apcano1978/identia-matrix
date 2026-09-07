@@ -28,7 +28,16 @@
        class="flex-1 min-h-0 overflow-y-auto">
     <%= panel_block("EVOLUTIVO") do %>
       <dl class="text-t105 leading-[1.8]">
-        <%= render "initiatives/fact", term: "cliente", value: initiative.platform_client.name %>
+        <%# El proyecto SIEMPRE, el cliente solo cuando lo hay. Un proyecto propio
+            no tiene ninguno detrás, y hasta B7b esta línea reventaba con
+            `NoMethodError` en cuanto se abría su ficha. Enseñar el proyecto es
+            además lo correcto: es la raíz y la frontera, y el cliente pasó a ser
+            lo que hay detrás. %>
+        <%= render "initiatives/fact", term: "proyecto", value: initiative.project.name %>
+        <% if initiative.platform_client %>
+          <%= render "initiatives/fact", term: "cliente",
+                     value: initiative.platform_client.name %>
+        <% end %>
         <%= render "initiatives/fact", term: "platform",
                    value: initiative.platform_project&.platform_project_ref || "—" %>
         <%= render "initiatives/fact", term: "abierto",

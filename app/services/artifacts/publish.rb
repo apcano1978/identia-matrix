@@ -53,8 +53,11 @@ module Artifacts
         # colgar de una delegación que devolverá `nil` en cuanto exista el primer
         # proyecto propio.
         #
-        # El campo `client` del front-matter sí sigue siendo el del cliente: está
-        # congelado desde F0 y su enmienda va con el bloque que la necesite.
+        # El campo `client` del front-matter sigue siendo el del cliente, y desde
+        # B7b es OPCIONAL: un proyecto propio no tiene ninguno. Quién es el dueño
+        # lo dice `project`, que entró obligatorio en la misma enmienda. Este
+        # comentario decía «su enmienda va con el bloque que la necesite»; el
+        # bloque fue B7b, que es el que hace posible el primer proyecto propio.
         project = initiative.project
         client = initiative.platform_client
         # El número lo da el evolutivo, no su código: `Initiative#number` es la
@@ -81,7 +84,7 @@ module Artifacts
           # —y el front-matter existe para que quien lo saque del bucket sepa qué
           # es sin preguntarle a matrix—. Nadie lo lee de vuelta para buscar el
           # evolutivo: es informativo.
-          initiative: initiative.slug, client: client.slug,
+          initiative: initiative.slug, project: project.slug, client: client&.slug,
           produced_by: produced_by_run&.code, produced_at: produced_at,
           derives_from: storage_key_of(derives_from), checksum: checksum)
         document = FrontMatter.render(attributes, body)

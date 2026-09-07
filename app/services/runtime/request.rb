@@ -25,6 +25,12 @@
 # confiar en que un modelo se autolimite. Aquí las entradas son disjuntas
 # porque el código las reparte.
 module Runtime::Request
+  # Lo que matrix sabe hacer pero el contrato con el brain todavía no admite.
+  # Hoy solo hay un caso —un proyecto propio, que no tiene cliente— y es
+  # temporal: lo levanta B9½. Es una excepción propia y no un `NoMethodError`
+  # porque quien la vea tiene que saber que no ha roto nada.
+  Unsupported = Class.new(StandardError)
+
   CONTRACT_VERSION = 1
   DEFAULT_MODEL = "chat-default".freeze
 
@@ -144,8 +150,26 @@ module Runtime::Request
     material
   end
 
+  # ⚠ El contrato `agent_run.v1` tiene `client` en `required` y
+  # `additionalProperties: false`, así que un proyecto PROPIO no puede ejecutar
+  # ningún agente todavía — y el esquema se valida con los DOS runtimes, fake
+  # incluido, así que falla dentro de matrix sin llegar a la red.
+  #
+  # Se dice con palabras en vez de morir con `undefined method 'slug' for nil`,
+  # que es lo que hacía y no explica nada a quien pulsa el botón. Enmendarlo es
+  # **F11 · B9½**, y va después porque hay que desplegar el brain primero: su
+  # `MatrixAgentConfig` no declara `extra`, y el defecto de Pydantic v2 es
+  # `ignore` — mandarle `config.project` contra el brain de hoy respondería 200 y
+  # el agente trabajaría sin haber visto el proyecto.
   def client_of(initiative)
     client = initiative.platform_client
+
+    if client.nil?
+      raise Unsupported,
+            "el contrato con el brain exige cliente y #{initiative.project.slug} " \
+            "es un proyecto propio: los agentes sobre proyectos propios llegan " \
+            "en F11 · B9½, cuando el brain sepa lo que es un proyecto"
+    end
 
     { "slug" => client.slug, "platform_id" => client.platform_id,
       "name" => client.name }

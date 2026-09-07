@@ -1,0 +1,134 @@
+<% breadcrumb "projects", "nuevo" %>
+<% content_for :title, "identia-matrix · nuevo proyecto" %>
+
+<%= render "shared/view_bar", back: { label: "proyectos", path: projects_path },
+           title: "nuevo",
+           notes: [ "un proyecto es una frontera: nada se lee de fuera" ] %>
+
+<%= form_with url: projects_path, class: "flex-1 min-h-0 flex" do |form| %>
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <h1 class="font-sans text-t27 font-semibold tracking-[.03em] text-terminal-fg">
+      Nuevo proyecto
+    </h1>
+
+    <%# ── DE DÓNDE SALE ──────────────────────────────────────────────────────
+
+        Las dos opciones, y una apagada. Enseñar solo la que funciona sería más
+        corto y dejaría sin respuesta la pregunta que cualquiera se hace aquí:
+        «¿y los de mis clientes?». La respuesta —que llegan solos— es lo que hay
+        que aprender en esta pantalla, y solo se aprende viéndola dicha. %>
+    <%= section_header "DE DÓNDE SALE", tone: :gate2,
+                       gloss: "lo decide si hay un cliente detrás, no una casilla" %>
+
+    <div class="grid grid-cols-2 gap-3 mt-2.5">
+      <div class="p-[14px_15px] border border-dashed border-terminal-border
+                  bg-terminal-sunken opacity-60">
+        <div class="flex items-baseline gap-2">
+          <span class="text-t12 text-terminal-fg-3">○</span>
+          <span class="text-t12 text-terminal-fg-3">Cliente de identia-platform</span>
+          <span class="ml-auto eyebrow text-terminal-fg-3">LLEGA SOLO</span>
+        </div>
+        <p class="mt-1.5 text-t105 leading-[1.6] text-terminal-fg-3">
+          El cliente, el proyecto y sus fuentes llegan sincronizados desde
+          identia-platform. Matrix no los inventa ni los crea a mano: nacen con
+          su cliente y se van con él.
+        </p>
+      </div>
+
+      <div class="p-[14px_15px] border border-antique-gold bg-[rgba(196,155,94,.09)]">
+        <div class="flex items-baseline gap-2">
+          <span class="text-t12 text-antique-gold">●</span>
+          <span class="text-t12 text-terminal-fg">Proyecto propio</span>
+          <span class="ml-auto eyebrow text-antique-gold">PROPIO</span>
+        </div>
+        <p class="mt-1.5 text-t105 leading-[1.6] text-terminal-fg-3">
+          Vive solo en matrix. Sin cliente detrás, sin sincronización, y con su
+          propia frontera: ningún agente lee ni cita material de otro proyecto.
+        </p>
+      </div>
+    </div>
+
+    <%# ── CÓMO SE LLAMA ──────────────────────────────────────────────────────
+
+        Dos campos y no uno, y las dos glosas importan tanto como los campos: uno
+        se congela para siempre y el otro no. Derivar el nombre corto del título
+        metería `radar-de-ofertas-publicas` dentro de cada clave de artefacto del
+        proyecto, sin que nadie pudiera corregirlo después. %>
+    <%= section_header "CÓMO SE LLAMA", tone: :gate2,
+                       gloss: "uno se congela al crear; el otro solo se lee" %>
+
+    <div class="grid grid-cols-2 gap-3 mt-2.5">
+      <div>
+        <div class="flex items-baseline gap-2">
+          <span class="eyebrow text-terminal-muted">nombre corto</span>
+          <span class="text-t10 text-terminal-fg-3">va en rutas y citas</span>
+        </div>
+        <%= form.text_field :slug, required: true, autofocus: true,
+                            maxlength: Projects::Open::MAX_SLUG,
+                            placeholder: "radar-ofertas",
+                            class: "terminal-field focus:terminal-field-focus mt-1 w-full" %>
+        <p class="mt-1 text-t10 text-terminal-fg-3">
+          Se congela al crear: las claves de artefacto dependen de él.
+          Minúsculas y guiones, hasta <%= Projects::Open::MAX_SLUG %> caracteres.
+        </p>
+      </div>
+
+      <div>
+        <div class="flex items-baseline gap-2">
+          <span class="eyebrow text-terminal-muted">título</span>
+          <span class="text-t10 text-terminal-fg-3">va en las cabeceras</span>
+        </div>
+        <%= form.text_field :name, required: true,
+                            placeholder: "Radar de ofertas públicas",
+                            class: "terminal-field focus:terminal-field-focus mt-1 w-full" %>
+        <%# La maqueta dice aquí «se puede cambiar cuando quieras», y no es
+            verdad: matrix no tiene ningún `update` fuera de la configuración de
+            agentes. Se dice lo que hay. %>
+        <p class="mt-1 text-t10 text-terminal-fg-3">
+          Es lo que se lee en las pantallas. Tampoco se edita después: matrix no
+          corrige, abre otra cosa.
+        </p>
+      </div>
+    </div>
+
+    <%# ── REPOSITORIOS ───────────────────────────────────────────────────────
+
+        La maqueta los conecta aquí. No se hace: `repositories#create` ya existe
+        y cuelga de la ficha, y meterlo también en esta alta sería un segundo
+        camino para la misma escritura. Lo que sí hace falta es decir a dónde se
+        va, porque sin repositorio no se puede abrir ningún evolutivo. %>
+    <%= section_header "DESPUÉS", tone: :muted,
+                       gloss: "el orden es obligado y no se puede invertir" %>
+    <p class="mt-2.5 p-[11px_12px] border border-terminal-border bg-terminal-sunken
+              text-t105 leading-[1.65] text-terminal-fg-3">
+      Crear el proyecto abre su frontera y nada más. El primer
+      <span class="text-terminal-fg">repositorio</span> se registra en su ficha,
+      y hasta que exista no se puede abrir ningún
+      <span class="text-terminal-fg">evolutivo</span>: un evolutivo es trabajo
+      <em>sobre</em> código, y sin repositorio no habría nada que citar.
+    </p>
+  </div>
+
+  <%= side_panel(width: 258) do %>
+    <%= panel_block("CREAR") do %>
+      <p class="text-t105 leading-[1.65] text-terminal-fg-3">
+        Un proyecto propio no se sincroniza con nada y no hereda documentación de
+        ningún cliente. Lo que lea un agente sobre él será lo que se le registre
+        aquí.
+      </p>
+
+      <%= form.submit "ABRIR EL PROYECTO ⏎",
+                      class: "mt-3 w-full cursor-pointer border-0 bg-antique-gold
+                              px-3 py-2.5 font-sans text-t11 font-semibold
+                              tracking-[.09em] text-ink hover:opacity-90" %>
+    <% end %>
+
+    <%= panel_block("QUIÉN FIRMA") do %>
+      <p class="text-t12 text-terminal-fg"><%= Current.user.name %></p>
+      <p class="mt-1.5 text-t105 leading-[1.6] text-terminal-fg-3">
+        En un proyecto propio firmas tú, y el contrato sigue siendo obligatorio:
+        GATE 1 pide contraseña igual que en uno de cliente.
+      </p>
+    <% end %>
+  <% end %>
+<% end %>

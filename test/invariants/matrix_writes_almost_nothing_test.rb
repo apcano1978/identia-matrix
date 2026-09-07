@@ -53,6 +53,25 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     "initiatives#create",
     "repositories#create",
 
+    # ── La tercera alta (F11 · B7b) ─────────────────────────────────────────
+    #
+    # Abrir un proyecto PROPIO: el que no tiene cliente detrás, y con el que
+    # matrix pasa a desarrollarse a sí misma. También `create`, y la lista
+    # conserva su propiedad con catorce escrituras.
+    #
+    # **No lo acompaña ningún `projects#update`, y se sopesó.** El rediseño dice
+    # del título de un proyecto «se puede cambiar cuando quieras», y aquí no se
+    # implementó: el slug está dentro de las claves de todos sus artefactos y no
+    # puede moverse —eso lo defiende `FrozenSlug`—, y editar solo el título
+    # dejaría un `update` en la lista para cambiar un rótulo. Si algún día hace
+    # falta, que sea porque alguien lo pidió, no porque la maqueta lo dibujó.
+    #
+    # El proyecto de un CLIENTE no se crea por aquí: nace con él en
+    # `Platform::Sync#ensure_projects` y muere con él en
+    # `matrix:prune_projection`. Un segundo camino para crearlo es exactamente
+    # como se desincronizan las cosas.
+    "projects#create",
+
     # ── La guía de pruebas (F6) ─────────────────────────────────────────────
     "walks#create",
     # Levantar la mano sobre un paso que no se puede recorrer…

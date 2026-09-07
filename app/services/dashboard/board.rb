@@ -172,8 +172,12 @@ class Dashboard::Board
 
     # `caser/triaje-core @a02f781`. El sha es el ANCLADO: es sobre ese estado del
     # código que habla todo lo que el evolutivo cite.
+    #
+    # El prefijo es el slug del PROYECTO, que es el que ya usa `Artifacts::Key`
+    # para el primer segmento de la clave. Con el del cliente decía lo mismo por
+    # herencia y se caía con `NoMethodError` en cuanto el proyecto era propio.
     def sources_for(initiative)
-      slug = initiative.platform_client.slug
+      slug = initiative.project.slug
 
       initiative.initiative_repositories.map do |link|
         [ "#{slug}/#{link.repository.name}", link.pinned_sha ].compact.join(" @")

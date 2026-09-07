@@ -32,21 +32,33 @@ module DashboardHelper
     end
   end
 
+  # El ámbito del evento: `vivla/ev-031`. Sale del PROYECTO desde B7b y no del
+  # cliente — un proyecto propio no tiene ninguno, y el evento se quedaba sin
+  # ámbito justo en el trabajo que es de matrix.
+  #
+  # El evento de sincronización sigue siendo del cliente y de ningún proyecto
+  # («SYNC vivla · 14 docs»), así que se mira el proyecto primero y el cliente
+  # después: es la única fila que conserva las dos columnas.
   def event_scope(event)
-    [ event.platform_client&.slug, event.initiative&.code ].compact.join("/")
+    [ event.project&.slug || event.platform_client&.slug,
+      event.initiative&.code ].compact.join("/")
   end
 
   # `4.82 M tok`. El consumo de hoy, agregado de agent_runs.
   # A dónde lleva el botón de cada bandeja. Desde F6, a la puerta que hay que
   # atender: una decisión se toma delante de lo que se está decidiendo, no
   # desde una lista.
+  # ⚠ El primer segmento sale del PROYECTO, no del cliente del evolutivo. Hoy
+  # dan la misma cadena —el slug del proyecto se heredó del cliente en B3— así
+  # que pasarle el cliente funcionaba de casualidad; con un proyecto propio es
+  # `nil` y esto levanta un `UrlGenerationError` que tumba el dashboard entero.
   def tray_destination(initiative, action)
-    client = initiative.platform_client
+    project = initiative.project
 
     case action
-    when "firmar" then project_initiative_gate_1_path(client, initiative)
-    when "validar" then project_initiative_gate_2_path(client, initiative)
-    else project_initiative_path(client, initiative)
+    when "firmar" then project_initiative_gate_1_path(project, initiative)
+    when "validar" then project_initiative_gate_2_path(project, initiative)
+    else project_initiative_path(project, initiative)
     end
   end
 

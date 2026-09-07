@@ -80,19 +80,21 @@ module DomainBuilders
     end
   end
 
+  # `project ||` y no `client ||=`: con un proyecto PROPIO, `platform_client` es
+  # nulo, y encadenar el respaldo fabricaría un cliente que nadie usa. Se mira
+  # primero si ya hay proyecto, que es la raíz desde F11.
   def build_repository(client: nil, project: nil, name: "identia-platform", **attributes)
-    client ||= project&.platform_client || build_client
+    project ||= project_for(client || build_client)
 
-    Repository.create!(project: project || project_for(client), name: name,
-                       **attributes)
+    Repository.create!(project: project, name: name, **attributes)
   end
 
   def build_initiative(client: nil, project: nil, code: nil, slug: nil, **attributes)
-    client ||= project&.platform_client || build_client
+    project ||= project_for(client || build_client)
     code ||= "ev-#{format('%03d', next_platform_id % 1000)}"
 
     Initiative.create!(
-      project: project || project_for(client),
+      project: project,
       code: code,
       # El código es un slug válido, así que sirve de nombre por defecto. Los
       # tests que prueben la resolución por nombre pasan el suyo.

@@ -1,25 +1,44 @@
 # frozen_string_literal: true
 
 module Artifacts
-  # El front-matter de un artefacto. CONGELADO EN F0.
+  # El front-matter de un artefacto. Congelado en F0, ENMENDADO EN F11 · B7b.
   #
-  # Diez campos, ni uno más. Va al principio del markdown, delimitado por ---,
-  # y viaja con el fichero: quien saque un artefacto del bucket tiene que poder
-  # saber qué es, de qué deriva y quién lo produjo, sin consultar la base de
-  # datos de matrix.
+  # Once campos. Va al principio del markdown, delimitado por ---, y viaja con
+  # el fichero: quien saque un artefacto del bucket tiene que poder saber qué
+  # es, de qué deriva y quién lo produjo, sin consultar la base de datos de
+  # matrix.
   #
   #   ---
-  #   key: artifacts://vivla/ev-031/dod-031/v2.md
+  #   key: artifacts://vivla/precio-festivos/dod-031/v2.md
   #   kind: dod
   #   code: dod-031
   #   version: 2
-  #   initiative: ev-031
+  #   initiative: precio-festivos
+  #   project: vivla
   #   client: vivla
   #   produced_by: seraph/run-166
   #   produced_at: 2026-05-28T10:04:18+02:00
-  #   derives_from: artifacts://vivla/ev-031/spec-031/v4.md
+  #   derives_from: artifacts://vivla/precio-festivos/spec-031/v4.md
   #   checksum: sha256:6b86b273ff34fce…
   #   ---
+  #
+  # **LA ENMIENDA DE B7b, y por qué era inevitable.** El campo `client` nació
+  # obligatorio porque en F0 no había forma de que un artefacto no tuviera
+  # cliente detrás. Desde F11 sí la hay —un proyecto PROPIO no tiene ninguno— y
+  # con `client` en `REQUIRED` publicar sobre él levantaba un `ArgumentError`:
+  # matrix no podía escribir sobre sí misma.
+  #
+  # Se enmienda **añadiendo**, no reinterpretando. `project` entra obligatorio y
+  # lleva el mismo string que el primer segmento de la clave; `client` se queda
+  # donde estaba y pasa a opcional. Reutilizar `client` para meter dentro el
+  # proyecto habría sido más corto y habría hecho ambiguos los artefactos ya
+  # emitidos: los cuarenta y nueve que hay dicen `client: vivla` queriendo decir
+  # el cliente, y tienen que seguir diciéndolo.
+  #
+  # No mueve nada de lo emitido: `parse` filtra por `FIELDS`, así que un
+  # artefacto viejo se lee igual y sale sin `project`; y el checksum es del
+  # CUERPO —no del fichero—, así que la cabecera puede crecer sin que ninguna
+  # clave ni ninguna verificación cambie.
   #
   # `derives_from` es lo que ata la cadena de procedencia: el DoD deriva de la
   # spec, el informe de verificación del DoD, el cierre de todo lo anterior. Un
@@ -31,6 +50,7 @@ module Artifacts
       code
       version
       initiative
+      project
       client
       produced_by
       produced_at
@@ -38,21 +58,27 @@ module Artifacts
       checksum
     ].freeze
 
-    # Los que no pueden faltar. `derives_from` sí puede: el dossier de TANK no
-    # deriva de nada, arranca la cadena.
-    REQUIRED = (FIELDS - [ :derives_from ]).freeze
+    # Los que no pueden faltar.
+    #
+    # `derives_from` puede: el dossier de TANK no deriva de nada, arranca la
+    # cadena. Y `client` puede desde B7b: un proyecto propio no tiene ninguno,
+    # y exigirlo impedía que matrix publicara sobre su propio trabajo. Quién es
+    # el dueño no se pierde por eso — lo dice `project`, que sí es obligatorio.
+    OPTIONAL = %i[derives_from client].freeze
+    REQUIRED = (FIELDS - OPTIONAL).freeze
 
     DELIMITER = "---"
 
     module_function
 
-    def build(key:, kind:, code:, version:, initiative:, client:, produced_by:, produced_at:, checksum:, derives_from: nil)
+    def build(key:, kind:, code:, version:, initiative:, project:, produced_by:, produced_at:, checksum:, client: nil, derives_from: nil)
       {
         key: key,
         kind: kind.to_s,
         code: code,
         version: Integer(version),
         initiative: initiative,
+        project: project,
         client: client,
         produced_by: produced_by,
         produced_at: produced_at.iso8601,
