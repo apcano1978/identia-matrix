@@ -50,7 +50,7 @@ gem "faraday", "~> 2.9"
 gem "json_schemer", "~> 2.3"
 
 # Render del markdown de los artefactos (spec, DoD, guía, cierre).
-gem "commonmarker", "~> 2.0"
+gem "commonmarker", "~> 2.10"
 
 # Paginación de listados largos.
 gem "pagy", "~> 9.0"
