@@ -1,9 +1,9 @@
-<% breadcrumb "clients", @client.slug, @initiative.slug, "sources" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "sources" %>
 <% content_for :title, "identia-matrix · fuentes de #{@initiative.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code,
-                   path: client_initiative_path(@client, @initiative) },
+           back: { label: @initiative.slug,
+                   path: project_initiative_path(@project, @initiative) },
            title: "fuentes",
            notes: [ pluralize(@links.size, "repo") ] %>
 
@@ -41,7 +41,7 @@
       <div class="grid-source-repos items-center px-3 py-2.5
                   border-b border-terminal-border last:border-b-0">
         <%= link_to link.repository.name,
-                    client_repository_path(@client, link.repository),
+                    project_repository_path(@project, link.repository),
                     class: "text-terminal-fg" %>
         <span class="text-antique-gold"><%= link.pinned_sha || "sin anclar" %></span>
         <span class="text-terminal-fg-3"><%= indexed_files(link.repository) %></span>
@@ -67,7 +67,7 @@
   <%# ── HEREDADAS ─────────────────────────────────────────────────────────
       Lo que NO está acotado a este evolutivo. El borde discontinuo es el mismo
       idioma que el chip de cita derivada: lo que no se declaró explícitamente. %>
-  <%= section_header "HEREDADAS DE #{@client.slug.upcase}",
+  <%= section_header "HEREDADAS DE #{@project.slug.upcase}",
                      count: @inherited.values.sum(&:size), tone: :gate2,
                      gloss: "documentación general del cliente" %>
 

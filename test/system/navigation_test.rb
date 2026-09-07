@@ -1,7 +1,11 @@
 require "application_system_test_case"
 
-# El recorrido entero de la fase: dashboard → clientes → vivla → ev-031 →
-# booking-core, y vuelta por los breadcrumbs.
+# El recorrido entero de la fase: dashboard → proyectos → vivla → el evolutivo
+# por su nombre → booking-core, y vuelta por los breadcrumbs.
+#
+# Desde F11 la raíz es el PROYECTO. El cliente conserva ficha —«y por el
+# cliente», abajo— pero ya no es la puerta al trabajo: de su ficha se sale al
+# proyecto, y del proyecto al evolutivo.
 #
 # Es el test que comprueba que las seis pantallas están conectadas. Cada una por
 # separado puede estar bien y el conjunto no llevar a ninguna parte.
@@ -14,6 +18,39 @@ class NavigationTest < ApplicationSystemTestCase
   test "de ida" do
     assert_arrived_at root_path, crumb: "status"
 
+    click_on "PROYECTOS"
+    assert_arrived_at projects_path, crumb: "projects"
+
+    click_on "VIVLA"
+    assert_arrived_at project_path("vivla"), crumb: "projects/vivla"
+
+    click_on "Unificar precios y calendario"
+    assert_arrived_at project_initiative_path("vivla", "precio-festivos"),
+                      crumb: "projects/vivla/precio-festivos"
+
+    click_on "booking-core"
+    assert_arrived_at project_repository_path("vivla", "booking-core"),
+                      crumb: "projects/vivla/repos/booking-core"
+  end
+
+  test "y de vuelta" do
+    visit project_repository_path("vivla", "booking-core")
+    assert_arrived_at project_repository_path("vivla", "booking-core"),
+                      crumb: "projects/vivla/repos/booking-core"
+
+    click_on "← vivla"
+    assert_arrived_at project_path("vivla"), crumb: "projects/vivla"
+
+    click_on "← proyectos"
+    assert_arrived_at projects_path, crumb: "projects"
+
+    click_on "identia-matrix"
+    assert_arrived_at root_path, crumb: "status"
+  end
+
+  # El otro eje. Sigue existiendo, y lleva al trabajo por el proyecto: es un
+  # tramo más largo, y es el que dice que el cliente ya no es la raíz.
+  test "y por el cliente, que llega al mismo sitio con un paso más" do
     click_on "CLIENTES"
     assert_arrived_at clients_path, crumb: "clients"
 
@@ -21,27 +58,7 @@ class NavigationTest < ApplicationSystemTestCase
     assert_arrived_at client_path("vivla"), crumb: "clients/vivla"
 
     click_on "Unificar precios y calendario"
-    assert_arrived_at client_initiative_path("vivla", "precio-festivos"),
-                      crumb: "clients/vivla/precio-festivos"
-
-    click_on "booking-core"
-    assert_arrived_at client_repository_path("vivla", "booking-core"),
-                      crumb: "clients/vivla/repos/booking-core"
-  end
-
-  test "y de vuelta" do
-    visit client_repository_path("vivla", "booking-core")
-    assert_arrived_at client_repository_path("vivla", "booking-core"),
-                      crumb: "clients/vivla/repos/booking-core"
-
-    click_on "← vivla"
-    assert_arrived_at client_path("vivla"), crumb: "clients/vivla"
-
-    click_on "← clientes"
-    assert_arrived_at clients_path, crumb: "clients"
-
-    click_on "identia-matrix"
-    assert_arrived_at root_path, crumb: "status"
+    assert_arrived_at project_path("vivla"), crumb: "projects/vivla"
   end
 
   test "la raiz es el dashboard y pide sesion" do
@@ -62,8 +79,8 @@ class NavigationTest < ApplicationSystemTestCase
     assert_no_text "COMPROBACIONES"
   end
 
-  test "el rail lleva a las tres secciones desde cualquier pantalla" do
-    visit client_initiative_path("vivla", "precio-festivos")
+  test "el rail lleva a las cuatro secciones desde cualquier pantalla" do
+    visit project_initiative_path("vivla", "precio-festivos")
 
     click_on "AGENTES"
     assert_arrived_at agents_path, crumb: "agents/tank"

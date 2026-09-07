@@ -50,6 +50,6 @@ class PlatformProjectsController < ApplicationController
     end
 
     def initiative_path_for(initiative)
-      client_initiative_path(initiative.platform_client, initiative)
+      project_initiative_path(initiative.project, initiative)
     end
 end

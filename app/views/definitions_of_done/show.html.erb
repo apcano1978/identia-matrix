@@ -1,8 +1,8 @@
-<% breadcrumb "clients", @client.slug, @initiative.slug, "dod" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "dod" %>
 <% content_for :title, "identia-matrix · #{@dod.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code, path: initiative_path_for },
+           back: { label: @initiative.slug, path: initiative_path_for },
            title: @dod.to_s,
            notes: [ @dod.authored_by_run&.code,
                     @dod.artifact ? "inmutable · #{@dod.artifact.storage_key}" : nil ].compact %>

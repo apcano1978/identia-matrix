@@ -5,7 +5,7 @@
   <%= stage_glyph initiative.current_stage, initiative.current_stage_status %>
 
   <%= link_to initiative.code,
-              client_initiative_path(initiative.platform_client.slug, initiative.slug),
+              project_initiative_path(initiative.project.slug, initiative.slug),
               class: "text-t105 border-b border-terminal-border-gold" %>
 
   <span class="text-t115 text-terminal-fg truncate" title="<%= initiative.title %>">

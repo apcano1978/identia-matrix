@@ -1,7 +1,11 @@
-# Los clientes, proyectados desde identia-platform. La ficha es la pantalla que
-# explica el modelo: evolutivos en las filas, repositorios en las columnas.
+# Los clientes, proyectados desde identia-platform.
 #
 # Solo lectura, y no por falta de tiempo: matrix nunca modifica un origen.
+#
+# Desde F11 esta sección **dejó de ser la puerta de entrada al trabajo**: el
+# evolutivo y el repositorio cuelgan del proyecto. Lo que queda aquí es lo que es
+# del cliente y de ningún proyecto —quién es, si está en preparación, cuándo se
+# sincronizó y qué documentación tiene— más la lista de sus proyectos.
 class ClientsController < ApplicationController
   # Generoso a propósito: la paginación existe para el día que un cliente tenga
   # cincuenta evolutivos, no para partir la matriz en dos con cinco.
@@ -19,27 +23,13 @@ class ClientsController < ApplicationController
     @admitted_ids = ClientAdmission.platform_ids
   end
 
+  # La ficha conserva lo que es DEL CLIENTE y de ningún proyecto: su
+  # sincronización con platform, su admisión (P16) y sus documentos y reuniones.
+  # El trabajo —evolutivos y repositorios— se ve en la ficha de cada proyecto.
   def show
     @client = Platform::Client.find_by!(slug: params[:slug])
-    @repositories = @client.repositories.order(:name).to_a
-    @pagy, @initiatives = pagy(
-      @client.initiatives
-             .includes(:stage_entries, :escalations, :artifacts,
-                       initiative_repositories: :repository)
-             .order(:code),
-      limit: PER_PAGE)
-
-    # El pie de la matriz cuenta sobre TODOS, no sobre la página: «2 de 5 tocan
-    # más de uno» dejaría de ser cierto en la página dos.
-    @multi_repo_count = @client.initiatives
-                               .joins(:initiative_repositories)
-                               .group("initiatives.id").having("count(*) > 1")
-                               .count.size
-    @initiatives_count = @client.initiatives.count
-
-    # Para vincular un evolutivo nuevo a su proyecto de platform. Los ausentes
-    # se quedan fuera: se pueden seguir citando desde artefactos ya emitidos,
-    # pero no se empieza trabajo nuevo sobre algo que en platform ya no existe.
-    @platform_projects = @client.platform_projects.where(missing_since: nil).order(:name)
+    @projects = @client.projects.order(:slug)
+                       .includes(initiatives: { initiative_repositories: :repository })
+                       .to_a
   end
 end

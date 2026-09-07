@@ -18,11 +18,11 @@ class AltaTest < ActionDispatch::IntegrationTest
   # ── Evolutivo ──────────────────────────────────────────────────────────────
 
   test "abrir un evolutivo lleva a su ficha, y nace en NEED" do
-    post client_initiatives_path(@client),
+    post project_initiatives_path(@client),
          params: { title: "Unificar precios", repository_ids: [ @repo.id ] }
 
     initiative = Initiative.sole
-    assert_redirected_to client_initiative_path(@client, initiative)
+    assert_redirected_to project_initiative_path(@client, initiative)
     assert initiative.at_need?
 
     follow_redirect!
@@ -31,9 +31,9 @@ class AltaTest < ActionDispatch::IntegrationTest
   end
 
   test "sin repositorio vuelve a la ficha del cliente y lo dice" do
-    post client_initiatives_path(@client), params: { title: "Sin nada" }
+    post project_initiatives_path(@client), params: { title: "Sin nada" }
 
-    assert_redirected_to client_path(@client)
+    assert_redirected_to project_path(project_for(@client))
     assert_match(/repositorio/i, flash[:alert])
     assert_equal 0, Initiative.count
   end
@@ -43,7 +43,7 @@ class AltaTest < ActionDispatch::IntegrationTest
     # repositorios se buscan DENTRO de él. Un id ajeno no encuentra nada.
     ajeno = build_repository(client: build_client(slug: "caser"), name: "de-otro")
 
-    post client_initiatives_path(@client),
+    post project_initiatives_path(@client),
          params: { title: "Intruso", repository_ids: [ ajeno.id ] }
 
     assert_equal 0, Initiative.count, "se coló un repositorio de otro cliente"
@@ -56,7 +56,7 @@ class AltaTest < ActionDispatch::IntegrationTest
                                 platform_project_ref: "proj-9999", name: "Ajeno")
     end
 
-    post client_initiatives_path(@client),
+    post project_initiatives_path(@client),
          params: { title: "Con proyecto ajeno", repository_ids: [ @repo.id ],
                    platform_project_id: proyecto.id }
 
@@ -67,13 +67,13 @@ class AltaTest < ActionDispatch::IntegrationTest
   # ── Repositorio ────────────────────────────────────────────────────────────
 
   test "registrar un repositorio con su git y su CI" do
-    post client_repositories_path(@client),
+    post project_repositories_path(@client),
          params: { name: "pricing-svc", default_branch: "develop",
                    remote_url: "git@github.com:vivla/pricing-svc.git",
                    ci_provider: "github", ci_repo_slug: "vivla/pricing-svc" }
 
     repository = @client.repositories.find_by!(name: "pricing-svc")
-    assert_redirected_to client_repository_path(@client, repository)
+    assert_redirected_to project_repository_path(@client, repository)
     assert_equal "develop", repository.default_branch
     assert repository.ci_configured?, "con proveedor y slug, admite verificación"
   end
@@ -81,7 +81,7 @@ class AltaTest < ActionDispatch::IntegrationTest
   test "sin CI se registra igual, y la ficha dirá que no verifica" do
     # Nulo significa «este repositorio no admite verificación automática», y así
     # se dice en su ficha en vez de fingir que verifica (F10).
-    post client_repositories_path(@client), params: { name: "docs.site" }
+    post project_repositories_path(@client), params: { name: "docs.site" }
 
     repository = @client.repositories.find_by!(name: "docs.site")
     assert_equal "main", repository.default_branch
@@ -89,9 +89,9 @@ class AltaTest < ActionDispatch::IntegrationTest
   end
 
   test "un nombre repetido dentro del cliente se rechaza con su motivo" do
-    post client_repositories_path(@client), params: { name: "booking-core" }
+    post project_repositories_path(@client), params: { name: "booking-core" }
 
-    assert_redirected_to client_path(@client)
+    assert_redirected_to project_path(project_for(@client))
     assert flash[:alert].present?
     assert_equal 1, @client.repositories.where(name: "booking-core").count
   end
@@ -99,7 +99,7 @@ class AltaTest < ActionDispatch::IntegrationTest
   test "el mismo nombre en OTRO cliente sí vale" do
     otro = build_client(slug: "caser")
 
-    post client_repositories_path(otro), params: { name: "booking-core" }
+    post project_repositories_path(otro), params: { name: "booking-core" }
 
     assert_equal 1, otro.repositories.where(name: "booking-core").count
   end
@@ -111,7 +111,7 @@ class AltaTest < ActionDispatch::IntegrationTest
     marketing = build_platform_user(role: :marketing)
     sign_in_as marketing
 
-    post client_initiatives_path(@client),
+    post project_initiatives_path(@client),
          params: { title: "No debería", repository_ids: [ @repo.id ] }
 
     assert_equal 0, Initiative.count
@@ -120,7 +120,7 @@ class AltaTest < ActionDispatch::IntegrationTest
   test "sin sesión tampoco" do
     sign_out
 
-    post client_repositories_path(@client), params: { name: "colado" }
+    post project_repositories_path(@client), params: { name: "colado" }
 
     assert_equal 1, Repository.count
   end

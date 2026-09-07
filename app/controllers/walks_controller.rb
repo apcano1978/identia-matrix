@@ -27,7 +27,7 @@ class WalksController < ApplicationController
     end
 
     def guide_path(step)
-      client_initiative_guide_path(@client, @initiative,
+      project_initiative_guide_path(@project, @initiative,
                                    anchor: "paso-#{format('%02d', step.position)}")
     end
 end

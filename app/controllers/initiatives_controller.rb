@@ -2,8 +2,8 @@
 # internamente, y la guarda de vocabulario hace fallar la suite si se cuela.
 class InitiativesController < ApplicationController
   def show
-    @client = Platform::Client.find_by!(slug: params[:client_slug])
-    @initiative = @client.initiatives
+    @project = Project.find_by!(slug: params[:project_slug])
+    @initiative = @project.initiatives
                          .includes(:stage_entries, :escalations, :artifacts,
                                    :platform_project,
                                    initiative_repositories: :repository)
@@ -35,22 +35,24 @@ class InitiativesController < ApplicationController
   # Nace en `need` y ahí espera. **No hay forma de avanzarlo desde la interfaz**,
   # y no se añade una: el pipeline lo mueven los agentes, que llegan en F9.
   def create
-    client = Platform::Client.find_by!(slug: params[:client_slug])
+    project = Project.find_by!(slug: params[:project_slug])
     authorize Initiative, :create?
 
     initiative = Initiatives::Open.call(
-      client: client,
+      project: project,
       title: params[:title],
-      # DENTRO del cliente, nunca por id suelto: un `Repository.find` a secas es
-      # la forma más fácil de cruzar la frontera de cliente sin darse cuenta.
-      repositories: client.repositories.where(id: params[:repository_ids]),
-      platform_project: client.platform_projects.find_by(id: params[:platform_project_id]),
+      # DENTRO del proyecto, nunca por id suelto: un `Repository.find` a secas es
+      # la forma más fácil de cruzar la frontera sin darse cuenta.
+      repositories: project.repositories.where(id: params[:repository_ids]),
+      platform_project: project.platform_client
+                               &.platform_projects
+                               &.find_by(id: params[:platform_project_id]),
       actor: Current.user.to_s)
 
-    redirect_to client_initiative_path(client, initiative), status: :see_other,
+    redirect_to project_initiative_path(project, initiative), status: :see_other,
                 notice: "#{initiative.code} abierto. Espera a TANK, que llega en F9."
   rescue Initiatives::Open::Refused => error
-    redirect_to client_path(client), status: :see_other,
+    redirect_to project_path(project), status: :see_other,
                 alert: "No se ha abierto el evolutivo: #{error.message}."
   end
 

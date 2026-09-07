@@ -1,9 +1,9 @@
 <% signed = @signature.present? %>
-<% breadcrumb "clients", @client.slug, @initiative.slug, "gate-1" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "gate-1" %>
 <% content_for :title, "identia-matrix · GATE 1 · #{@initiative.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code, path: initiative_path_for },
+           back: { label: @initiative.slug, path: initiative_path_for },
            title: "GATE 1",
            notes: [ @package.code, signed ? "firmado" : "espera firma" ] %>
 

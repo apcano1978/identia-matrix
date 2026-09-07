@@ -1,5 +1,7 @@
 <%# 62 px, y ni uno más: es la medida de la maqueta y la referencia de todo lo
-    demás. Arriba el isótipo, tres entradas, y abajo engranaje y avatar. %>
+    demás. Arriba el isótipo, cuatro entradas, y abajo engranaje y avatar.
+    PROYECTOS es la puerta al trabajo desde F11; CLIENTES conserva lo que es del
+    cliente y de ningún proyecto. %>
 <nav class="w-[62px] flex-none bg-terminal-rail border-r border-terminal-border
             flex flex-col items-center">
   <div class="pt-[15px] pb-[13px]"><%= render "shared/isotype" %></div>
@@ -20,6 +22,14 @@
       <span class="absolute top-[9px] right-[9px] px-1 text-[8.5px] font-medium
                    bg-antique-gold text-ink"><%= waiting %></span>
     <% end %>
+  <% end %>
+
+  <%= link_to projects_path, class: rail_entry_class(:projects), title: "Proyectos" do %>
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" fill="none" stroke="#C6BEA8" stroke-width="1.6"></rect>
+      <path d="M3 9h18M9 9v10" stroke="#C6BEA8" stroke-width="1.6"></path>
+    </svg>
+    <span class="<%= rail_label_class(:projects) %>">PROYECTOS</span>
   <% end %>
 
   <%= link_to clients_path, class: rail_entry_class(:clients), title: "Clientes" do %>

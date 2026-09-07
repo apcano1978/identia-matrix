@@ -11,7 +11,7 @@
     + registrar un repositorio
   </summary>
 
-  <%= form_with url: client_repositories_path(client), class: "px-3.5 pb-3.5 pt-1" do |form| %>
+  <%= form_with url: project_repositories_path(project), class: "px-3.5 pb-3.5 pt-1" do |form| %>
     <div class="grid grid-cols-2 gap-px">
       <%= form.text_field :name, required: true, placeholder: "nombre · booking-core",
                           pattern: "[a-z0-9]+([-_.][a-z0-9]+)*",

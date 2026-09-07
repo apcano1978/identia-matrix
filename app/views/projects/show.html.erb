@@ -1,0 +1,46 @@
+<% breadcrumb "projects", @project.slug %>
+<% content_for :title, "identia-matrix · #{@project.slug}" %>
+
+<%= render "shared/view_bar",
+           back: { label: "proyectos", path: projects_path },
+           title: @project.slug,
+           notes: [ @project.own? ? "proyecto propio · nada que sincronizar" :
+                      "el cliente y sus proyectos se gestionan en identia-platform · " \
+                      "los evolutivos y los repositorios son de matrix" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-[.03em] text-terminal-fg">
+        <%= @project.name %>
+      </h1>
+      <%# De quién es, o que no es de nadie. Un proyecto propio no tiene cliente
+          detrás, y decirlo evita que la ausencia se lea como un dato que falta. %>
+      <% if @project.for_client? %>
+        <%= link_to @project.platform_client.name, client_path(@project.platform_client),
+                    class: "text-t12 text-terminal-fg-4 hover:text-antique-gold" %>
+      <% else %>
+        <span class="eyebrow text-terminal-fg-3 border border-dashed
+                     border-terminal-border-strong px-1.5 py-px">PROPIO</span>
+      <% end %>
+    </div>
+
+    <%= render "projects/matrix", project: @project, repositories: @repositories,
+               initiatives: @initiatives, pagy: @pagy,
+               total: @initiatives_count, multi_repo: @multi_repo_count %>
+
+    <%= render "projects/new_initiative", project: @project,
+               repositories: @repositories, projects: @platform_projects %>
+
+    <%= section_header "REPOSITORIOS", count: @repositories.size, tone: :gate2,
+                       gloss: "eje de memoria · qué se hizo antes ahí" %>
+    <div class="grid grid-cols-3 gap-3 mt-2.5">
+      <%= render partial: "projects/repository_card", collection: @repositories,
+                 as: :repository, locals: { project: @project } %>
+    </div>
+
+    <%= render "projects/new_repository", project: @project %>
+  </div>
+
+  <%= render "projects/panel", project: @project %>
+</div>

@@ -27,7 +27,7 @@ class MatrixSequenceTest < ActiveSupport::TestCase
     # borrar una fila devolvería su número al reparto y el evolutivo nuevo
     # heredaría las citas del viejo.
     client = build_client
-    primero = Initiatives::Open.call(client: client, title: "Uno", actor: "test",
+    primero = Initiatives::Open.call(project: project_for(client), title: "Uno", actor: "test",
                                      repositories: [ build_repository(client: client) ])
     codigo_liberado = primero.code
     primero.destroy!

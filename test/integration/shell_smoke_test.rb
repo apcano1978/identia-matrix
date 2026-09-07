@@ -37,7 +37,8 @@ class ShellSmokeTest < ActionDispatch::IntegrationTest
     sign_in_as Platform::User.find_by!(platform_id: 1)
 
     { root_path => "DASHBOARD", clients_path => "CLIENTES",
-      client_path("vivla") => "CLIENTES", agents_path => "AGENTES" }.each do |path, label|
+      client_path("vivla") => "CLIENTES", projects_path => "PROYECTOS",
+      project_path("vivla") => "PROYECTOS", agents_path => "AGENTES" }.each do |path, label|
       get path
       assert_response :success
       on = css_select("a.rail-entry-on .rail-label").map(&:text)
@@ -59,8 +60,10 @@ class ShellSmokeTest < ActionDispatch::IntegrationTest
 
     { root_path => "status", clients_path => "clients",
       client_path("vivla") => "clients/vivla",
-      client_initiative_path("vivla", "precio-festivos") => "clients/vivla/precio-festivos",
-      client_repository_path("vivla", "booking-core") => "clients/vivla/repos/booking-core",
+      projects_path => "projects",
+      project_path("vivla") => "projects/vivla",
+      project_initiative_path("vivla", "precio-festivos") => "projects/vivla/precio-festivos",
+      project_repository_path("vivla", "booking-core") => "projects/vivla/repos/booking-core",
       agents_path => "agents/tank" }.each do |path, crumb|
       get path
       assert_equal crumb, css_select("header span.text-antique-gold").first.text

@@ -1,6 +1,6 @@
 <div class="h-[34px] flex-none flex items-center gap-[9px] px-3.5
             bg-terminal-sunken border-b border-terminal-border">
-  <%= link_to "← #{client.slug}", client_path(client), class: "text-t105" %>
+  <%= link_to "← #{project.slug}", project_path(project), class: "text-t105" %>
   <span class="text-t11 text-terminal-sep">/</span>
   <span class="text-t11 font-medium text-terminal-fg">
     <%= initiative.code %> · <%= initiative.title %>
@@ -24,7 +24,7 @@
   <% end %>
 
   <div class="ml-auto flex items-center gap-3 text-t105 text-terminal-fg-3">
-    <%= link_to "workflow", client_initiative_path(client, initiative),
+    <%= link_to "workflow", project_initiative_path(project, initiative),
                 class: "pb-0.5 #{artifact.nil? || artifact == artifacts.first ?
                   'text-antique-gold border-b border-antique-gold' : ''}" %>
 
@@ -43,7 +43,7 @@
       <% end %>
     <% end %>
 
-    <%= link_to "sources", client_initiative_sources_path(client, initiative),
+    <%= link_to "sources", project_initiative_sources_path(project, initiative),
                 class: "pb-0.5" %>
 
     <%# `config` es F9. Apagada, y su título dice por qué. %>

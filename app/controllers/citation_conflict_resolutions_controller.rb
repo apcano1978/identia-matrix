@@ -23,6 +23,6 @@ class CitationConflictResolutionsController < ApplicationController
     def initiative_path_for(initiative)
       return root_path if initiative.blank?
 
-      client_initiative_path(initiative.platform_client, initiative)
+      project_initiative_path(initiative.platform_client, initiative)
     end
 end

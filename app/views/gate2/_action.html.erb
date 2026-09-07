@@ -24,7 +24,7 @@
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <% if blocking.empty? %>
         <%= button_to "validar y pasar a LINK",
-                      client_initiative_gate_2_validation_path(@client, initiative,
+                      project_initiative_gate_2_validation_path(@project, initiative,
                                                                decision: "validated"),
                       class: "border border-terminal-border-gold bg-antique-gold
                               px-3 py-1.5 text-t105 text-terminal-bg" %>
@@ -33,7 +33,7 @@
       <%# GATE 2 es reversible por rechazo, y ahí está su diferencia con GATE 1.
           El rechazo devuelve a NEO, sube la iteración y NO consume ciclo de QA:
           no hay ningún ✕, es una decisión humana. %>
-      <%= form_with url: client_initiative_gate_2_validation_path(@client, initiative),
+      <%= form_with url: project_initiative_gate_2_validation_path(@project, initiative),
                     class: "flex flex-1 items-end gap-2.5" do |form| %>
         <%= form.hidden_field :decision, value: "rejected" %>
         <div class="flex-1">

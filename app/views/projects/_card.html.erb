@@ -1,0 +1,66 @@
+<% initiatives = project.initiatives.sort_by(&:code) %>
+<% open = initiatives.reject(&:at_publication?) %>
+<% leading = open.min_by { |i| i.stage_changed_at || i.opened_at } %>
+
+<%# El borde en oro marca el proyecto que tiene algo esperando a una persona. Es
+    la misma señal que el dashboard, vista desde el otro lado.
+
+    Y DISCONTINUO al propio: el mismo idioma que la tarjeta de fuentes heredadas
+    —lo que no está fijado se dibuja con trazo partido—, aquí para decir que
+    detrás no hay cliente. %>
+<%= link_to project_path(project),
+            class: "flex flex-col p-[14px_15px] border #{
+              if project.own? then 'border-dashed border-terminal-border-strong bg-terminal-sunken'
+              elsif leading&.awaiting_human? then 'border-antique-gold bg-[rgba(196,155,94,.09)]'
+              else 'border-terminal-border bg-terminal-sunken'
+              end}" do %>
+  <div class="flex items-baseline gap-2 w-full">
+    <span class="font-sans text-t15 font-semibold tracking-[.06em] text-terminal-fg">
+      <%= project.name %>
+    </span>
+    <% if project.own? %>
+      <span class="ml-auto eyebrow text-terminal-fg-3">PROPIO</span>
+    <% else %>
+      <span class="ml-auto"><%= situation_tag(leading, size: "text-t10", short: true) if leading %></span>
+    <% end %>
+  </div>
+
+  <div class="mt-1 text-t10 text-terminal-fg-3">
+    <%= project.platform_client&.sector || "de matrix" %>
+  </div>
+
+  <div class="h-px bg-terminal-border my-[11px]"></div>
+
+  <%# Sin evolutivos la tarjeta se queda muda, y eso no es un hueco: es el estado
+      con el que nace un proyecto. Lo dice el rediseño con estas palabras. %>
+  <% if initiatives.empty? %>
+    <p class="text-t105 text-terminal-fg-3 leading-[1.6]">
+      Todavía no tiene ningún evolutivo. Empieza aportando documentación o una idea.
+    </p>
+  <% end %>
+
+  <div class="flex flex-col gap-[9px] w-full">
+    <% initiatives.each do |initiative| %>
+      <div class="w-full">
+        <div class="flex items-baseline gap-[7px]">
+          <span class="flex-1 min-w-0 truncate text-t115 text-terminal-fg-2">
+            <%= initiative.title %>
+          </span>
+          <%= stage_strip initiative, size: "text-t11" %>
+        </div>
+        <div class="mt-[3px] text-t95 text-terminal-muted">
+          <%= initiative.repositories.map(&:name).sort.join(" · ") %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center gap-[9px] w-full mt-[11px] text-t95 text-terminal-fg-3">
+    <span><%= pluralize initiatives.size, "evolutivo" %></span>
+    <span>·</span>
+    <span><%= pluralize project.repositories.size, "repositorio" %></span>
+    <span class="ml-auto">
+      <%= age(leading&.stage_changed_at || initiatives.last&.stage_changed_at) %>
+    </span>
+  </div>
+<% end %>

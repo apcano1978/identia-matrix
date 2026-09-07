@@ -123,7 +123,7 @@ class EvidenceTest < ApplicationSystemTestCase
 
     assert_text "Checklist ejecutable"
     assert_no_text "Lectura continua"
-    assert_current_path client_initiative_guide_path("vivla", "precio-festivos")
+    assert_current_path project_initiative_guide_path("vivla", "precio-festivos")
   end
 
   # La asimetría visual es la misma que la regla de bloqueo: un paso de única
@@ -170,33 +170,33 @@ class EvidenceTest < ApplicationSystemTestCase
   # ── Se llega desde la ficha ───────────────────────────────────────────────
 
   test "las tres pestañas del evolutivo llevan a sus pantallas" do
-    visit client_initiative_path("vivla", "precio-festivos")
+    visit project_initiative_path("vivla", "precio-festivos")
 
     click_on "dod"
     assert_text "Definición de terminado"
 
-    visit client_initiative_path("vivla", "precio-festivos")
+    visit project_initiative_path("vivla", "precio-festivos")
     click_on "verify"
     assert_text "Informe de verificación"
 
-    visit client_initiative_path("vivla", "precio-festivos")
+    visit project_initiative_path("vivla", "precio-festivos")
     click_on "guide"
     assert_text "Guía de pruebas"
   end
 
   private
     def open_dod
-      visit client_initiative_definition_of_done_path("vivla", "precio-festivos")
+      visit project_initiative_definition_of_done_path("vivla", "precio-festivos")
       assert_text "CRITERIOS"
     end
 
     def open_verification
-      visit client_initiative_verification_path("vivla", "precio-festivos")
+      visit project_initiative_verification_path("vivla", "precio-festivos")
       assert_text "VEREDICTOS"
     end
 
     def open_guide
-      visit client_initiative_guide_path("vivla", "precio-festivos")
+      visit project_initiative_guide_path("vivla", "precio-festivos")
       assert_text "Guía de pruebas"
     end
 end

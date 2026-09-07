@@ -60,9 +60,14 @@ Rails.application.routes.draw do
   # despliegue cuando Redis parpadea, y deja de responder justo cuando hace falta.
   get "diagnostics" => "diagnostics#show" if Rails.env.local?
 
-  # El eje de trabajo cuelga del cliente, y el de memoria también. Las rutas lo
-  # dicen: no hay ningún evolutivo ni ningún repositorio fuera de su cliente, que
-  # es la frontera dura del sistema.
+  # El eje de trabajo cuelga del PROYECTO, y el de memoria también. Las rutas lo
+  # dicen: no hay ningún evolutivo ni ningún repositorio fuera de su proyecto,
+  # que es la frontera dura del sistema desde F11.
+  #
+  # Y eso no es decoración de la URL: **la frontera se defiende navegando la
+  # asociación**, no con una policy. `@project.initiatives.find_by!` no puede
+  # devolver el evolutivo de otro proyecto; un `Initiative.find_by!` suelto, sí.
+  # Por eso el anidamiento importa y no es azúcar.
   # INVARIANTE 8, escrito en la forma de la ruta: ante un conflicto de
   # procedencia gana el ORIGEN, y lo único que se puede crear es la RESOLUCIÓN.
   # No hay `update`, no hay `destroy`, y no existe ningún parámetro que diga a
@@ -73,16 +78,21 @@ Rails.application.routes.draw do
                           controller: "citation_conflict_resolutions"
   end
 
-  resources :clients, only: %i[index show], param: :slug do
+  # La ficha de cliente. Ya no anida nada: el cliente conserva lo que es suyo y
+  # de ningún proyecto —su sincronización con platform, su admisión, sus
+  # documentos y reuniones— pero dejó de ser la puerta de entrada al trabajo.
+  resources :clients, only: %i[index show], param: :slug
+
+  resources :projects, only: %i[index show], param: :slug do
     # ── Las dos primeras altas de matrix (P1) ────────────────────────────────
     #
     # `create` y nada más, como el resto de lo que matrix escribe: dar de alta
     # es un acto que ocurre una vez. **No hay `update` ni `destroy`**, y que no
     # los haya se lee en `bin/rails routes` sin abrir un controlador.
     #
-    # Cuelgan del CLIENTE y no de la raíz: es donde el evolutivo y el
-    # repositorio nacen, y es lo que hace que la frontera de cliente entre por
-    # la ruta en vez de por un parámetro que alguien pueda cambiar.
+    # Cuelgan del PROYECTO y no de la raíz: es donde el evolutivo y el
+    # repositorio nacen, y es lo que hace que la frontera entre por la ruta en
+    # vez de por un parámetro que alguien pueda cambiar.
     resources :initiatives, only: %i[show create], param: :slug do
       # Lo que un agente puede leer y citar para este evolutivo. Cuelga del
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.

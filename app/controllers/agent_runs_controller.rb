@@ -34,7 +34,7 @@ class AgentRunsController < ApplicationController
     end
 
     def redirect_with(**flash)
-      redirect_to client_initiative_path(@client, @initiative),
+      redirect_to project_initiative_path(@project, @initiative),
                   status: :see_other, **flash
     end
 end

@@ -69,7 +69,7 @@
     <% else %>
       <div class="flex items-center gap-2.5">
         <%= button_to "○ marcar recorrido",
-                      client_initiative_guide_step_walk_path(@client, @initiative, step),
+                      project_initiative_guide_step_walk_path(@project, @initiative, step),
                       class: "border border-terminal-border-gold px-2.5 py-1
                               text-t10 text-antique-gold" %>
 
@@ -77,7 +77,7 @@
             auto-verificado no hay nada bloqueado que desbloquear. %>
         <% if sole && step.critical? && !step.opened_escalations.any?(&:open?) %>
           <%= link_to "no puedo recorrerlo",
-                      client_initiative_gate_2_path(@client, @initiative,
+                      project_initiative_gate_2_path(@project, @initiative,
                                                     anchor: "paso-#{format('%02d', step.position)}"),
                       class: "text-t10 text-terminal-fg-4" %>
         <% end %>

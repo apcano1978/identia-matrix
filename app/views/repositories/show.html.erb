@@ -1,10 +1,10 @@
-<% breadcrumb "clients", @client.slug, "repos", @repository.name %>
+<% breadcrumb "projects", @project.slug, "repos", @repository.name %>
 <% content_for :title, "identia-matrix · #{@repository.name}" %>
 
 <%# «registro · nada que atender» no es decoración: un repositorio NO tiene
     pipeline ni estado, y la sub-barra lo dice antes de que nadie busque un
     botón que no existe. %>
-<%= render "shared/view_bar", back: { label: @client.slug, path: client_path(@client) },
+<%= render "shared/view_bar", back: { label: @project.slug, path: project_path(@project) },
            title: @repository.name,
            notes: [ "registro · nada que atender",
                     "lo que TANK lee para no repetir decisiones ya tomadas" ] %>
@@ -30,7 +30,7 @@
 
     <div class="mt-[9px] flex flex-col">
       <% @history.each do |entry| %>
-        <%= render "repositories/entry", entry: entry, client: @client %>
+        <%= render "repositories/entry", entry: entry, project: @project %>
       <% end %>
     </div>
 

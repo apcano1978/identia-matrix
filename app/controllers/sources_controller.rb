@@ -6,8 +6,8 @@
 # otro nombre el rail se apagaría al entrar aquí.
 class SourcesController < ApplicationController
   def index
-    @client = Platform::Client.find_by!(slug: params[:client_slug])
-    @initiative = @client.initiatives
+    @project = Project.find_by!(slug: params[:project_slug])
+    @initiative = @project.initiatives
                          .includes(initiative_repositories: :repository)
                          .find_by!(slug: params[:initiative_slug])
 

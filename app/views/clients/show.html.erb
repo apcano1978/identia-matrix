@@ -27,24 +27,13 @@
       </span>
     </div>
 
-    <%= render "clients/matrix", client: @client, repositories: @repositories,
-               initiatives: @initiatives, pagy: @pagy,
-               total: @initiatives_count, multi_repo: @multi_repo_count %>
-
-    <%= render "clients/new_initiative", client: @client,
-               repositories: @repositories, projects: @platform_projects %>
-
-    <%= section_header "REPOSITORIOS", count: @repositories.size, tone: :gate2,
-                       gloss: "eje de memoria · qué se hizo antes ahí" %>
-    <div class="grid grid-cols-3 gap-3 mt-2.5">
-      <%= render partial: "clients/repository_card", collection: @repositories,
-                 as: :repository, locals: { client: @client } %>
+    <%= section_header "PROYECTOS", count: @projects.size, tone: :gate2,
+                       gloss: "de aquí cuelgan los evolutivos y los repositorios" %>
+    <div class="grid grid-cols-2 items-start gap-[13px] mt-2.5">
+      <%= render partial: "projects/card", collection: @projects, as: :project %>
     </div>
-
-    <%= render "clients/new_repository", client: @client %>
 
     <%= render "clients/client_sources", client: @client %>
   </div>
 
-  <%= render "clients/panel", client: @client %>
 </div>

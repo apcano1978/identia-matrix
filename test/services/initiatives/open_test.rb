@@ -11,7 +11,7 @@ class Initiatives::OpenTest < ActiveSupport::TestCase
   end
 
   def abrir(**overrides)
-    Initiatives::Open.call(**{ client: @client, title: "Unificar precios",
+    Initiatives::Open.call(**{ project: project_for(@client), title: "Unificar precios",
                                repositories: [ @repo ], actor: "antonio" }.merge(overrides))
   end
 

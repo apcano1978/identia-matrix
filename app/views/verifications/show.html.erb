@@ -1,8 +1,8 @@
-<% breadcrumb "clients", @client.slug, @initiative.slug, "verify" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "verify" %>
 <% content_for :title, "identia-matrix · #{@report.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code, path: initiative_path_for },
+           back: { label: @initiative.slug, path: initiative_path_for },
            title: @report.code,
            notes: [ "ciclo #{@report.qa_cycle}/#{Initiative::MAX_QA_CYCLES}",
                     "contra #{@dod}" ] %>
@@ -82,7 +82,7 @@
               convierte un criterio sin verificar en un paso con dueño. %>
           <div class="text-t10">
             <% if verdict.guide_step %>
-              <%= link_to client_initiative_guide_path(@client, @initiative,
+              <%= link_to project_initiative_guide_path(@project, @initiative,
                                                        anchor: "paso-#{format('%02d', verdict.guide_step.position)}"),
                           class: "text-glyph-unsupported" do %>
                 → <%= verdict.guide_step.test_guide.code %> ·
@@ -107,7 +107,7 @@
         <span class="text-terminal-fg">La conformidad final la firma un humano.</span>
       </p>
       <% if @guide %>
-        <%= link_to "ir a GATE 2 ↗", client_initiative_gate_2_path(@client, @initiative),
+        <%= link_to "ir a GATE 2 ↗", project_initiative_gate_2_path(@project, @initiative),
                     class: "ml-auto flex-none border border-terminal-border-gold
                             px-2.5 py-1 text-t10 text-antique-gold" %>
       <% end %>

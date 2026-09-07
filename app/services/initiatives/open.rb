@@ -18,8 +18,8 @@ class Initiatives::Open
 
   def self.call(...) = new(...).call
 
-  def initialize(client:, title:, repositories:, actor:, platform_project: nil)
-    @client = client
+  def initialize(project:, title:, repositories:, actor:, platform_project: nil)
+    @project = project
     @title = title.to_s.strip
     @repositories = Array(repositories)
     @actor = actor
@@ -42,15 +42,11 @@ class Initiatives::Open
 
   private
 
-  attr_reader :client, :title, :repositories, :actor, :platform_project
+  attr_reader :project, :title, :repositories, :actor, :platform_project
 
-  # F11 · el proyecto del cliente. Mientras las dos columnas conviven se deriva
-  # aquí; al contraer, el alta recibirá el proyecto y el cliente será lo que
-  # cuelgue de él, no al revés.
-  def project = @project ||= Project.find_by(platform_client_id: client.id)
 
-  # **La frontera de cliente, comprobada aquí y no en la vista.** Un formulario
-  # manipulado puede mandar el id del repositorio de otro cliente, y enlazarlo
+  # **La frontera de proyecto, comprobada aquí y no en la vista.** Un formulario
+  # manipulado puede mandar el id del repositorio de otro proyecto, y enlazarlo
   # metería material ajeno en el ámbito de un evolutivo — que es lo que el
   # invariante 10 existe para impedir.
   def validate!
@@ -60,7 +56,7 @@ class Initiatives::Open
     intrusos = repositories.reject { |repository| repository.project_id == project&.id }
     return if intrusos.empty?
 
-    raise Refused, "esos repositorios no son de #{project&.slug || client.slug}: " \
+    raise Refused, "esos repositorios no son de #{project&.slug}: " \
                    "#{intrusos.map(&:name).join(', ')}"
   end
 
@@ -117,7 +113,7 @@ class Initiatives::Open
   def record_event(initiative)
     Event.create!(
       occurred_at: Time.current, actor: actor, kind: "initiative_opened",
-      initiative: initiative, platform_client: client, project: project,
+      initiative: initiative, platform_client: project.platform_client, project: project,
       message: "#{initiative.code} · alta · #{repositories.map(&:name).join(', ')}",
       payload: { repositories: repositories.map(&:name),
                  platform_project_ref: platform_project&.platform_project_ref })

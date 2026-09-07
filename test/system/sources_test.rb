@@ -6,7 +6,7 @@ class SourcesTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
-    visit client_initiative_sources_path("vivla", "precio-festivos")
+    visit project_initiative_sources_path("vivla", "precio-festivos")
   end
 
   test "dice de quién es el ámbito y que no se escribe en él" do
@@ -78,19 +78,21 @@ class SourcesTest < ApplicationSystemTestCase
   end
 
   test "se llega desde el evolutivo y se vuelve" do
-    visit client_initiative_path("vivla", "precio-festivos")
+    visit project_initiative_path("vivla", "precio-festivos")
     click_on "sources"
 
     assert_text "Fuentes en ámbito"
-    assert_text "clients/vivla/precio-festivos/sources"
+    assert_text "projects/vivla/precio-festivos/sources"
 
-    click_on "← ev-031"
+    click_on "← precio-festivos"
 
     assert_text "PIPELINE"
   end
 
-  test "y el rail sigue en CLIENTES" do
-    assert_selector ".rail-entry-on", text: "CLIENTES"
+  # Las fuentes son del evolutivo, y el evolutivo cuelga del proyecto: el rail
+  # se queda donde está el trabajo.
+  test "y el rail sigue en PROYECTOS" do
+    assert_selector ".rail-entry-on", text: "PROYECTOS"
   end
 
   test "es una pantalla de lectura: no se edita nada desde aquí" do

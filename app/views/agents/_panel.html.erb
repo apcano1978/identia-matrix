@@ -35,7 +35,7 @@
         <div class="flex items-baseline gap-2 text-t105">
           <span class="text-terminal-fg-3"><%= run.purpose %></span>
           <%= link_to run.initiative.code,
-                      client_initiative_path(run.initiative.platform_client,
+                      project_initiative_path(run.initiative.project,
                                              run.initiative),
                       class: "text-t95" %>
           <span class="ml-auto text-terminal-muted">

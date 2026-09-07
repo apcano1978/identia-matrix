@@ -44,9 +44,9 @@ module DashboardHelper
     client = initiative.platform_client
 
     case action
-    when "firmar" then client_initiative_gate_1_path(client, initiative)
-    when "validar" then client_initiative_gate_2_path(client, initiative)
-    else client_initiative_path(client, initiative)
+    when "firmar" then project_initiative_gate_1_path(client, initiative)
+    when "validar" then project_initiative_gate_2_path(client, initiative)
+    else project_initiative_path(client, initiative)
     end
   end
 

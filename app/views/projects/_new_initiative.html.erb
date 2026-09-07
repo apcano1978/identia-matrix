@@ -24,7 +24,7 @@
       + abrir un evolutivo
     </summary>
 
-    <%= form_with url: client_initiatives_path(client), class: "px-3.5 pb-3.5 pt-1" do |form| %>
+    <%= form_with url: project_initiatives_path(project), class: "px-3.5 pb-3.5 pt-1" do |form| %>
       <%= form.text_field :title, required: true, autofocus: true,
                           placeholder: "qué hay que hacer · unificar precios y calendario",
                           class: "terminal-field focus:terminal-field-focus w-full" %>

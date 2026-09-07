@@ -1,9 +1,10 @@
 # Las pantallas que cuelgan de un evolutivo.
 #
 # Todas cargan lo mismo y de la misma forma, y todas tienen que respetar la
-# frontera de cliente: se busca el evolutivo DENTRO de su cliente, nunca por su
-# código a secas. Un `Initiative.find_by(code:)` suelto es la forma más fácil de
-# cruzar la frontera sin darse cuenta.
+# frontera de PROYECTO: se busca el evolutivo DENTRO de su proyecto, nunca por su
+# nombre a secas. Un `Initiative.find_by(slug:)` suelto es la forma más fácil de
+# cruzar la frontera sin darse cuenta — y aquí es donde de verdad se defiende,
+# porque las policies solo comprueban acceso a la aplicación, no ámbito.
 module InitiativeScoped
   extend ActiveSupport::Concern
 
@@ -15,8 +16,8 @@ module InitiativeScoped
 
   private
     def load_initiative
-      @client = Platform::Client.find_by!(slug: params[:client_slug])
-      @initiative = @client.initiatives.find_by!(slug: params[:initiative_slug])
+      @project = Project.find_by!(slug: params[:project_slug])
+      @initiative = @project.initiatives.find_by!(slug: params[:initiative_slug])
     end
 
     # El DoD vigente: el de versión más alta. Las anteriores se leen desde el
@@ -34,7 +35,7 @@ module InitiativeScoped
     end
 
     def initiative_path_for(**options)
-      client_initiative_path(@client, @initiative, **options)
+      project_initiative_path(@project, @initiative, **options)
     end
 
     # Turbo Drive exige 303 tras un POST para seguir la redirección con un GET.

@@ -4,7 +4,7 @@ class RepositoriesTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
-    visit client_repository_path("vivla", "booking-core")
+    visit project_repository_path("vivla", "booking-core")
   end
 
   test "el repositorio no tiene pipeline ni estado, y lo dice" do

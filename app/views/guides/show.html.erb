@@ -1,8 +1,8 @@
-<% breadcrumb "clients", @client.slug, @initiative.slug, "guide" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "guide" %>
 <% content_for :title, "identia-matrix · #{@guide.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code, path: initiative_path_for },
+           back: { label: @initiative.slug, path: initiative_path_for },
            title: @guide.code,
            notes: [ "#{@coverage[:walked]}/#{@coverage[:total]} pasos" ] %>
 

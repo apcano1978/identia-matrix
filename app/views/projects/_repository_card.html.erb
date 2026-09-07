@@ -1,5 +1,5 @@
 <% last = last_touch(repository) %>
-<%= link_to client_repository_path(client.slug, repository.name),
+<%= link_to project_repository_path(project.slug, repository.name),
             class: "flex flex-col p-[13px_14px] bg-terminal-sunken
                     border border-terminal-border" do %>
   <div class="flex items-baseline gap-2 w-full">

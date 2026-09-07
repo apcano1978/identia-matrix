@@ -3,11 +3,14 @@ require "application_system_test_case"
 # P1 · el alta, desde la pantalla. Aquí se comprueba lo que un test de
 # integración no ve: que los formularios existen, que están donde tienen que
 # estar y que dicen lo que hace falta decir.
+#
+# Desde F11 cuelgan del PROYECTO, no del cliente: un evolutivo y un repositorio
+# son de un proyecto, y un cliente puede tener varios.
 class AltaTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
-    visit client_path("vivla")
+    visit project_path("vivla")
   end
 
   test "la ficha ya no dice que sea de solo lectura entera" do
@@ -17,7 +20,7 @@ class AltaTest < ApplicationSystemTestCase
     assert_text "los evolutivos y los repositorios son de matrix"
   end
 
-  test "abrir un evolutivo desde la ficha del cliente" do
+  test "abrir un evolutivo desde la ficha del proyecto" do
     find("summary", text: "abrir un evolutivo").click
     fill_in "title", with: "Unificar el calendario"
     check "repo-#{Repository.find_by!(name: 'booking-core').id}"
@@ -46,10 +49,9 @@ class AltaTest < ApplicationSystemTestCase
     assert Repository.find_by!(name: "rates-engine").ci_configured?
   end
 
-  test "un cliente sin repositorios explica por qué no puede abrir un evolutivo" do
-    visit client_path("navantia")
+  test "un proyecto sin repositorios explica por qué no puede abrir un evolutivo" do
     Repository.where(project: Project.find_by!(slug: "navantia")).destroy_all
-    visit client_path("navantia")
+    visit project_path("navantia")
 
     assert_text "Para abrir un evolutivo hace falta al menos un repositorio"
     assert_no_selector "summary", text: "abrir un evolutivo"

@@ -41,7 +41,7 @@ class Platform::Client < Platform::Record
   #
   # «Los evolutivos de un cliente» sigue siendo una pregunta legítima —la hace
   # `InitiativeScoped`, y debajo de ella están todas las rutas anidadas
-  # `client_initiative_*`— y sigue teniendo la misma respuesta: los de sus
+  # `project_initiative_*`— y sigue teniendo la misma respuesta: los de sus
   # proyectos. Ni un llamante cambia.
   #
   # La protección de borrado no se pierde por el camino: `Project` lleva

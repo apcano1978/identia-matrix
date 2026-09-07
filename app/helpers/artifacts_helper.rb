@@ -42,7 +42,7 @@ module ArtifactsHelper
     return tag.span(label, class: "text-antique-gold") if current == mode
 
     link_to label,
-            client_initiative_path(initiative.platform_client, initiative,
+            project_initiative_path(initiative.project, initiative,
                                    artifact: artifact.code,
                                    version: artifact.version, view: mode),
             **options

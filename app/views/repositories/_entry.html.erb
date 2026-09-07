@@ -1,7 +1,7 @@
 <% initiative = entry.initiative %>
 <div class="grid-repo-history items-baseline px-3 py-3
             border-b border-[rgba(240,233,215,.07)] last:border-b-0">
-  <%= link_to initiative.code, client_initiative_path(client, initiative),
+  <%= link_to initiative.code, project_initiative_path(project, initiative),
               class: "text-t11" %>
   <span class="text-t95 text-terminal-muted">
     <%= age_label(initiative.stage_changed_at,

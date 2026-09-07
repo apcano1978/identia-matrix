@@ -59,7 +59,7 @@ class PlatformProjectDeepLinkTest < ActionDispatch::IntegrationTest
 
     get platform_project_deep_link_path("proj-2291")
 
-    assert_redirected_to client_initiative_path(@client, initiative)
+    assert_redirected_to project_initiative_path(@client, initiative)
   end
 
   # Ref desconocida y cliente ajeno colapsan en la misma rama: desde fuera son

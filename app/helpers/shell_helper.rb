@@ -3,22 +3,27 @@
 # El armazón: qué entrada del rail se ilumina, qué dice el breadcrumb y qué
 # resume la barra de título.
 module ShellHelper
-  # El mapeo de vista a entrada NO es uno a uno. Siete vistas —clientes, ficha,
-  # evolutivo, repositorio, fuentes, DoD, verificación y GATE 2— iluminan
-  # CLIENTES, porque todas son el mismo recorrido: entrar en el trabajo de un
-  # cliente. GATE 1 ilumina DASHBOARD, que es de donde se llega a firmar.
+  # El mapeo de vista a entrada NO es uno a uno. Las del trabajo —proyectos,
+  # ficha, evolutivo, repositorio, fuentes, DoD, verificación y GATE 2— iluminan
+  # PROYECTOS, porque todas son el mismo recorrido: entrar en el trabajo de un
+  # proyecto. GATE 1 ilumina DASHBOARD, que es de donde se llega a firmar.
+  #
+  # CLIENTES se queda con lo suyo: quién es, si está en preparación y qué
+  # documentación tiene. Desde F11 ya no es la puerta de entrada al trabajo.
   RAIL_SECTIONS = {
     "dashboard" => :dashboard,
     "gates" => :dashboard,
+    "projects" => :projects,
+    "initiatives" => :projects,
+    "repositories" => :projects,
+    "sources" => :projects,
     "clients" => :clients,
-    "initiatives" => :clients,
-    "repositories" => :clients,
-    "sources" => :clients,
     "agents" => :agents
   }.freeze
 
   RAIL_ENTRIES = [
-    [ :dashboard, "DASHBOARD" ], [ :clients, "CLIENTES" ], [ :agents, "AGENTES" ]
+    [ :dashboard, "DASHBOARD" ], [ :projects, "PROYECTOS" ],
+    [ :clients, "CLIENTES" ], [ :agents, "AGENTES" ]
   ].freeze
 
   def rail_section = RAIL_SECTIONS[controller_name]

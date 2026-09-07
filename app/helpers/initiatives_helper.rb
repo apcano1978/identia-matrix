@@ -78,9 +78,9 @@ module InitiativesHelper
 
   def evidence_path_for(label, client, initiative)
     case label
-    when "dod" then client_initiative_definition_of_done_path(client, initiative)
-    when "verify" then client_initiative_verification_path(client, initiative)
-    else client_initiative_guide_path(client, initiative)
+    when "dod" then project_initiative_definition_of_done_path(client, initiative)
+    when "verify" then project_initiative_verification_path(client, initiative)
+    else project_initiative_guide_path(client, initiative)
     end
   end
 

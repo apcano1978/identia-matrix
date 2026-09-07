@@ -22,7 +22,7 @@
               <span class="text-antique-gold">v<%= other.version %></span>
             <% else %>
               <%= link_to "v#{other.version}",
-                          client_initiative_path(initiative.platform_client, initiative,
+                          project_initiative_path(initiative.project, initiative,
                                                  artifact: other.code,
                                                  version: other.version, view: mode),
                           class: "text-terminal-fg-4" %>
@@ -64,7 +64,7 @@
           veredictos: es el enlace natural desde aquí. %>
       <% if report %>
         <%= link_to "ver informe →",
-                    client_initiative_verification_path(initiative.platform_client, initiative),
+                    project_initiative_verification_path(initiative.project, initiative),
                     class: "ml-auto flex-none whitespace-nowrap text-t105 text-antique-gold" %>
       <% end %>
     </div>

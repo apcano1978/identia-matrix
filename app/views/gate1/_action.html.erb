@@ -36,7 +36,7 @@
   </p>
 
   <% if may_sign %>
-    <%= form_with url: client_initiative_gate_1_signature_path(@client, initiative),
+    <%= form_with url: project_initiative_gate_1_signature_path(@project, initiative),
                   class: "mt-3 flex items-end gap-2.5" do |form| %>
       <div>
         <%# Re-autenticación. Es irreversible, nominal y autoriza escritura
@@ -58,7 +58,7 @@
         TRINITY y no a NEO, porque lo que está mal es el paquete, no la spec. Y
         exige una nota: sin ella TRINITY volvería a sellar lo mismo sin saber
         qué corregir. %>
-    <%= form_with url: client_initiative_gate_1_return_to_trinity_path(@client, initiative),
+    <%= form_with url: project_initiative_gate_1_return_to_trinity_path(@project, initiative),
                   class: "mt-3 flex items-end gap-2.5 border-t border-terminal-border pt-3" do |form| %>
       <div class="flex-1">
         <%= form.label :note, "o devuelve a TRINITY, diciendo qué corregir",

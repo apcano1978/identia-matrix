@@ -1,4 +1,4 @@
-<%# LA MATRIZ. Filas: evolutivos. Columnas: los repositorios del cliente, tantas
+<%# LA MATRIZ. Filas: evolutivos. Columnas: los repositorios del proyecto, tantas
     como tenga. Es la pantalla que explica que los dos ejes se cruzan y no se
     contienen — y por eso el punto de «no lo toca» está casi apagado: si todas
     las celdas pesaran igual, esto parecería una tabla de datos. %>
@@ -21,7 +21,7 @@
   </div>
 
   <% initiatives.each do |initiative| %>
-    <%= link_to client_initiative_path(client.slug, initiative.slug),
+    <%= link_to project_initiative_path(project.slug, initiative.slug),
                 class: "grid gap-2.5 px-3 py-2.5 items-center border-b
                         border-[rgba(240,233,215,.07)] last:border-b-0",
                 style: "grid-template-columns: #{columns}" do %>

@@ -66,12 +66,12 @@ class InitiativesTest < ApplicationSystemTestCase
 
     click_on "dod"
 
-    assert_current_path client_initiative_definition_of_done_path("vivla", "precio-festivos")
+    assert_current_path project_initiative_definition_of_done_path("vivla", "precio-festivos")
     assert_selector "h1", text: "Definición de terminado"
   end
 
   test "y el artefacto del DoD se sigue leyendo desde el panel" do
-    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031", version: 2)
+    visit project_initiative_path("vivla", "precio-festivos", artifact: "dod-031", version: 2)
 
     assert_text "dod-031.md"
     assert_selector ".markdown-body h1", text: "Definición de terminado"
@@ -90,7 +90,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # `source` enseña el DOCUMENTO: la cabecera y el cuerpo, que es lo que hay en
   # el bucket. La numeración es real, no la 61 recortada de la maqueta.
   test "source enseña el markdown crudo, numerado y con su cabecera" do
-    visit client_initiative_path("vivla", "precio-festivos", artifact: "spec-031",
+    visit project_initiative_path("vivla", "precio-festivos", artifact: "spec-031",
                                                      view: "source")
 
     assert_text "key: artifacts://vivla/precio-festivos/spec-031/v4.md"
@@ -102,7 +102,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # §7.5 · el diff entre las dos versiones del DoD. Lo que cambió es que se
   # añadió el criterio c0, que es la historia que el seed ya contaba.
   test "el diff entre dod-031 v1 y v2 enseña el criterio que se añadió" do
-    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
+    visit project_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
                                                      version: 2, view: "diff")
 
     assert_text "comparando"
@@ -112,7 +112,7 @@ class InitiativesTest < ApplicationSystemTestCase
   end
 
   test "y se puede saltar entre las versiones de un artefacto" do
-    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
+    visit project_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
                                                      version: 2)
     click_on "v1"
 
@@ -124,7 +124,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # Un artefacto de una sola versión no ofrece el modo: no hay contra qué
   # comparar. Mismo tratamiento que las pestañas sin artefacto de F3.
   test "un artefacto de una sola versión no ofrece diff" do
-    visit client_initiative_path("vivla", "precio-festivos", artifact: "spec-031")
+    visit project_initiative_path("vivla", "precio-festivos", artifact: "spec-031")
 
     assert_selector "span.cursor-not-allowed", text: "diff"
     assert_no_selector "a", text: "diff"
@@ -186,7 +186,7 @@ class InitiativesTest < ApplicationSystemTestCase
     click_on "LOG"
 
     assert_no_text "REPOSITORIOS ANCLADOS"
-    assert_current_path client_initiative_path("vivla", "precio-festivos")
+    assert_current_path project_initiative_path("vivla", "precio-festivos")
   end
 
   test "el nexo con platform es un enlace de salida, no una edicion" do
@@ -268,7 +268,7 @@ class InitiativesTest < ApplicationSystemTestCase
   private
     # Por NOMBRE desde F11: es lo que dice la URL.
     def open(slug)
-      visit client_initiative_path("vivla", slug)
+      visit project_initiative_path("vivla", slug)
       assert_text "PIPELINE"
     end
 
@@ -276,7 +276,7 @@ class InitiativesTest < ApplicationSystemTestCase
     # panel de la maqueta es el de la SPEC, que no es el que se abre por defecto
     # —ese es el último del pipeline—, así que se pide explícitamente.
     def open_refs(slug, artifact: "spec-031")
-      visit client_initiative_path("vivla", slug, artifact: artifact)
+      visit project_initiative_path("vivla", slug, artifact: artifact)
       assert_text "PIPELINE"
       click_on "REFS"
       assert_text "TODAS"

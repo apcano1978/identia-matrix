@@ -44,7 +44,7 @@
         <% initiative.initiative_repositories.each do |link| %>
           <div class="flex items-baseline gap-2 text-t105">
             <%= link_to link.repository.name,
-                        client_repository_path(initiative.platform_client,
+                        project_repository_path(initiative.project,
                                                link.repository),
                         class: "text-terminal-fg-2" %>
             <span class="ml-auto text-antique-gold"><%= link.pinned_sha || "sin anclar" %></span>
@@ -70,7 +70,7 @@
     <%= panel_block("ARTEFACTOS (#{initiative.artifacts.size})") do %>
       <div class="flex flex-col gap-1.5">
         <% initiative.artifacts.sort_by(&:code).each do |item| %>
-          <%= link_to client_initiative_path(initiative.platform_client, initiative,
+          <%= link_to project_initiative_path(initiative.project, initiative,
                                              artifact: item.code),
                       class: "flex items-baseline gap-2 text-t105 #{
                         item == artifact ? 'text-antique-gold' : 'text-terminal-fg-3'}" do %>

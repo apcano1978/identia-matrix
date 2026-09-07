@@ -71,13 +71,13 @@ class DashboardTest < ApplicationSystemTestCase
   test "el botón de una fila lleva a lo que hay que atender" do
     within("[data-initiative=\'ev-041\']") { click_on "firmar ↗" }
 
-    assert_current_path client_initiative_gate_1_path("caser", "triaje-asistido")
+    assert_current_path project_initiative_gate_1_path("caser", "triaje-asistido")
   end
 
   test "y las bandejas sin puerta siguen llevando al evolutivo" do
     within("[data-initiative=\'ev-038\']") { click_on "abrir ↗" }
 
-    assert_current_path client_initiative_path("cirsa", "bi-de-sala")
+    assert_current_path project_initiative_path("cirsa", "bi-de-sala")
   end
 
   private

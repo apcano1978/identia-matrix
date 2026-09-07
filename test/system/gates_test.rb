@@ -232,12 +232,12 @@ class GatesTest < ApplicationSystemTestCase
 
   private
     def open_gate_1(client, code)
-      visit client_initiative_gate_1_path(client, code)
+      visit project_initiative_gate_1_path(client, code)
       assert_text "GATE 1"
     end
 
     def open_gate_2
-      visit client_initiative_gate_2_path("vivla", "precio-festivos")
+      visit project_initiative_gate_2_path("vivla", "precio-festivos")
       assert_text "PASOS"
     end
 

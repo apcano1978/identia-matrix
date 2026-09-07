@@ -31,7 +31,7 @@
           artefacto se lee con su procedencia al lado, que es de lo que va el
           sistema. %>
       <% artifacts.each do |artifact| %>
-        <%= link_to client_initiative_path(initiative.platform_client, initiative,
+        <%= link_to project_initiative_path(initiative.project, initiative,
                                            artifact: artifact.code,
                                            version: artifact.version),
                     class: "grid grid-cols-[150px_1fr_80px] gap-3.5 items-baseline

@@ -22,7 +22,7 @@
     </p>
   <% else %>
     <%= button_to "▶ poner a trabajar a #{work[:agent].upcase}",
-                  client_initiative_agent_run_path(@client, initiative),
+                  project_initiative_agent_run_path(@project, initiative),
                   class: "w-full border border-terminal-border-gold bg-antique-gold
                           px-3 py-1.5 text-t105 text-terminal-bg" %>
     <p class="mt-1.5 text-t10 text-terminal-fg-4">

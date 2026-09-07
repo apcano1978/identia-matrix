@@ -1,8 +1,8 @@
-<% breadcrumb "clients", @client.slug, @initiative.slug, "gate-2" %>
+<% breadcrumb "projects", @project.slug, @initiative.slug, "gate-2" %>
 <% content_for :title, "identia-matrix · GATE 2 · #{@initiative.code}" %>
 
 <%= render "shared/view_bar",
-           back: { label: @initiative.code, path: initiative_path_for },
+           back: { label: @initiative.slug, path: initiative_path_for },
            title: "GATE 2",
            notes: [ @guide.code, "#{@coverage[:walked]}/#{@coverage[:total]} pasos" ] %>
 
@@ -14,7 +14,7 @@
     </h1>
     <p class="mt-1 text-t105 text-terminal-fg-3">
       No autorizas nada: eso fue <%= link_to "GATE 1",
-        client_initiative_gate_1_path(@client, @initiative), class: "text-antique-gold" %>.
+        project_initiative_gate_1_path(@project, @initiative), class: "text-antique-gold" %>.
     </p>
 
     <%# La cifra que da sentido a toda la fase. %>

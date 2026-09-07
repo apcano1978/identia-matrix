@@ -34,7 +34,7 @@
     </div>
 
     <h2 class="eyebrow text-terminal-fg-3 mt-[22px]">OVERRIDES DE AGENTE</h2>
-    <% overrides = AgentConfig.where(project_id: client.projects.select(:id)).order(:agent) %>
+    <% overrides = AgentConfig.where(project_id: project.id).order(:agent) %>
     <div class="mt-2.5 p-[11px_12px] border border-terminal-border
                 text-t11 leading-[1.7] text-terminal-fg-3">
       <% if overrides.any? %>

@@ -18,7 +18,7 @@ class ValidationsController < ApplicationController
 
     redirect_after(initiative_path_for, notice: notice_for(result))
   rescue Gates::Validate::Blocked, ArgumentError => error
-    redirect_after(client_initiative_gate_2_path(@client, @initiative),
+    redirect_after(project_initiative_gate_2_path(@project, @initiative),
                    alert: error.message)
   end
 

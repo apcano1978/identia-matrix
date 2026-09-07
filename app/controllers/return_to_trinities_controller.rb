@@ -30,7 +30,7 @@ class ReturnToTrinitiesController < ApplicationController
   end
 
   private
-    def gate_1_path = client_initiative_gate_1_path(@client, @initiative)
+    def gate_1_path = project_initiative_gate_1_path(@project, @initiative)
 
     def write_note(body)
       HumanNote.create!(

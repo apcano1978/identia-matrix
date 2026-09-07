@@ -28,7 +28,7 @@ class RaisedHandsController < ApplicationController
     end
 
     def gate_2_path(step)
-      client_initiative_gate_2_path(@client, @initiative,
+      project_initiative_gate_2_path(@project, @initiative,
                                     anchor: "paso-#{format('%02d', step.position)}")
     end
 end
