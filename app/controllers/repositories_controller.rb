@@ -22,10 +22,11 @@ class RepositoriesController < ApplicationController
     client = Platform::Client.find_by!(slug: params[:client_slug])
     authorize Repository, :create?
 
-    # F11 · el repositorio cuelga ya del proyecto. Mientras las dos columnas
-    # conviven se escriben las dos; al contraer se queda solo la nueva.
-    repository = client.repositories.new(
-      repository_params.merge(project: Project.find_by(platform_client_id: client.id)))
+    # Del PROYECTO, no del cliente: es la raíz desde F11. `client.repositories`
+    # sigue existiendo —pasa por sus proyectos— pero construir desde ahí no
+    # sabría a cuál de ellos colgarlo.
+    project = Project.find_by!(platform_client_id: client.id)
+    repository = project.repositories.new(repository_params)
 
     if repository.save
       redirect_to client_repository_path(client, repository), status: :see_other,
@@ -54,7 +55,7 @@ class RepositoriesController < ApplicationController
                                    .index_by { |c| c.gate_signature.initiative_id }
 
       repository.initiative_repositories
-                .includes(initiative: [ :platform_client, :stage_entries, :artifacts,
+                .includes(initiative: [ { project: :platform_client }, :stage_entries, :artifacts,
                                         :escalations ])
                 .sort_by { |link| -(link.initiative.stage_changed_at ||
                                     link.initiative.opened_at).to_i }

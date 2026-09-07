@@ -63,7 +63,6 @@ module Guides
       def write_note
         HumanNote.create!(
           initiative: initiative,
-          platform_client: initiative.platform_client,
           project: initiative.project,
           author_user: @user,
           code: HumanNote.code_for(@user, project: initiative.project),

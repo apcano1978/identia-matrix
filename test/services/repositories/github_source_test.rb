@@ -104,10 +104,9 @@ class Repositories::GithubSourceTest < ActiveSupport::TestCase
 
   test "usa la credencial vigente del proyecto, y manda la más reciente" do
     proyecto = project_for(@client)
-    RepositoryCredential.create!(platform_client: @client, project: proyecto,
-                                 host: "github.com", token: "vieja")
-    nueva = RepositoryCredential.create!(platform_client: @client, project: proyecto,
-                                         host: "github.com", token: "nueva")
+    RepositoryCredential.create!(project: proyecto, host: "github.com", token: "vieja")
+    nueva = RepositoryCredential.create!(project: proyecto, host: "github.com",
+                                         token: "nueva")
 
     assert_equal nueva, RepositoryCredential.current_for(proyecto, "github.com")
     assert_equal "nueva", RepositoryCredential.current_for(proyecto, "github.com").token
@@ -116,15 +115,14 @@ class Repositories::GithubSourceTest < ActiveSupport::TestCase
   test "la credencial de un proyecto no vale para otro" do
     # La frontera aplicada al ACCESO, no solo a los datos. Y desde F11 es la de
     # proyecto: dos proyectos del mismo cliente tampoco se prestan credenciales.
-    RepositoryCredential.create!(platform_client: @client, project: project_for(@client),
+    RepositoryCredential.create!(project: project_for(@client),
                                  host: "github.com", token: "de-identia")
 
     assert_nil RepositoryCredential.current_for(build_own_project, "github.com")
   end
 
   test "el token va cifrado en la columna" do
-    credential = RepositoryCredential.create!(platform_client: @client,
-                                              project: project_for(@client),
+    credential = RepositoryCredential.create!(project: project_for(@client),
                                               host: "github.com", token: "ghp_secreto")
     crudo = RepositoryCredential.connection.select_value(
       "SELECT token FROM repository_credentials WHERE id = #{credential.id}")

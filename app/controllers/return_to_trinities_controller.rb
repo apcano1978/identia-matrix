@@ -34,8 +34,7 @@ class ReturnToTrinitiesController < ApplicationController
 
     def write_note(body)
       HumanNote.create!(
-        initiative: @initiative, platform_client: @client,
-        project: @initiative.project,
+        initiative: @initiative, project: @initiative.project,
         author_user: Current.user,
         code: HumanNote.code_for(Current.user, project: @initiative.project),
         body: body)

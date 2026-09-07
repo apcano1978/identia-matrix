@@ -17,7 +17,7 @@ class MatrixSequenceTest < ActiveSupport::TestCase
 
     assert_match(/\Aev-\d{3,}\z/, codigo)
     assert Initiative.new(code: codigo, title: "x", opened_at: Time.current,
-                          platform_client: build_client).valid?
+                          project: project_for(build_client)).valid?
   end
 
   test "un número NO se recicla cuando se borra su evolutivo" do
@@ -70,7 +70,7 @@ class MatrixSequenceTest < ActiveSupport::TestCase
   # en cada llamada. Lo que NO puede olvidar es el proyecto — sin él la frontera
   # de `Initiatives::Open` rechaza el repositorio, y el mensaje habla de otra cosa.
   def build_repository(client:, name: "repo-#{SecureRandom.hex(3)}")
-    Repository.create!(platform_client: client, project: project_for(client),
-                       name: name, default_branch: "main")
+    Repository.create!(project: project_for(client), name: name,
+                       default_branch: "main")
   end
 end

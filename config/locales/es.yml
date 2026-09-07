@@ -25,6 +25,10 @@ es:
       not_a_number: "no es un número"
       greater_than_or_equal_to: "debe ser mayor o igual que %{count}"
       in: "debe estar entre %{count}"
+      # La de un `belongs_to` obligatorio sin valor. Faltaba, y no se veía porque
+      # hasta F11 ninguna ruta llegaba a producirla: el día que lo hiciera, la
+      # pantalla habría enseñado «Translation missing» en vez de decir qué falta.
+      required: "es obligatorio"
   activerecord:
     errors:
       messages:

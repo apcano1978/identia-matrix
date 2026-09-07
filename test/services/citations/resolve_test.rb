@@ -40,7 +40,6 @@ class Citations::ResolveTest < ActiveSupport::TestCase
 
   test "una cita de nota resuelve contra la nota de ese día y ese autor" do
     note = HumanNote.create!(initiative: @initiative,
-                             platform_client: @client,
                              project: project_for(@client),
                              author_user: build_platform_user,
                              code: "2026-05-08-ap",

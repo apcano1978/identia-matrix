@@ -66,7 +66,7 @@ class Pipeline::RestartTest < ActiveSupport::TestCase
     initiative = place(build_initiative, :gate_2)
     escalation = Escalation.create!(
       initiative: initiative,
-      platform_client_id: initiative.platform_client_id,
+      project_id: initiative.project_id,
       reason: :unwalkable_step, opened_at: Time.current,
       opened_by_user: build_platform_user, guide_step: some_guide_step)
 

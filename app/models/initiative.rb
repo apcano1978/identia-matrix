@@ -14,13 +14,21 @@ class Initiative < ApplicationRecord
   # Tope de ciclos de QA. Un tercer ✕ no gasta un ciclo que no existe: escala.
   MAX_QA_CYCLES = 2
 
-  belongs_to :platform_client, class_name: "Platform::Client"
+  belongs_to :project
 
-  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
-
-  # se endurece al contraer, que es cuando `platform_client` se va.
-
-  belongs_to :project, optional: true
+  # El cliente ya no es una columna: se responde A TRAVÉS DEL PROYECTO, que es
+  # donde vive. La frase «el cliente de un evolutivo» sigue siendo verdad; lo que cambió es
+  # por dónde se llega.
+  #
+  # ⚠ NUNCA en un `where`. La frontera se impone con una clave foránea, no
+  # navegando asociaciones —es el invariante 10— y una consulta que lo intentara
+  # fallaría con la columna ausente, que es ruidoso y está bien.
+  #
+  # Un proyecto PROPIO devuelve `nil`: no tiene cliente detrás.
+  # Se delegan LOS DOS: el id sale de una columna de `projects`, así que
+  # `platform_client_id` no carga al cliente, solo lo nombra. Lo usan las
+  # escrituras de `events`, que sí conserva la columna.
+  delegate :platform_client, :platform_client_id, to: :project
   belongs_to :platform_project, class_name: "Platform::Project", optional: true
 
   has_many :initiative_repositories, dependent: :destroy
@@ -54,7 +62,6 @@ class Initiative < ApplicationRecord
             numericality: { in: 0..MAX_QA_CYCLES }
 
   scope :open, -> { where.not(current_stage: :publication) }
-  scope :for_client, ->(client) { where(platform_client_id: client) }
 
   # El número que comparten los artefactos del evolutivo: ev-031 → 31.
   def number = code.delete_prefix("ev-").to_i

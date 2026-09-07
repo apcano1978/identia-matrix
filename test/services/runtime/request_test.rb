@@ -100,8 +100,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     run = agent_run
     client = run.initiative.platform_client
     author = build_platform_user(name: "Antonio Pérez")
-    HumanNote.create!(initiative: run.initiative, platform_client: client,
-                      project: run.initiative.project,
+    HumanNote.create!(initiative: run.initiative, project: run.initiative.project,
                       author_user: author, body: "Se reinicia tras la escalada.",
                       code: HumanNote.code_for(author, project: project_for(client)))
 
@@ -142,7 +141,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
 
     corriente = note_for(initiative, author, "Una aclaración de trabajo")
     reinicio = note_for(initiative, author, "Se reinicia tras la escalada")
-    Escalation.create!(initiative: initiative, platform_client: client,
+    Escalation.create!(initiative: initiative, project: initiative.project,
                        reason: "qa_cycles_exhausted", human_note: reinicio,
                        opened_at: Time.current)
 
@@ -182,7 +181,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
 
     assert_equal "chat-default", config_for(initiative, agent: :tank, purpose: :context)["model"]
 
-    AgentConfig.find_by(agent: :tank, platform_client_id: nil)
+    AgentConfig.find_by(agent: :tank, project_id: nil)
                .update!(settings: { "model" => { "alias" => "chat-fast" } })
 
     assert_equal "chat-fast", config_for(initiative, agent: :tank, purpose: :context)["model"]
@@ -203,8 +202,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
 
     def note_for(initiative, author, body)
       client = initiative.platform_client
-      HumanNote.create!(initiative: initiative, platform_client: client,
-                        project: initiative.project,
+      HumanNote.create!(initiative: initiative, project: initiative.project,
                         author_user: author, body: body,
                         code: HumanNote.code_for(author, project: project_for(client)))
     end

@@ -4,9 +4,8 @@
 # lo que necesita y hereda el resto, para que cambiar el global no deje a los
 # clientes con configuraciones fosilizadas.
 class AgentConfig < ApplicationRecord
-  belongs_to :platform_client, class_name: "Platform::Client", optional: true
-  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
-  # se endurece al contraer, que es cuando `platform_client` se va.
+  # OPCIONAL, y el nulo significa algo: es la fila de la configuración GLOBAL,
+  # la que heredan todos los proyectos que no la sobrescriben.
   belongs_to :project, optional: true
   belongs_to :updated_by_user, class_name: "Platform::User", optional: true
 

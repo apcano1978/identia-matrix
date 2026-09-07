@@ -46,7 +46,7 @@ class Pipeline::Complete
     # pipeline, y es lo que la maqueta enseña en el nodo 12 de ev-009 y ev-002.
     # `Artifacts::Key.prefix_for` existía desde F0 sin que lo usara nadie.
     def prefix
-      Artifacts::Key.prefix_for(client: initiative.platform_client.slug,
+      Artifacts::Key.prefix_for(client: initiative.project.slug,
                                 initiative: initiative.code)
     end
 end

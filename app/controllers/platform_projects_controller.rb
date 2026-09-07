@@ -18,7 +18,7 @@
 class PlatformProjectsController < ApplicationController
   def show
     @platform_project = Platform::Project
-                        .includes(initiatives: %i[platform_client artifacts])
+                        .includes(initiatives: [ :artifacts, { project: :platform_client } ])
                         .find_by(platform_project_ref: params[:platform_project_ref])
 
     # Ref desconocida y cliente ajeno colapsan en la MISMA rama, y es el punto:

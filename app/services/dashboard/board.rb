@@ -87,7 +87,7 @@ class Dashboard::Board
 
     def open
       @open ||= scope.open
-                     .includes(:platform_client, :stage_entries, :escalations,
+                     .includes({ project: :platform_client }, :stage_entries, :escalations,
                                :work_packages, :test_guides,
                                :verification_reports,
                                initiative_repositories: :repository)

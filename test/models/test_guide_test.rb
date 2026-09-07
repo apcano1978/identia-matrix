@@ -83,7 +83,7 @@ class TestGuideTest < ActiveSupport::TestCase
     def exempt(guide_step)
       initiative = guide_step.test_guide.initiative
       escalation = Escalation.create!(
-        initiative: initiative, platform_client: initiative.platform_client,
+        initiative: initiative, project: initiative.project,
         reason: :unwalkable_step, opened_at: Time.current,
         opened_by_user: build_platform_user, guide_step: guide_step)
       guide_step.update!(exempted_at: Time.current,

@@ -113,8 +113,7 @@ module DesignSeed
     Catalog::REPOSITORIES.each do |data|
       client = client_for(data[:client])
       repository = Repository.find_or_initialize_by(
-        platform_client_id: client.id, name: data[:name])
-      repository.project = project_for(client)
+        project_id: project_for(client).id, name: data[:name])
       repository.update!(data.except(:client, :name).merge(
                            last_synced_at: Time.current))
     end
@@ -125,7 +124,6 @@ module DesignSeed
     client = client_for(data[:client])
 
     initiative.assign_attributes(
-      platform_client_id: client.id,
       project_id: project_for(client).id,
       platform_project_id: Platform::Project.find_by(
         platform_id: data[:project])&.id,
@@ -173,7 +171,7 @@ module DesignSeed
     WorkPackageRepository.find_or_initialize_by(
       work_package: package,
       repository: Repository.find_by!(
-        platform_client_id: initiative.platform_client_id,
+        project_id: initiative.project_id,
         name: data[:repository])
     ).update!(deploy_order: 1, write_scope: data[:write_scope])
   end
@@ -181,7 +179,7 @@ module DesignSeed
   def link_repositories(initiative, data)
     data[:repositories].each do |name|
       repository = Repository.find_by!(
-        platform_client_id: initiative.platform_client_id, name: name)
+        project_id: initiative.project_id, name: name)
       link = InitiativeRepository.find_or_initialize_by(
         initiative: initiative, repository: repository)
       link.update!(pinned_sha: data[:pinned][name],
@@ -244,7 +242,6 @@ module DesignSeed
 
     Escalation.find_or_create_by!(initiative: initiative,
                                   reason: data[:escalation]) do |escalation|
-      escalation.platform_client_id = initiative.platform_client_id
       escalation.project_id = initiative.project_id
       escalation.opened_at = Time.current - 1.day
     end
@@ -262,15 +259,14 @@ module DesignSeed
 
   def seed_agent_configs
     Catalog::AGENT_CONFIGS.each do |agent, settings|
-      AgentConfig.find_or_initialize_by(agent: agent, platform_client_id: nil)
+      AgentConfig.find_or_initialize_by(agent: agent, project_id: nil)
                  .update!(settings: settings)
     end
 
     Catalog::AGENT_OVERRIDES.each do |data|
-      cliente = client_for(data[:client])
       AgentConfig.find_or_initialize_by(
-        agent: data[:agent], platform_client_id: cliente.id
-      ).update!(settings: data[:settings], project_id: project_for(cliente).id)
+        agent: data[:agent], project_id: project_for(client_for(data[:client])).id
+      ).update!(settings: data[:settings])
     end
   end
 
@@ -492,7 +488,7 @@ module DesignSeed
                    derives_from: nil, number: nil, body: nil)
     code = Artifacts::Key.code(kind: kind, number: number || initiative.number,
                                round: round)
-    key = Artifacts::Key.build(client: initiative.platform_client.slug,
+    key = Artifacts::Key.build(client: initiative.project.slug,
                                initiative: initiative.code, code: code,
                                version: version)
     body ||= body_for(kind, initiative)
@@ -673,7 +669,7 @@ module DesignSeed
   def repository_named(name, initiative)
     return nil if name.blank?
 
-    Repository.find_by(platform_client_id: initiative.platform_client_id,
+    Repository.find_by(project_id: initiative.project_id,
                        name: name)
   end
 

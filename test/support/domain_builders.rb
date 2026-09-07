@@ -83,15 +83,15 @@ module DomainBuilders
   def build_repository(client: nil, project: nil, name: "identia-platform", **attributes)
     client ||= project&.platform_client || build_client
 
-    Repository.create!(platform_client: client, project: project || project_for(client),
-                       name: name, **attributes)
+    Repository.create!(project: project || project_for(client), name: name,
+                       **attributes)
   end
 
   def build_initiative(client: nil, project: nil, code: nil, **attributes)
     client ||= project&.platform_client || build_client
 
     Initiative.create!(
-      platform_client: client, project: project || project_for(client),
+      project: project || project_for(client),
       code: code || "ev-#{format('%03d', next_platform_id % 1000)}",
       title: "Un evolutivo", opened_at: Time.current, **attributes)
   end
@@ -136,10 +136,10 @@ module DomainBuilders
     code = Artifacts::Key.code(kind: kind, number: initiative.number)
 
     Artifact.create!(
-      initiative: initiative, platform_client: initiative.platform_client,
-      project: initiative.project, kind: kind, code: code, version: version,
+      initiative: initiative, project: initiative.project,
+      kind: kind, code: code, version: version,
       storage_key: Artifacts::Key.build(
-        client: initiative.platform_client.slug,
+        client: initiative.project.slug,
         initiative: initiative.code, code: code, version: version),
       checksum: "sha256:#{SecureRandom.hex(8)}", **attributes)
   end
@@ -181,7 +181,6 @@ module DomainBuilders
   def build_note(initiative, author: nil)
     HumanNote.create!(
       initiative: initiative,
-      platform_client_id: initiative.platform_client_id,
       project_id: initiative.project_id,
       author_user: author || build_platform_user,
       code: "2026-08-05-ap#{next_platform_id}",

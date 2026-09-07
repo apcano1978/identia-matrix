@@ -5,10 +5,7 @@
 # `opened_by_user` y `guide_step`, que los otros tres no usan.
 class Escalation < ApplicationRecord
   belongs_to :initiative
-  belongs_to :platform_client, class_name: "Platform::Client"
-  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
-  # se endurece al contraer, que es cuando `platform_client` se va.
-  belongs_to :project, optional: true
+  belongs_to :project
   belongs_to :opened_by_user, class_name: "Platform::User", optional: true
   belongs_to :opened_by_verification, class_name: "VerificationReport",
              optional: true

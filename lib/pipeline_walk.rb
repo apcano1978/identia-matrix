@@ -69,7 +69,6 @@ module PipelineWalk
 
       def prepare
         initiative = Initiative.find_or_create_by!(code: @code) do |created|
-          created.platform_client = @client
           created.project = @project
           created.title = "Recorrido de prueba · #{variant}"
           created.opened_at = Time.current
@@ -456,8 +455,7 @@ module PipelineWalk
 
       def human_note(initiative, body)
         HumanNote.create!(
-          initiative: initiative, platform_client: @client,
-          project: initiative.project,
+          initiative: initiative, project: initiative.project,
           author_user: signer, body: body,
           code: HumanNote.code_for(signer, project: @project))
       end

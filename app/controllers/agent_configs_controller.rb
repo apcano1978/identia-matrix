@@ -32,11 +32,9 @@ class AgentConfigsController < ApplicationController
 
   private
     def save(agent, client)
-      # El nulo sigue significando «global». Mientras `platform_client_id`
-      # exista se escriben las dos, pero la que manda ya es el proyecto.
+      # El nulo sigue significando «global»: es la fila que heredan todos.
       project_id = client && Project.find_by(platform_client_id: client.id)&.id
       config = AgentConfig.find_or_initialize_by(agent: agent, project_id: project_id)
-      config.platform_client_id = client&.id
       config.settings = settings_for(agent, client)
       config.updated_by_user = Current.user
       config.save!

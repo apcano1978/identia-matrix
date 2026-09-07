@@ -48,7 +48,7 @@ class AltaTest < ApplicationSystemTestCase
 
   test "un cliente sin repositorios explica por qué no puede abrir un evolutivo" do
     visit client_path("navantia")
-    Repository.where(platform_client: Platform::Client.find_by!(slug: "navantia")).destroy_all
+    Repository.where(project: Project.find_by!(slug: "navantia")).destroy_all
     visit client_path("navantia")
 
     assert_text "Para abrir un evolutivo hace falta al menos un repositorio"

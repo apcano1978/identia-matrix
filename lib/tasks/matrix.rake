@@ -235,7 +235,7 @@ namespace :matrix do
     proyecto = Project.find_by!(platform_client_id: client.id)
     anterior = RepositoryCredential.current_for(proyecto, host)
     credential = RepositoryCredential.create!(
-      platform_client: client, host: host, token: token, project: proyecto,
+      host: host, token: token, project: proyecto,
       note: "emitida a mano#{anterior ? ' · rota la anterior' : ''}")
 
     puts "#{client.slug} · #{credential}"
@@ -245,8 +245,10 @@ namespace :matrix do
 
   desc "Lista las credenciales de lectura vivas, sin revelar su valor."
   task credentials: :environment do
-    vigentes = Platform::Client.active.filter_map do |client|
-      RepositoryCredential.where(platform_client: client).latest_first.first
+    # Por PROYECTO desde F11: es a quien pertenece la credencial, y un proyecto
+    # propio tiene la suya sin cliente detrás.
+    vigentes = Project.order(:slug).filter_map do |project|
+      RepositoryCredential.where(project: project).latest_first.first
     end
 
     if vigentes.empty?
@@ -254,7 +256,7 @@ namespace :matrix do
       next
     end
 
-    vigentes.each { |c| puts "#{c.platform_client.slug.ljust(20)} #{c}" }
+    vigentes.each { |c| puts "#{c.project.slug.ljust(20)} #{c}" }
   end
 
   desc "Recorre un evolutivo por las doce etapas con el runtime falso"
@@ -364,11 +366,15 @@ namespace :matrix do
     # La frontera. Si de alguno cuelga trabajo, esto no es podar una proyección
     # sucia: es borrar historia, y entonces la respuesta correcta vuelve a ser
     # `missing_since`.
+    # Por los PROYECTOS de esos clientes: desde F11 el trabajo cuelga de ellos y
+    # no del cliente. La guarda es la misma; lo que cambió es por dónde se llega.
+    proyectos = Project.where(platform_client_id: ids).select(:id)
+
     trabajo = { "evolutivos" => Initiative, "artefactos" => Artifact,
                 "repositorios" => Repository, "notas humanas" => HumanNote,
                 "escaladas" => Escalation, "config de agentes" => AgentConfig,
                 "credenciales" => RepositoryCredential }
-              .transform_values { |modelo| modelo.where(platform_client_id: ids).count }
+              .transform_values { |modelo| modelo.where(project_id: proyectos).count }
               .reject { |_, cuantos| cuantos.zero? }
 
     unless trabajo.empty?

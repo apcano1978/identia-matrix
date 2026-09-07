@@ -88,7 +88,7 @@ class HumanNoteTest < ActiveSupport::TestCase
     def write_note(client, author, on)
       HumanNote.create!(
         initiative: build_initiative(client: client),
-        platform_client: client, project: project_for(client), author_user: author,
+        project: project_for(client), author_user: author,
         code: HumanNote.code_for(author, project: project_for(client), on: on),
         body: "Una nota")
     end

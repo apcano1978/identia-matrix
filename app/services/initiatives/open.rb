@@ -66,7 +66,6 @@ class Initiatives::Open
 
   def create_initiative
     Initiative.create!(
-      platform_client: client,
       project: project,
       platform_project: platform_project,
       code: Matrix::Sequence.next_initiative_code,

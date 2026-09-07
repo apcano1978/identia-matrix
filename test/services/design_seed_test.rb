@@ -29,10 +29,10 @@ class DesignSeedTest < ActiveSupport::TestCase
   # repositorio de vivla, tal como la enseña la ficha de cliente.
   test "la matriz de vivla es la de la maqueta" do
     client = Platform::Client.find_by!(slug: "vivla")
-    initiatives = Initiative.where(platform_client: client)
+    initiatives = Initiative.where(project: client.projects)
 
     assert_equal 5, initiatives.count
-    assert_equal 3, Repository.where(platform_client: client).count
+    assert_equal 3, Repository.where(project: client.projects).count
     assert_equal 2, initiatives.count(&:multi_repo?)
   end
 

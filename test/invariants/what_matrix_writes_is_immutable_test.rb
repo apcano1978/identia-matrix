@@ -38,7 +38,7 @@ class WhatMatrixWritesIsImmutableTest < ActiveSupport::TestCase
     artifact = build_artifact
     parsed = Artifacts::Key.parse(artifact.storage_key)
 
-    assert_equal artifact.platform_client.slug, parsed.client
+    assert_equal artifact.project.slug, parsed.client
     assert_equal artifact.initiative.code, parsed.initiative
     assert_equal artifact.code, parsed.code
     assert_equal artifact.version, parsed.version

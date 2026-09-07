@@ -5,6 +5,10 @@ class AgentsTest < ApplicationSystemTestCase
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
     click_on "AGENTES"
+    # La barrera del setup. Sin ella el primer `click_on` de cada test puede caer
+    # sobre el panel todavía, y entonces el fallo aparece en un test distinto
+    # cada vez según el orden — que es lo que lo hace difícil de leer.
+    assert_selector "h1", text: "TANK"
   end
 
   test "los seis agentes tienen pestaña" do
@@ -47,7 +51,7 @@ class AgentsTest < ApplicationSystemTestCase
     # `morfeo_loop.max_returns` sostiene un invariante: un cliente que se diera
     # dos vueltas más estaría comprando otra política, no ajustando la suya.
     open_agent "neo"
-    click_on "vivla"
+    open_client "vivla"
 
     assert_text "No admiten override"
     fill_in "settings", with: '{"morfeo_loop":{"max_returns":9},"model":{"spec_length":"verbose"}}'
@@ -55,7 +59,7 @@ class AgentsTest < ApplicationSystemTestCase
     assert_text "guardada"
 
     override = AgentConfig.find_by(agent: "neo",
-                                   platform_client_id: Platform::Client.find_by!(slug: "vivla").id)
+                                   project: Project.find_by!(slug: "vivla"))
 
     assert_nil override.settings["morfeo_loop"],
                "la clave bloqueada se poda; el resto del cambio se guarda"
@@ -115,7 +119,7 @@ class AgentsTest < ApplicationSystemTestCase
     open_agent "neo"
     assert_text "Elige un cliente arriba para ver qué le cambia"
 
-    click_on "vivla"
+    open_client "vivla"
 
     assert_text "model.spec_length"
     assert_text "verbose"
@@ -123,7 +127,7 @@ class AgentsTest < ApplicationSystemTestCase
 
   test "un cliente sin override lo dice" do
     open_agent "neo"
-    click_on "caser"
+    open_client "caser"
 
     assert_text "caser hereda la global sin cambios"
   end

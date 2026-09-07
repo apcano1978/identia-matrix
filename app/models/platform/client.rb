@@ -18,16 +18,8 @@ class Platform::Client < Platform::Record
                                foreign_key: :platform_client_id,
                                inverse_of: :platform_client,
                                dependent: :restrict_with_exception
-  has_many :repositories, foreign_key: :platform_client_id,
-                          inverse_of: :platform_client,
-                          dependent: :restrict_with_exception
-  has_many :initiatives, foreign_key: :platform_client_id,
-                         inverse_of: :platform_client,
-                         dependent: :restrict_with_exception
-
-  # F11 · los proyectos de matrix de este cliente. `repositories` e `initiatives`
-  # pasan a colgar de ellos, y de aquí en adelante esta es la única de las tres
-  # que importa: las otras dos se retiran al contraer.
+  # F11 · los proyectos de matrix de este cliente. Es la raíz: `repositories` e
+  # `initiatives` cuelgan de ellos, y se alcanzan a través de esta asociación.
   #
   # ⚠ `class_name: "::Project"` CON LOS DOS PUNTOS, y sin ellos esto está mal de
   # una forma que no da la cara: dentro de `module Platform`, Rails infiere
@@ -42,6 +34,20 @@ class Platform::Client < Platform::Record
                       foreign_key: :platform_client_id,
                       inverse_of: :platform_client,
                       dependent: :restrict_with_exception
+
+  # **A TRAVÉS DEL PROYECTO desde F11**, que es donde vive el dato. Ya no hay
+  # `platform_client_id` en `repositories` ni en `initiatives`: la frontera es el
+  # proyecto.
+  #
+  # «Los evolutivos de un cliente» sigue siendo una pregunta legítima —la hace
+  # `InitiativeScoped`, y debajo de ella están todas las rutas anidadas
+  # `client_initiative_*`— y sigue teniendo la misma respuesta: los de sus
+  # proyectos. Ni un llamante cambia.
+  #
+  # La protección de borrado no se pierde por el camino: `Project` lleva
+  # `restrict_with_exception` en las dos, y este cliente en `:projects`.
+  has_many :repositories, through: :projects
+  has_many :initiatives, through: :projects
 
   validates :platform_id, presence: true, uniqueness: true
   # El slug va dentro de claves de artefacto inmutables: se congela en la

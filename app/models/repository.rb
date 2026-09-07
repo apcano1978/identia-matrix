@@ -5,10 +5,21 @@
 # La palabra «repositorio» significa siempre esto, nunca un proyecto de
 # platform ni un evolutivo.
 class Repository < ApplicationRecord
-  belongs_to :platform_client, class_name: "Platform::Client"
-  # F11 · la raíz nueva. `optional` MIENTRAS las dos columnas conviven:
-  # se endurece al contraer, que es cuando `platform_client` se va.
-  belongs_to :project, optional: true
+  belongs_to :project
+
+  # El cliente ya no es una columna: se responde A TRAVÉS DEL PROYECTO, que es
+  # donde vive. La frase «el cliente de un repositorio» sigue siendo verdad; lo que cambió es
+  # por dónde se llega.
+  #
+  # ⚠ NUNCA en un `where`. La frontera se impone con una clave foránea, no
+  # navegando asociaciones —es el invariante 10— y una consulta que lo intentara
+  # fallaría con la columna ausente, que es ruidoso y está bien.
+  #
+  # Un proyecto PROPIO devuelve `nil`: no tiene cliente detrás.
+  # Se delegan LOS DOS: el id sale de una columna de `projects`, así que
+  # `platform_client_id` no carga al cliente, solo lo nombra. Lo usan las
+  # escrituras de `events`, que sí conserva la columna.
+  delegate :platform_client, :platform_client_id, to: :project
 
   has_many :initiative_repositories, dependent: :destroy
   has_many :initiatives, through: :initiative_repositories

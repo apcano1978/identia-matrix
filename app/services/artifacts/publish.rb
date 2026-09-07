@@ -45,6 +45,17 @@ module Artifacts
       # un agente, y un artefacto sin quién lo produjo no es trazable.
       def call(initiative:, kind:, body:, produced_at:, produced_by_run:,
                derives_from: nil, version: nil, round: nil, number: nil)
+        # EL PRIMER SEGMENTO DE LA CLAVE SALE DEL PROYECTO, no del cliente.
+        #
+        # Hoy son la misma cadena —el slug del proyecto se heredó del cliente al
+        # mudarse la raíz— así que ninguna clave emitida cambia. Se escribe así
+        # igualmente porque la clave es lo inmutable del sistema y no puede
+        # colgar de una delegación que devolverá `nil` en cuanto exista el primer
+        # proyecto propio.
+        #
+        # El campo `client` del front-matter sí sigue siendo el del cliente: está
+        # congelado desde F0 y su enmienda va con el bloque que la necesite.
+        project = initiative.project
         client = initiative.platform_client
         # El número lo da el evolutivo, no su código: `Initiative#number` es la
         # única autoridad, y componerlo desde el código obligaba a que el código
@@ -52,7 +63,7 @@ module Artifacts
         code = Key.code(kind: kind, round: round,
                         number: number || initiative.number)
         version ||= next_version_for(initiative, code)
-        key = Key.build(client: client.slug, initiative: initiative.code,
+        key = Key.build(client: project.slug, initiative: initiative.code,
                         code: code, version: version)
 
         refuse_republication!(key)
@@ -110,9 +121,7 @@ module Artifacts
                      attributes:, blob:, produced_by_run:, body:)
           ApplicationRecord.transaction do
             artifact = Artifact.create!(
-              project: initiative.project,
-              initiative: initiative, platform_client: initiative.platform_client,
-              kind: kind, code: code, version: version, storage_key: key,
+              project: initiative.project, initiative: initiative, kind: kind, code: code, version: version, storage_key: key,
               checksum: checksum, front_matter: attributes,
               produced_by_run: produced_by_run)
 
