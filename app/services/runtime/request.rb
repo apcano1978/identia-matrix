@@ -25,12 +25,6 @@
 # confiar en que un modelo se autolimite. Aquí las entradas son disjuntas
 # porque el código las reparte.
 module Runtime::Request
-  # Lo que matrix sabe hacer pero el contrato con el brain todavía no admite.
-  # Hoy solo hay un caso —un proyecto propio, que no tiene cliente— y es
-  # temporal: lo levanta B9½. Es una excepción propia y no un `NoMethodError`
-  # porque quien la vea tiene que saber que no ha roto nada.
-  Unsupported = Class.new(StandardError)
-
   CONTRACT_VERSION = 1
   DEFAULT_MODEL = "chat-default".freeze
 
@@ -103,12 +97,13 @@ module Runtime::Request
     {
       "model" => model_for(agent_run.agent, settings),
       "matrix" => settings.deep_stringify_keys,
-      "client" => client_of(initiative),
+      "project" => project_of(initiative),
       "initiative" => initiative_of(initiative),
       "stage" => initiative.current_stage,
       "qa_cycle" => initiative.qa_cycles_consumed,
       "repositories" => repositories_of(initiative)
-    }.merge(material_for(agent_run))
+    }.merge(client_of(initiative))
+     .merge(material_for(agent_run))
   end
 
   # El alias de modelo con el que corre cada agente.
@@ -179,29 +174,32 @@ module Runtime::Request
     end
   end
 
-  # ⚠ El contrato `agent_run.v1` tiene `client` en `required` y
-  # `additionalProperties: false`, así que un proyecto PROPIO no puede ejecutar
-  # ningún agente todavía — y el esquema se valida con los DOS runtimes, fake
-  # incluido, así que falla dentro de matrix sin llegar a la red.
+  # LA FRONTERA, y desde B9½ es lo que viaja obligatorio. Era el cliente hasta
+  # F11; el proyecto es estrictamente más estrecho —dos clientes no comparten
+  # proyecto—, así que el agente no gana acceso a nada: pierde el de otro
+  # proyecto del mismo cliente.
+  def project_of(initiative)
+    project = initiative.project
+
+    { "slug" => project.slug, "name" => project.name }
+  end
+
+  # De quién es el proyecto, **cuando es de alguien**.
   #
-  # Se dice con palabras en vez de morir con `undefined method 'slug' for nil`,
-  # que es lo que hacía y no explica nada a quien pulsa el botón. Enmendarlo es
-  # **F11 · B9½**, y va después porque hay que desplegar el brain primero: su
-  # `MatrixAgentConfig` no declara `extra`, y el defecto de Pydantic v2 es
-  # `ignore` — mandarle `config.project` contra el brain de hoy respondería 200 y
-  # el agente trabajaría sin haber visto el proyecto.
+  # Devuelve un hash para fusionar, no el valor: un proyecto PROPIO no tiene
+  # cliente y la clave se OMITE en vez de mandarse a `null`. Así el contrato
+  # puede seguir esperando un objeto donde hay uno, sin admitir nulos.
+  #
+  # Hasta B9½ esto levantaba `Unsupported`: el contrato exigía cliente, y como el
+  # esquema se valida con los DOS runtimes —fake incluido— un agente sobre un
+  # proyecto propio fallaba dentro de matrix sin llegar a la red. Este bloque es
+  # el que lo levanta, y por eso el brain va primero.
   def client_of(initiative)
     client = initiative.platform_client
+    return {} if client.nil?
 
-    if client.nil?
-      raise Unsupported,
-            "el contrato con el brain exige cliente y #{initiative.project.slug} " \
-            "es un proyecto propio: los agentes sobre proyectos propios llegan " \
-            "en F11 · B9½, cuando el brain sepa lo que es un proyecto"
-    end
-
-    { "slug" => client.slug, "platform_id" => client.platform_id,
-      "name" => client.name }
+    { "client" => { "slug" => client.slug, "platform_id" => client.platform_id,
+                    "name" => client.name } }
   end
 
   def initiative_of(initiative)

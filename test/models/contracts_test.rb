@@ -43,6 +43,7 @@ class ContractsTest < ActiveSupport::TestCase
       contract_version: 1,
       config: {
         model: "chat-default",
+        project: { slug: "vivla", name: "VIVLA" },
         client: { slug: "vivla", platform_id: 42 },
         initiative: { code: "ev-031", title: "Unificar precios y calendario" },
         stage: "neo",
@@ -79,11 +80,24 @@ class ContractsTest < ActiveSupport::TestCase
     assert_valid_contract(:matrix_brain_agent_run, payload)
   end
 
-  test "la peticion exige la frontera de cliente" do
+  # LA FRONTERA ES EL PROYECTO desde F11, y era el cliente antes. Es
+  # estrictamente más estrecha —dos clientes no comparten proyecto—, así que
+  # todo lo que era legal lo sigue siendo.
+  test "la peticion exige la frontera de proyecto" do
+    payload = agent_run_payload
+    payload[:config].delete(:project)
+
+    refute Contracts.valid?(:matrix_brain_agent_run, payload)
+  end
+
+  # Y el cliente ya NO se exige: un proyecto PROPIO no tiene ninguno. Su
+  # ausencia no es un dato que falte — es lo que significa que el proyecto es de
+  # matrix.
+  test "pero no exige cliente, que es lo que hace posible un proyecto propio" do
     payload = agent_run_payload
     payload[:config].delete(:client)
 
-    refute Contracts.valid?(:matrix_brain_agent_run, payload)
+    assert Contracts.valid?(:matrix_brain_agent_run, payload)
   end
 
   test "la peticion rechaza un codigo de evolutivo que no sea ev-nnn" do

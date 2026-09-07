@@ -13,6 +13,10 @@ require "application_system_test_case"
 # `platform_client` a `nil` daban `UrlGenerationError` o `NoMethodError`, y no
 # había un solo test que pasara por ahí porque no había forma de crear un
 # proyecto sin cliente.
+#
+# Los dos últimos se INVIRTIERON en B9½: B7b los dejó escritos afirmando lo que
+# todavía no se podía —ejecutar un agente sobre un proyecto propio— con el
+# bloque que lo levantaría nombrado dentro.
 class OwnProjectTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
@@ -149,38 +153,40 @@ class OwnProjectTest < ApplicationSystemTestCase
     assert_no_selector "select#platform_project_id"
   end
 
-  # ── Lo que TODAVÍA no se puede, y conviene que esté escrito ────────────────
+  # ── Y desde B9½, también se le puede poner a trabajar un agente ───────────
+  #
+  # Estos dos tests decían lo contrario hasta B9½, y ese es exactamente su valor:
+  # B7b los escribió afirmando lo que TODAVÍA no se podía, con el bloque que lo
+  # levantaría escrito dentro. Se invierten, no se borran.
 
   # `Runtime::Request` valida el payload contra `agent_run.v1.json` antes de
-  # enviarlo y con los dos runtimes, fake incluido. Ese contrato tiene `client`
-  # en `required`, así que un agente sobre un proyecto propio falla DENTRO de
-  # matrix, sin llegar a la red. Enmendarlo es B9½, y va después porque hay que
-  # desplegar el brain primero.
-  test "pero todavía no se le puede poner a trabajar un agente: eso es B9½" do
+  # enviarlo y con los dos runtimes, fake incluido. Ese contrato exigía `client`,
+  # así que un agente sobre un proyecto propio fallaba DENTRO de matrix. Ahora la
+  # frontera que viaja obligatoria es el PROYECTO, y el cliente se omite cuando
+  # no lo hay.
+  test "el payload se construye, con el proyecto y sin cliente" do
     initiative = own_initiative
     run = AgentRun.create!(initiative: initiative, agent: :tank, purpose: :context,
                            iteration: initiative.iteration,
                            code: "tank/#{initiative.slug}-context-1",
                            status: :running, started_at: Time.current)
 
-    error = assert_raises(Runtime::Request::Unsupported) do
-      Runtime::Request.for(run).payload
-    end
+    config = Runtime::Request.for(run).payload["config"]
 
-    assert_match "B9½", error.message,
-                 "el fallo tiene que decir a qué bloque pertenece, no morir en un nil"
+    assert_equal({ "slug" => "matrix-interna", "name" => "Matrix interna" },
+                 config["project"])
+    assert_not config.key?("client"),
+               "la clave se OMITE, no se manda a null: el contrato espera un objeto"
   end
 
-  # Y por eso la pantalla no ofrece el botón: la ejecución se lanza en segundo
-  # plano, así que ofrecerlo dejaría una ejecución fallida sin que nadie viera
-  # por qué.
-  test "y la ficha no ofrece el botón de lanzarlo, lo explica" do
+  test "y la ficha ofrece el botón, que es lo que B7b no podía" do
     initiative = own_initiative
+    place(initiative, :tank)
 
     visit project_initiative_path("matrix-interna", initiative.slug)
 
-    assert_text "Los agentes todavía no trabajan sobre proyectos propios"
-    assert_no_button "▶ poner a trabajar a TANK"
+    assert_button "▶ poner a trabajar a TANK"
+    assert_no_text "Los agentes todavía no trabajan sobre proyectos propios"
   end
 
   private

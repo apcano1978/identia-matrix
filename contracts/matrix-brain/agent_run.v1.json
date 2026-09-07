@@ -20,7 +20,7 @@
       "description": "Las ENTRADAS DEL TRABAJO: qué evolutivo, de qué cliente, con qué material y con qué parámetros de llamada. El esquema real por agente lo publica el brain en GET /v1/agents como config_schema.\n\nEl contexto del evolutivo vive AQUÍ y no en `context`, enmendando lo que F0 dejó escrito. `AgentContext` del brain es una clase compartida con Pepper, Natasha, Clark y Vision, tiene cuatro campos y NO declara extra=forbid: descarta en silencio lo que no reconoce, así que todo esto se habría tirado sin aviso. La regla que se deduce del propio brain —y que Pepper ya seguía— es que `config` son las entradas del trabajo y `context` la infraestructura de ejecución. De paso, cada config_model lo valida con Pydantic en vez de recibir un dict opaco.",
       "required": [
         "model",
-        "client",
+        "project",
         "initiative",
         "stage",
         "qa_cycle"
@@ -42,9 +42,26 @@
           ],
           "description": "Omitirlo deja el default del modelo, que en Claude Sonnet 5 ya es adaptativo."
         },
+        "project": {
+          "type": "object",
+          "description": "LA FRONTERA. Ningún agente lee ni cita material de otro proyecto. Era el cliente hasta F11; el proyecto es estrictamente más estrecho, así que todo lo que era legal lo sigue siendo.",
+          "required": [
+            "slug",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slug": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
         "client": {
           "type": "object",
-          "description": "La frontera de cliente. Ningún agente puede leer ni citar material de otro cliente: es restricción del modelo, no filtro de la vista.",
+          "description": "De quién es el proyecto, cuando es de alguien. OPCIONAL desde F11: un proyecto PROPIO no viene de ningún cliente de identia-platform, y su ausencia no es un dato que falte. La clave se OMITE, no se manda a null. La frontera de cliente. Ningún agente puede leer ni citar material de otro cliente: es restricción del modelo, no filtro de la vista.",
           "required": [
             "slug",
             "platform_id"
