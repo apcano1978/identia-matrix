@@ -33,6 +33,26 @@ class EnumsTest < ActiveSupport::TestCase
     assert_equal Artifacts::Key::KINDS.map(&:to_s).sort, Artifact.kinds.keys.sort
   end
 
+  # Los dos órdenes de los tipos de artefacto son LISTAS DISTINTAS a propósito, y
+  # este test existe para que sigan cubriendo lo mismo.
+  #
+  # `KINDS` es almacenamiento: respalda una columna entera, así que lo nuevo se
+  # anexa y nada se intercala. `PIPELINE_ORDER` es el orden en el que se
+  # producen. Coincidieron durante siete tipos, y `acta` los separó — entró la
+  # última y trabaja la primera.
+  #
+  # Un tipo nuevo que se anexe a `KINDS` y no se declare aquí caería al final del
+  # pipeline por omisión, y el visor lo abriría por defecto sin que nadie lo
+  # hubiera decidido.
+  test "el orden de pipeline cubre todos los tipos, sin sobrar ninguno" do
+    assert_equal Artifacts::Key::KINDS.sort, Artifacts::Key::PIPELINE_ORDER.sort
+  end
+
+  test "y el acta va la primera del flujo aunque sea la última del enum" do
+    assert_equal :acta, Artifacts::Key::PIPELINE_ORDER.first
+    assert_equal :acta, Artifacts::Key::KINDS.last
+  end
+
   test "los tipos de cita son los nueve de la gramática" do
     assert_equal Citations::Grammar::KINDS.sort, Citation.source_kinds.keys.sort
   end

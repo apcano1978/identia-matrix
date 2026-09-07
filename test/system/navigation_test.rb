@@ -83,7 +83,7 @@ class NavigationTest < ApplicationSystemTestCase
     visit project_initiative_path("vivla", "precio-festivos")
 
     click_on "AGENTES"
-    assert_arrived_at agents_path, crumb: "agents/tank"
+    assert_arrived_at agents_path, crumb: "agents/arquitecto"
 
     click_on "DASHBOARD"
     assert_arrived_at root_path, crumb: "status"

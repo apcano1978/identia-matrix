@@ -2,6 +2,7 @@
 
 module AgentsHelper
   ROLES = {
+    "arquitecto" => "requisitos · interroga hasta cerrar cada decisión",
     "tank" => "contexto · indexa el repositorio y las fuentes del cliente",
     "neo" => "dossier → especificación técnica + ADR",
     "morfeo" => "revisión · spec y DoD antes de ejecutar",
@@ -11,6 +12,9 @@ module AgentsHelper
   }.freeze
 
   CADENCE = {
+    # El único que interviene tantas veces como haga falta: su etapa es una
+    # conversación, y una conversación no tiene un número de turnos sabido.
+    "arquitecto" => "interviene en la etapa 1, tantos turnos como haga falta",
     "seraph" => "interviene 2 veces por ciclo",
     "link" => "interviene 1 vez · tras GATE 2"
   }.freeze

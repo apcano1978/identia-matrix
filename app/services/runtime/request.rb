@@ -43,7 +43,16 @@ module Runtime::Request
   #   finished        los artefactos TERMINADOS de este evolutivo
   #   human_notes     todo lo que una persona escribió, nivel ORIGEN
   #   restart_notes   solo las notas que resolvieron una escalada
+  #   decisions       el acta en curso de ESTE evolutivo
   MATERIAL = {
+    # El ARQUITECTO interroga a una persona, y para eso necesita saber qué se ha
+    # preguntado ya —para no repetirlo— y qué documentación hay detrás.
+    #
+    # **No recibe `prior_artifacts`, y es una decisión.** Quien ancla lo decidido
+    # en la memoria del repositorio es TANK, en la etapa siguiente. Darle aquí
+    # los evolutivos anteriores convertiría la entrevista en una revisión de
+    # antecedentes, que es el trabajo de otro.
+    "arquitecto" => %i[sources human_notes decisions],
     "tank"    => %i[sources prior_artifacts human_notes],
     "neo"     => %i[sources prior_artifacts human_notes],
     "seraph"  => %i[finished],
@@ -143,11 +152,31 @@ module Runtime::Request
       material["human_notes"] = notes_of(initiative, restarts_only: true)
     end
 
+    material["decisions"] = decisions_of(initiative) if allowed.include?(:decisions)
+
     previous = allowed.include?(:prior_artifacts) ? prior_artifacts_of(initiative) : []
     finished = allowed.include?(:finished) ? finished_artifacts_of(initiative) : []
     material["prior_artifacts"] = previous + finished if previous.any? || finished.any?
 
     material
+  end
+
+  # El acta en curso: lo que ya se preguntó, para que el ARQUITECTO no lo vuelva
+  # a preguntar.
+  #
+  # ⚠ **De ESTE evolutivo y de ninguno más.** No es una precaución sobrante: es
+  # el invariante 10, y aquí es material nuevo cruzando por primera vez. La
+  # consulta sale de la asociación del evolutivo, que es lo más estrecho que hay
+  # — ni siquiera del proyecto.
+  #
+  # El ordinal viaja porque es lo que el agente devuelve en `reference` para
+  # decir cuál cierra: sin él tendría que identificar la decisión por su texto.
+  def decisions_of(initiative)
+    initiative.decisions.by_ordinal.map do |decision|
+      { "ordinal" => decision.ordinal, "status" => decision.status,
+        "question" => decision.question, "answer" => decision.answer,
+        "source" => decision.source_citation }
+    end
   end
 
   # ⚠ El contrato `agent_run.v1` tiene `client` en `required` y

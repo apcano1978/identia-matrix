@@ -68,6 +68,46 @@ class NoAgentCrossesTheProjectBoundaryTest < ActiveSupport::TestCase
     assert_equal "vivla", payload.dig("config", "client", "slug")
   end
 
+  # MATERIAL NUEVO CRUZANDO POR PRIMERA VEZ (B8). El ARQUITECTO recibe el acta
+  # en curso, y un acta son preguntas de negocio: exactamente lo que no puede
+  # salir de su proyecto.
+  #
+  # La consulta sale de la asociación del EVOLUTIVO, que es más estrecho todavía
+  # que el proyecto: dos evolutivos del mismo proyecto tampoco comparten acta.
+  test "y el acta que recibe el ARQUITECTO es solo la de su evolutivo" do
+    cliente = build_client(slug: "vivla")
+    suyo = build_initiative(client: cliente)
+    ajeno = build_initiative(project: suyo.project)
+
+    decision(suyo, 1, "¿La mía?")
+    decision(ajeno, 1, "¿La del otro evolutivo del mismo proyecto?")
+
+    run = AgentRun.create!(initiative: suyo, agent: :arquitecto,
+                           purpose: :interview, code: "arquitecto/frontera",
+                           status: :running)
+    preguntas = Runtime::Request.for(run).payload
+                                .dig("config", "decisions").map { |d| d["question"] }
+
+    assert_equal [ "¿La mía?" ], preguntas
+  end
+
+  # Y los demás agentes no la reciben en absoluto: `MATERIAL` es una lista de
+  # concesiones, y lo que no aparece no es un hueco, es la frontera.
+  test "y ningún otro agente la recibe" do
+    initiative = build_initiative
+    decision(initiative, 1, "¿Algo?")
+
+    (AgentRun.agents.keys - [ "arquitecto" ]).each do |agent|
+      run = AgentRun.create!(initiative: initiative, agent: agent,
+                             purpose: Pipeline::STAGE_WORK.values
+                                        .find { |w| w[:agent] == agent }[:purpose],
+                             code: "#{agent}/sin-acta", status: :running)
+
+      assert_nil Runtime::Request.for(run).payload.dig("config", "decisions"),
+                 "#{agent} no tiene por qué ver el acta"
+    end
+  end
+
   test "la frontera se puede comprobar con un where, sin navegar asociaciones" do
     # Desnormalizado a propósito: tiene que ser barato de imponer en cada
     # consulta, no una condición que se olvide en la que corre pocas veces.
@@ -90,4 +130,10 @@ class NoAgentCrossesTheProjectBoundaryTest < ActiveSupport::TestCase
 
     assert_empty crossed
   end
+
+  private
+    def decision(initiative, ordinal, question)
+      initiative.decisions.create!(project: initiative.project, ordinal: ordinal,
+                                   question: question)
+    end
 end

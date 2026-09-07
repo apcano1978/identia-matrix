@@ -105,14 +105,26 @@ class Runtime::FakeTest < ActiveSupport::TestCase
   end
 
   private
+    # La etapa del par, y si el par no tiene etapa, la del AGENTE.
+    #
+    # El ARQUITECTO tiene dos propósitos y una sola etapa: `interview` es lo que
+    # `STAGE_WORK` lanza y `requirements` es el cierre de la conversación, que
+    # ocurre en la misma etapa 1 pero no lo dispara el pipeline.
     def agent_run(agent: :tank, purpose: :context)
       initiative = build_initiative
-      place(initiative, Pipeline::STAGE_WORK.find { |_, w|
-        w[:agent] == agent.to_s && w[:purpose] == purpose.to_s
-      }.first)
+      place(initiative, stage_for(agent, purpose))
 
       AgentRun.create!(initiative: initiative, agent: agent, purpose: purpose,
                        code: "run-#{SecureRandom.hex(4)}", status: :running)
+    end
+
+    def stage_for(agent, purpose)
+      exacta = Pipeline::STAGE_WORK.find do |_, work|
+        work[:agent] == agent.to_s && work[:purpose] == purpose.to_s
+      end
+      return exacta.first if exacta
+
+      Pipeline::STAGE_WORK.find { |_, work| work[:agent] == agent.to_s }.first
     end
 
     def request_for(agent, purpose)

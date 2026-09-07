@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -170,6 +170,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_100000) do
     t.string "reason", null: false
     t.datetime "updated_at", null: false
     t.index ["platform_id"], name: "index_client_admissions_on_platform_id", unique: true
+  end
+
+  create_table "decisions", force: :cascade do |t|
+    t.text "answer"
+    t.datetime "created_at", null: false
+    t.bigint "initiative_id", null: false
+    t.integer "ordinal", null: false
+    t.bigint "project_id", null: false
+    t.text "question", null: false
+    t.bigint "raised_by_run_id"
+    t.string "source_citation"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["initiative_id", "ordinal"], name: "index_decisions_on_initiative_id_and_ordinal", unique: true
+    t.index ["initiative_id"], name: "index_decisions_on_initiative_id"
+    t.index ["project_id", "status"], name: "index_decisions_on_project_id_and_status"
+    t.index ["project_id"], name: "index_decisions_on_project_id"
+    t.index ["raised_by_run_id"], name: "index_decisions_on_raised_by_run_id"
   end
 
   create_table "definitions_of_done", force: :cascade do |t|
@@ -646,6 +664,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_100000) do
   add_foreign_key "citation_conflicts", "citations", column: "derived_citation_id"
   add_foreign_key "citation_conflicts", "citations", column: "origin_citation_id"
   add_foreign_key "citations", "repositories"
+  add_foreign_key "decisions", "agent_runs", column: "raised_by_run_id"
+  add_foreign_key "decisions", "initiatives"
+  add_foreign_key "decisions", "projects"
   add_foreign_key "definitions_of_done", "agent_runs", column: "authored_by_run_id"
   add_foreign_key "definitions_of_done", "agent_runs", column: "reviewed_by_run_id"
   add_foreign_key "definitions_of_done", "artifacts"

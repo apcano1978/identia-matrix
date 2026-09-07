@@ -124,6 +124,14 @@ Rails.application.routes.draw do
       # Todas son `show` singular: hay un DoD vigente, un informe vigente y una
       # guía vigente por evolutivo. Las versiones anteriores se ven desde el
       # visor de artefactos, que es donde vive la historia.
+      # El acta va la PRIMERA de las de evidencia porque es la primera de la
+      # cadena: de ella salen la spec y, de ahí, todo lo demás.
+      #
+      # ⚠ `controller:` explícito. El inflector de Rails lee «acta» como el
+      # PLURAL LATINO de «actum» —`"acta".pluralize` devuelve `"acta"`— y un
+      # `resource :acta` a secas busca `ActaController`. Es la misma razón por la
+      # que `gate_1` lo lleva.
+      resource :acta, only: :show, controller: "actas"
       resource :definition_of_done, only: :show, path: "dod"
       resource :verification, only: :show
       resource :guide, only: :show

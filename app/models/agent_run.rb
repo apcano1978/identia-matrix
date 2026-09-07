@@ -15,11 +15,28 @@ class AgentRun < ApplicationRecord
   has_many :artifacts, foreign_key: :produced_by_run_id,
                        inverse_of: :produced_by_run, dependent: :nullify
 
-  enum :agent, { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5 },
+  # ⚠ LOS DOS SON POSICIONALES: son columnas enteras. Lo que entra se ANEXA al
+  # final y nada se intercala — intercalar cambiaría el significado de las filas
+  # ya escritas sin tocarlas.
+  #
+  # `arquitecto` es el séptimo agente y llega en F11 · B8, en la etapa 1. Va el
+  # último aunque trabaje el primero: el orden de este enum es el de aparición en
+  # el código, no el del pipeline.
+  enum :agent,
+       { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5,
+         arquitecto: 6 },
        prefix: true, validate: true
+
+  # DOS propósitos para el ARQUITECTO, y no uno.
+  #
+  # `interview` es un turno de la conversación y NO publica nada; `requirements`
+  # es el cierre y publica el acta. Con un solo propósito, `Agents::Run`
+  # publicaría un artefacto por turno —lo que produce está en su tabla
+  # `ARTIFACT_KINDS`— y el acta es el ESTADO ACUMULADO, no una serie de
+  # documentos.
   enum :purpose,
        { context: 0, spec: 1, dod_pass: 2, review: 3, package: 4,
-         verification: 5, closure: 6 },
+         verification: 5, closure: 6, interview: 7, requirements: 8 },
        prefix: true, validate: true
   enum :status, { queued: 0, running: 1, ok: 2, failed: 3 }, validate: true
 

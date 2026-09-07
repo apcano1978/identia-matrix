@@ -24,7 +24,7 @@ module DesignSeed
   BODIES = {
     dossier: %w[tank context], spec: %w[neo spec], dod: %w[seraph dod_pass],
     pkg: %w[trinity package], verify: %w[seraph verification],
-    close: %w[link closure]
+    close: %w[link closure], acta: %w[arquitecto requirements]
   }.freeze
 
   # Cuerpos sueltos que NO son fixtures de agente: versiones anteriores que el
@@ -280,6 +280,8 @@ module DesignSeed
     initiative = Initiative.find_by!(code: "ev-031")
     runs = seed_runs(initiative)
 
+    seed_acta(initiative)
+
     dossier = artifact_for(initiative, kind: :dossier, run: runs[:tank])
     spec = artifact_for(initiative, kind: :spec, version: 4, run: runs[:neo])
 
@@ -304,6 +306,47 @@ module DesignSeed
     seed_conflict(dossier, package_artifact(initiative, runs))
 
     signature
+  end
+
+  # EL ACTA DEL ARQUITECTO (F11 · B8).
+  #
+  # Va PRIMERO, antes del dossier de TANK, porque es lo primero que ocurre: la
+  # etapa 1 decide los requisitos y de ahí sale todo lo demás.
+  #
+  # Las decisiones se siembran ANTES de publicar el acta, y no al revés: en
+  # cuanto el artefacto existe, `Decision` se niega a que las toquen —de ella
+  # salen la spec y los deltas—. Sembrarlas después habría reventado con el
+  # mismo `ReadOnlyRecord` que protege al sistema en producción, que es
+  # justamente la señal de que la guarda funciona.
+  #
+  # Su run es propio y no sale de `seed_runs`: ese recorre `STAGE_WORK`, donde el
+  # ARQUITECTO figura con `interview` —el turno de la conversación—, y quien
+  # publica el acta es `requirements`.
+  def seed_acta(initiative)
+    Catalog::DECISIONS_031.each do |data|
+      decision = initiative.decisions.find_or_initialize_by(ordinal: data[:ordinal])
+      next if decision.persisted?
+
+      decision.update!(project_id: initiative.project_id, status: data[:status],
+                       question: data[:question], answer: data[:answer],
+                       source_citation: data[:source])
+    end
+
+    run = AgentRun.find_or_create_by!(
+      code: "arquitecto/run-#{initiative.number}-requirements"
+    ) do |created|
+      created.initiative = initiative
+      created.agent = :arquitecto
+      created.purpose = :requirements
+      created.status = :ok
+      created.iteration = initiative.iteration
+      created.started_at = initiative.opened_at
+      created.finished_at = initiative.opened_at + 6.minutes
+      created.input_tokens = 24_600
+      created.output_tokens = 3_180
+    end
+
+    artifact_for(initiative, kind: :acta, run: run)
   end
 
   def seed_runs(initiative)

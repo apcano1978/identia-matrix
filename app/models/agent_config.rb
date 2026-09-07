@@ -9,7 +9,11 @@ class AgentConfig < ApplicationRecord
   belongs_to :project, optional: true
   belongs_to :updated_by_user, class_name: "Platform::User", optional: true
 
-  enum :agent, { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5 },
+  # Los mismos siete que `AgentRun`, y lo comprueba `enums_test`: dos listas que
+  # dicen lo mismo se separan el día que alguien toca una.
+  enum :agent,
+       { tank: 0, neo: 1, seraph: 2, morfeo: 3, trinity: 4, link: 5,
+         arquitecto: 6 },
        prefix: true, validate: true
 
   # El ámbito es el PROYECTO desde F11, igual que `effective_for`. Con el nulo

@@ -8,12 +8,29 @@ class AgentsTest < ApplicationSystemTestCase
     # La barrera del setup. Sin ella el primer `click_on` de cada test puede caer
     # sobre el panel todavía, y entonces el fallo aparece en un test distinto
     # cada vez según el orden — que es lo que lo hace difícil de leer.
+    #
+    # La pantalla abre por el primero del PIPELINE, y desde B8 ese es el
+    # ARQUITECTO, no TANK. El resto de tests hablan de la configuración de TANK,
+    # así que se va a la suya explícitamente en vez de depender del defecto.
+    assert_selector "h1", text: "ARQUITECTO"
+    click_on "tank"
     assert_selector "h1", text: "TANK"
   end
 
-  test "los seis agentes tienen pestaña" do
+  test "los siete agentes tienen pestaña" do
     within("div", text: "agents:", match: :first) do
-      %w[tank neo morfeo trinity seraph link].each { |a| assert_text a }
+      %w[arquitecto tank neo morfeo trinity seraph link].each { |a| assert_text a }
+    end
+  end
+
+  # El orden de la barra es el del TRABAJO, no el del enum: el ARQUITECTO es el
+  # último de `AgentRun.agents` y el primero en actuar.
+  test "y salen en el orden en que trabajan" do
+    within("div", text: "agents:", match: :first) do
+      claves = all("a, span").map(&:text).select { |t| AgentRun.agents.key?(t) }
+
+      assert_equal %w[arquitecto tank neo seraph morfeo trinity link],
+                   claves.uniq
     end
   end
 

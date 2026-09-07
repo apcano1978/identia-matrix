@@ -46,6 +46,26 @@ module Artifacts
 
     KINDS = PREFIXES.keys.freeze
 
+    # ⚠ EL ORDEN DE `KINDS` NO ES EL DEL PIPELINE, y desde B8 dejan de coincidir.
+    #
+    # `KINDS` es orden de ALMACENAMIENTO: de él sale el enum `Artifact#kind`, que
+    # es una columna entera, así que lo nuevo se anexa al final y nada se puede
+    # intercalar. `acta` entró la última **y trabaja la primera** — la escribe el
+    # ARQUITECTO en la etapa 1.
+    #
+    # Los dos órdenes fueron el mismo durante siete tipos, y esa coincidencia se
+    # coló en el visor de artefactos, que ordenaba por `KINDS.index` para abrir
+    # por el más avanzado. Con el acta anexada, abría por ella: el primero del
+    # flujo presentado como el último. Es la misma lección que `AgentRun#agent`,
+    # donde el ARQUITECTO es el 6 y actúa antes que el 0.
+    PIPELINE_ORDER = %i[acta dossier spec dod pkg verify guide close].freeze
+
+    # De menor a mayor avance. Un tipo que no esté en la lista va al final, para
+    # que añadir uno sin declarar aquí no lo esconda en silencio.
+    def self.pipeline_position(kind)
+      PIPELINE_ORDER.index(kind.to_sym) || PIPELINE_ORDER.size
+    end
+
     # Tipos cuyo número lo hereda del evolutivo. `pkg` es el único que no.
     INITIATIVE_NUMBERED = (KINDS - [ :pkg ]).freeze
 

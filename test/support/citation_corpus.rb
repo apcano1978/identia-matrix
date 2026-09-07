@@ -124,12 +124,25 @@ module CitationCorpus
       { kind: "code", repository: "pricing-svc", locator: "src/rules/holiday.ts", commit_sha: "b7c0d21" },
     "[src:doc/acta-precios#p2]" =>
       { kind: "doc", locator: "acta-precios", anchor: "p2" },
+    "[src:doc/arquitectura-corporativa#p7]" =>
+      { kind: "doc", locator: "arquitectura-corporativa", anchor: "p7" },
+    "[src:doc/contrato-sla-precio#p3]" =>
+      { kind: "doc", locator: "contrato-sla-precio", anchor: "p3" },
+    "[src:doc/matriz-de-casos-de-precio#p2]" =>
+      { kind: "doc", locator: "matriz-de-casos-de-precio", anchor: "p2" },
+    "[src:doc/tarifario-2026#p1]" =>
+      { kind: "doc", locator: "tarifario-2026", anchor: "p1" },
     "[src:dod/dod-031#c0]" =>
       { kind: "dod", locator: "dod-031", anchor: "c0" },
     "[src:dod/dod-031#c3]" =>
       { kind: "dod", locator: "dod-031", anchor: "c3" },
     "[src:meet/2026-05-02-unificacion-precio@22:40]" =>
       { kind: "meet", locator: "2026-05-02", clock: "22:40", meeting_slug: "unificacion-precio" },
+    "[src:meet/2026-05-14-festivos-y-tarifa@11:20]" =>
+      { kind: "meet", locator: "2026-05-14", meeting_slug: "festivos-y-tarifa",
+        clock: "11:20" },
+    "[src:meet/2026-05-26@11:02]" =>
+      { kind: "meet", locator: "2026-05-26", clock: "11:02" },
     "[src:meet/2026-05-02@22:40]" =>
       { kind: "meet", locator: "2026-05-02", clock: "22:40" },
     "[src:meet/2026-05-14-festivos-y-tarifa]" =>

@@ -20,13 +20,26 @@ module Pipeline
   # Quien actúa cuando no es una persona. Va en `events.actor`.
   SYSTEM_ACTOR = "SISTEMA".freeze
 
-  # Qué agente trabaja en cada etapa, y con qué propósito. Las cinco etapas que
-  # faltan no son de ningún agente: `need` es humana, `gate_1` y `gate_2` son
-  # firmas, `claude_code` pasa fuera de matrix y `publication` es el final.
+  # Qué agente trabaja en cada etapa, y con qué propósito. Las cuatro etapas que
+  # faltan no son de ningún agente: `gate_1` y `gate_2` son firmas, `claude_code`
+  # pasa fuera de matrix y `publication` es el final.
   #
   # SERAPH aparece dos veces con propósitos distintos, que es justo lo que
   # `agent_runs.purpose` existe para poder decir.
+  #
+  # ── `conversational`, y por qué el ARQUITECTO lo necesita ─────────────────
+  #
+  # Los seis agentes de siempre se lanzan y ya: un botón encola un job, el agente
+  # trabaja y publica. El ARQUITECTO no — su etapa es una CONVERSACIÓN con una
+  # persona, y un turno lanzado a ciegas no tiene a quién preguntar ni dónde
+  # dejar la respuesta.
+  #
+  # La bandera es lo que impide que el lanzador genérico de la ficha dispare un
+  # `interview` contra nada. La conversación se abre desde la pantalla del acta,
+  # y esa llega en B9: hasta entonces el lanzador dice por qué no hay botón, que
+  # es lo mismo que hace en las etapas que mueve una persona.
   STAGE_WORK = {
+    "need" => { agent: "arquitecto", purpose: "interview", conversational: true },
     "tank" => { agent: "tank", purpose: "context" },
     "neo" => { agent: "neo", purpose: "spec" },
     "seraph_dod" => { agent: "seraph", purpose: "dod_pass" },

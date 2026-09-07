@@ -63,7 +63,12 @@ module InitiativesHelper
   # seleccionan qué enseña el visor: cada una lleva a la suya, porque el DoD,
   # el informe y la guía tienen cosas que enseñar —contadores, veredictos,
   # cobertura— que un visor de markdown no puede dar.
-  ARTIFACT_TABS = { "dod" => :dod, "verify" => :verify, "guide" => :guide }.freeze
+  # `acta` va la PRIMERA porque es la primera de la cadena: de ella salen la spec
+  # y, de ahí, todo lo demás. Y como las otras tres, se apaga cuando su artefacto
+  # no existe — un evolutivo abierto antes de F11 no tiene acta y nunca la
+  # tendrá, y llevar a una pantalla vacía sería peor que decirlo.
+  ARTIFACT_TABS = { "acta" => :acta, "dod" => :dod, "verify" => :verify,
+                    "guide" => :guide }.freeze
 
   # ⚠ Por el PROYECTO, no por el cliente del evolutivo. Ver `tray_destination`
   # en `dashboard_helper`: es el mismo arreglo y por la misma razón, y aquí lo
@@ -81,6 +86,7 @@ module InitiativesHelper
 
   def evidence_path_for(label, project, initiative)
     case label
+    when "acta" then project_initiative_acta_path(project, initiative)
     when "dod" then project_initiative_definition_of_done_path(project, initiative)
     when "verify" then project_initiative_verification_path(project, initiative)
     else project_initiative_guide_path(project, initiative)

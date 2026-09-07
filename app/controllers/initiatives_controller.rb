@@ -13,12 +13,18 @@ class InitiativesController < ApplicationController
     # transacción y `created_at` no los distingue. El último de la lista es el
     # más avanzado, y es el que el visor abre por defecto.
     #
+    # ⚠ Por `PIPELINE_ORDER` y NO por `KINDS`, que es lo que decía hasta B8.
+    # `KINDS` es orden de almacenamiento —respalda un enum entero, así que lo
+    # nuevo se anexa— y el acta entró la última trabajando la primera: ordenar
+    # por ahí hacía que el visor abriera por el acta, o sea por el principio del
+    # flujo presentado como el final.
+    #
     # Dentro de cada tipo manda la VERSIÓN MÁS ALTA, que es la vigente — la
     # misma regla que aplica `Citations::Resolve` al atar una cita derivada.
     # Sin el desempate, con dos filas del mismo código el orden lo decidiría la
     # inserción y `artifact_tabs` elegiría una por casualidad.
     @artifacts = @initiative.artifacts.includes(:produced_by_run)
-                            .sort_by { |a| [ Artifacts::Key::KINDS.index(a.kind.to_sym), a.version ] }
+                            .sort_by { |a| [ Artifacts::Key.pipeline_position(a.kind), a.version ] }
                             .reverse
     @artifact = selected_artifact
     @versions = versions_of(@artifact)

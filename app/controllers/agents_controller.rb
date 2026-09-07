@@ -1,9 +1,13 @@
-# Los seis agentes, en SOLO LECTURA. Editar su configuración es F9, cuando haya
+# Los siete agentes, en SOLO LECTURA. Editar su configuración es F9, cuando haya
 # agentes de verdad a los que configurar; la pantalla existe antes para que la
 # entrada AGENTES del rail no lleve a un hueco durante seis fases.
 class AgentsController < ApplicationController
   # En ORDEN DE PIPELINE, no en el del enum: es el orden en el que actúan, y
   # sale de `Pipeline::STAGE_WORK` para que añadir una etapa lo mantenga solo.
+  #
+  # Se mantuvo solo: al entrar el ARQUITECTO en la etapa 1 (B8), la pantalla
+  # pasó a abrir por él sin tocar este fichero. Es lo correcto — actúa primero—
+  # y el test del breadcrumb lo siguió.
   AGENTS = Pipeline::STAGE_WORK.values.map { |work| work[:agent] }.uniq.freeze
 
   def index

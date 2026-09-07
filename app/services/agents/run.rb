@@ -26,9 +26,13 @@ module Agents
   class Run
     # Lo que produce cada propósito. Un agente cuyo propósito no está aquí
     # ejecuta y registra, pero no publica nada.
+    # `interview` NO está aquí, y es la mitad de por qué el ARQUITECTO tiene dos
+    # propósitos: un turno de conversación registra su fila y su coste pero no
+    # publica nada. El acta se publica una vez, al cerrar, con `requirements`.
     ARTIFACT_KINDS = {
       "context" => :dossier, "spec" => :spec, "dod_pass" => :dod,
-      "package" => :pkg, "verification" => :verify, "closure" => :close
+      "package" => :pkg, "verification" => :verify, "closure" => :close,
+      "requirements" => :acta
     }.freeze
 
     AlreadyRunning = Class.new(StandardError)

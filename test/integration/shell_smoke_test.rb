@@ -64,7 +64,7 @@ class ShellSmokeTest < ActionDispatch::IntegrationTest
       project_path("vivla") => "projects/vivla",
       project_initiative_path("vivla", "precio-festivos") => "projects/vivla/precio-festivos",
       project_repository_path("vivla", "booking-core") => "projects/vivla/repos/booking-core",
-      agents_path => "agents/tank" }.each do |path, crumb|
+      agents_path => "agents/arquitecto" }.each do |path, crumb|
       get path
       assert_equal crumb, css_select("header span.text-antique-gold").first.text
     end

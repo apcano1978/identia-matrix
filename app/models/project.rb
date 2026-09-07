@@ -32,6 +32,8 @@ class Project < ApplicationRecord
   # dejaría artefactos publicados sin raíz, y sus claves ya están emitidas.
   has_many :repositories, dependent: :restrict_with_exception
   has_many :initiatives, dependent: :restrict_with_exception
+  # La frontera desnormalizada del acta: el invariante 10 consulta por aquí.
+  has_many :decisions, dependent: :restrict_with_exception
 
   validates :name, presence: true
   # Kebab, el mismo formato que el slug de cliente: de ahí se hereda cuando el

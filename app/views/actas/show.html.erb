@@ -1,0 +1,98 @@
+<% breadcrumb "projects", @project.slug, @initiative.slug, "acta" %>
+<% content_for :title, "identia-matrix · acta de #{@initiative.slug}" %>
+
+<%= render "shared/view_bar",
+           back: { label: @initiative.slug, path: initiative_path_for },
+           title: "cierre de requisitos",
+           notes: [ acta_cost_note(@runs),
+                    @acta ? "inmutable · #{@acta.storage_key}" : "sin publicar" ] %>
+
+<div class="flex-1 min-h-0 flex">
+  <div class="flex-1 min-w-0 overflow-y-auto px-[22px] pt-[18px] pb-5">
+    <div class="flex items-baseline gap-3.5">
+      <h1 class="font-sans text-t27 font-semibold tracking-tight text-terminal-fg">
+        Acta de decisiones
+      </h1>
+      <%# El titular cuenta DECIDIDO contra PENDIENTE, y por eso las descartadas
+          suman con las cerradas: descartar también es haber decidido. Lo que
+          separa esta cifra es lo que queda por contestar. %>
+      <span class="text-t105 text-terminal-fg-3">
+        <%= pluralize(@closed_count, "cerrada") %> ·
+        <%= pluralize(@open_count, "abierta") %>
+      </span>
+    </div>
+
+    <%# ── Las tres pestañas de filtro ─────────────────────────────────────
+        Son GET con parámetro, no un filtro de cliente: así una pestaña se puede
+        enlazar y compartir, que es lo que hace falta cuando alguien pregunta
+        «¿qué queda abierto?». %>
+    <div class="flex items-baseline gap-2.5 mt-3.5">
+      <% [ [ "todas", "TODAS", @decisions.size ],
+           [ "cerradas", "CERRADAS", @closed_count ],
+           [ "abiertas", "ABIERTAS", @open_count ] ].each do |tab, label, count| %>
+        <%= link_to project_initiative_acta_path(@project, @initiative,
+                                                 tab: tab == "todas" ? nil : tab),
+                    data: { tab: tab },
+                    class: "px-2.5 py-0.5 font-sans text-t10 font-medium
+                            tracking-[.1em] border #{
+                      @tab == tab ? 'border-antique-gold bg-[rgba(196,155,94,.12)] text-antique-gold'
+                                  : 'border-terminal-border text-terminal-fg-3 hover:text-terminal-fg'}" do %>
+          <%= label %> · <%= count %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="mt-3.5 flex flex-col">
+      <% @visible.each do |decision| %>
+        <%= render "actas/decision", decision: decision, acta: @acta %>
+      <% end %>
+    </div>
+
+    <%# Una decisión abierta NO impide avanzar, y esta línea es la mitad de por
+        qué el acta existe: se arrastra hasta que alguien la conteste. %>
+    <% if @open_count.positive? %>
+      <p class="mt-4 border-l-2 border-terminal-border-gold
+                bg-[rgba(196,155,94,.08)] px-3.5 py-2.5
+                text-t105 leading-[1.6] text-terminal-fg-3">
+        <%= pluralize(@open_count, "decisión abierta", plural: "decisiones abiertas") %>
+        <span class="text-terminal-fg">no bloquean el avance</span>, pero se
+        arrastran: MORFEO las levanta como advertencia al revisar y LINK las
+        recupera al cerrar. Lo que no puede pasar es que se pierdan.
+      </p>
+    <% end %>
+  </div>
+
+  <%= side_panel(width: 258) do %>
+    <%= panel_block("EL ACTA") do %>
+      <p class="text-t105 leading-[1.65] text-terminal-fg-3">
+        La escribe el <span class="text-antique-gold">ARQUITECTO</span> en la
+        etapa de necesidad, preguntando hasta cerrar cada decisión. De ella sale
+        la especificación: lo que aquí quede sin contestar, allí queda sin
+        definir.
+      </p>
+    <% end %>
+
+    <%= panel_block("SESIONES") do %>
+      <% if @runs.any? %>
+        <dl class="text-t105 leading-[1.8]">
+          <% @runs.each do |run| %>
+            <%= render "initiatives/fact", term: run.purpose,
+                       value: "#{run.code.split('/').last} · #{run.total_tokens} tok" %>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="text-t105 text-terminal-fg-3">Sin ejecuciones registradas.</p>
+      <% end %>
+    <% end %>
+
+    <%# El panel de CONVERSACIÓN de la maqueta va aquí, y llega en B9: media
+        pantalla apagada prometería algo que todavía no está. %>
+    <%= panel_block("CONVERSACIÓN") do %>
+      <p class="text-t105 leading-[1.65] text-terminal-fg-3">
+        Contestar al ARQUITECTO todavía no se puede desde aquí. Es lo único de
+        matrix que ocurre en el acto —ida y vuelta con una persona, no un job que
+        tarda— y por eso va en su propio paso.
+      </p>
+    <% end %>
+  <% end %>
+</div>

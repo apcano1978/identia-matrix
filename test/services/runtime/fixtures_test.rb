@@ -6,9 +6,29 @@ require "test_helper"
 class Runtime::FixturesTest < ActiveSupport::TestCase
   test "hay un fixture por cada etapa que trabaja un agente" do
     expected = Pipeline::STAGE_WORK.values
-                                   .map { |w| [ w[:agent], w[:purpose] ] }.uniq.sort
+                                   .map { |w| [ w[:agent], w[:purpose] ] }.uniq
 
-    assert_equal expected, Runtime::Fixture.available
+    expected.each do |agent, purpose|
+      assert Runtime::Fixture.exists?(agent: agent, purpose: purpose),
+             "falta el fixture de #{agent}/#{purpose}"
+    end
+  end
+
+  # La igualdad exacta con `STAGE_WORK` se relajó en B8, y hay que decir por qué
+  # para que nadie la «arregle» volviéndola a poner: **el ARQUITECTO tiene dos
+  # propósitos y solo uno vive en una etapa**. `interview` es el turno de la
+  # conversación y sí está en `STAGE_WORK`; `requirements` es el cierre que
+  # publica el acta, y no lo lanza una etapa sino el cierre de la conversación.
+  #
+  # Lo que la igualdad protegía —que no haya fixtures huérfanos— se sigue
+  # afirmando aquí, con el ARQUITECTO como única excepción y nombrada.
+  test "y ningún fixture huérfano, salvo el cierre del ARQUITECTO" do
+    de_etapa = Pipeline::STAGE_WORK.values
+                                   .map { |w| [ w[:agent], w[:purpose] ] }.uniq
+
+    huerfanos = Runtime::Fixture.available - de_etapa
+
+    assert_equal [ [ "arquitecto", "requirements" ] ], huerfanos
   end
 
   test "todas las citas del cuerpo parsean contra la gramática de F0" do

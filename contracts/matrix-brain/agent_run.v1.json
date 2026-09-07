@@ -262,6 +262,49 @@
           "description": "Los ajustes de `agent_configs` que enseña la pantalla de AGENTES. Hablan vocabulario de matrix —umbrales, topes, política de revisión—, no del brain, y por eso viajan bajo su propia clave en vez de mezclados con los parámetros de llamada. Mezclarlos era una bomba de relojería: en cuanto una sección se llamó `model`, pisó el alias del contrato con un hash y la petición dejó de validar.",
           "default": {},
           "additionalProperties": true
+        },
+        "decisions": {
+          "type": "array",
+          "description": "El acta EN CURSO de este evolutivo: lo que ya se preguntó, para que el ARQUITECTO no lo vuelva a preguntar. Solo la recibe él (Runtime::Request::MATERIAL). El ordinal viaja porque es lo que el agente devuelve en findings[].reference para decir qué decisión cierra; es global dentro del evolutivo y no se renumera nunca.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": [
+              "ordinal",
+              "status",
+              "question"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ordinal": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "status": {
+                "enum": [
+                  "open",
+                  "closed",
+                  "discarded"
+                ]
+              },
+              "question": {
+                "type": "string"
+              },
+              "answer": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "La cita que respalda la decisión, en crudo."
+              }
+            }
+          }
         }
       },
       "additionalProperties": false

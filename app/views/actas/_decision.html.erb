@@ -1,0 +1,44 @@
+<%# Una fila del acta: glifo y estado arriba con su cita de origen, la pregunta
+    en el medio y en qué quedó debajo.
+
+    El ordinal se enseña porque ES la identidad de la decisión: es lo que lleva
+    dentro el ancla de la cita —`#abierta-4`— y lo que un agente devuelve para
+    decir cuál cierra. %>
+<div class="px-3 py-3 border-b border-[rgba(240,233,215,.07)] last:border-b-0"
+     data-decision="<%= decision.ordinal %>">
+  <div class="flex items-baseline gap-2.5">
+    <span class="<%= decision_tone(decision) %> text-t11">
+      <%= decision_glyph(decision) %> <%= Decision::ANCHORS.fetch(decision.status) %>
+    </span>
+    <span class="text-t95 text-terminal-muted">#<%= decision.ordinal %></span>
+
+    <span class="ml-auto text-t95">
+      <% if decision.source_citation.present? %>
+        <span class="text-antique-gold">◆</span>
+        <span class="text-terminal-fg-4"><%= decision.source_citation %></span>
+      <% else %>
+        <%# Sin fuente no es un descuido: una decisión abierta todavía no tiene
+            nada que citar, y decirlo distingue «no hay» de «se olvidó». %>
+        <span class="text-terminal-disabled">sin fuente todavía</span>
+      <% end %>
+    </span>
+  </div>
+
+  <p class="mt-1.5 text-t12 leading-[1.5] text-terminal-fg">
+    <%= decision.question %>
+  </p>
+
+  <p class="mt-1 text-t105 leading-[1.6] <%= decision.answered? ? 'text-terminal-fg-3'
+                                                               : 'text-terminal-disabled' %>">
+    <%= decision.answer.presence || "Sin respuesta." %>
+  </p>
+
+  <%# La cita que la nombra, solo cuando el acta existe: sin artefacto publicado
+      no hay código al que apuntar, y componerla igualmente daría una cita que no
+      resuelve. %>
+  <% if acta %>
+    <p class="mt-1.5 text-t95 text-terminal-muted">
+      <%= decision.citation(acta.code) %>
+    </p>
+  <% end %>
+</div>

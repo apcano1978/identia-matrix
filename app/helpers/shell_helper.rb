@@ -10,13 +10,25 @@ module ShellHelper
   #
   # CLIENTES se queda con lo suyo: quién es, si está en preparación y qué
   # documentación tiene. Desde F11 ya no es la puerta de entrada al trabajo.
+  # ⚠ Las cinco de evidencia —acta, DoD, verificación, guía y las dos puertas—
+  # NO estaban en el mapa, aunque el comentario de arriba afirmaba desde F6 que
+  # iluminan PROYECTOS. `rail_section` busca por `controller_name` y devolvía
+  # `nil`: el rail se apagaba entero al abrirlas, y con las cuatro entradas
+  # apagadas nadie sabía en qué sección estaba. Se descubrió en B8 al añadir
+  # `actas` y comprobar si hacía falta.
   RAIL_SECTIONS = {
     "dashboard" => :dashboard,
     "gates" => :dashboard,
+    "gate_1" => :dashboard,
     "projects" => :projects,
     "initiatives" => :projects,
     "repositories" => :projects,
     "sources" => :projects,
+    "actas" => :projects,
+    "definitions_of_done" => :projects,
+    "verifications" => :projects,
+    "guides" => :projects,
+    "gate_2" => :projects,
     "clients" => :clients,
     "agents" => :agents
   }.freeze

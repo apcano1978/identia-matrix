@@ -22,7 +22,8 @@
         "seraph",
         "morfeo",
         "trinity",
-        "link"
+        "link",
+        "arquitecto"
       ]
     },
     "purpose": {
@@ -33,9 +34,11 @@
         "review",
         "package",
         "verification",
-        "closure"
+        "closure",
+        "interview",
+        "requirements"
       ],
-      "description": "SERAPH interviene dos veces por ciclo con propósitos distintos: dod_pass antes de ejecutar, verification después."
+      "description": "SERAPH interviene dos veces por ciclo con propósitos distintos: dod_pass antes de ejecutar, verification después. El ARQUITECTO interviene con dos: interview es un turno de la conversación y no publica nada; requirements es el cierre y publica el acta."
     },
     "body": {
       "type": "string",
@@ -86,7 +89,7 @@
     },
     "findings": {
       "type": "array",
-      "description": "Hallazgos estructurados que matrix convierte en registros propios. MORFEO devuelve bloqueantes; SERAPH, veredictos. Ninguno CORRIGE nada: señalan.",
+      "description": "Hallazgos estructurados que matrix convierte en registros propios. MORFEO devuelve bloqueantes; SERAPH, veredictos. Ninguno CORRIGE nada: señalan. El ARQUITECTO devuelve decisiones: cada una es una pregunta con su estado, y matrix las reconcilia contra las filas del acta con Decisions::Apply.",
       "default": [],
       "items": {
         "type": "object",
@@ -103,7 +106,8 @@
               "verdict",
               "deploy_step",
               "criterion",
-              "guide_step"
+              "guide_step",
+              "decision"
             ]
           },
           "reference": {
@@ -137,6 +141,22 @@
               "string",
               "null"
             ]
+          },
+          "answer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en kind=decision: en qué quedó. Nula mientras la decisión está abierta, que es exactamente lo que «abierta» significa."
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed",
+              "discarded",
+              null
+            ],
+            "description": "Solo en kind=decision. `discarded` NO es `closed` con respuesta «no»: descartar acota el trabajo, cerrar lo define."
           }
         }
       }

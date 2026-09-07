@@ -660,6 +660,64 @@ module DesignSeed::Catalog
     ]
   }.freeze
 
+  # EL ACTA DEL ARQUITECTO · las once decisiones de ev-031 (F11 · B8).
+  #
+  # El ordinal es el orden en que se preguntaron, y **no se renumera nunca**: va
+  # dentro del ancla de la cita —`#abierta-4`— y esa cita vive en markdown que
+  # nadie puede reescribir. Por eso las abiertas no están al final: la 4 y la 7
+  # se preguntaron cuando les tocó, y ahí se quedan.
+  #
+  # Nueve cerradas —contando las descartadas, que también están decididas— y dos
+  # abiertas, que es lo que el rediseño pinta en su cabecera.
+  DECISIONS_031 = [
+    { ordinal: 1, status: :closed,
+      question: "¿Quién decide el precio cuando calendario y reserva discrepan?",
+      answer: "Una única autoridad de precio: pricing-svc. El resto consulta y " \
+              "puede cachear disponibilidad, nunca precio.",
+      source: "[src:meet/2026-05-02@22:40]" },
+    { ordinal: 2, status: :closed,
+      question: "¿El recargo de festivo se aplica sobre la tarifa base o sobre " \
+                "el precio ya recargado?",
+      answer: "Sobre la tarifa base, y aparece una sola vez.",
+      source: "[src:doc/tarifario-2026#p1]" },
+    { ordinal: 3, status: :discarded,
+      question: "¿Entra el precio de temporada alta en este cambio?",
+      answer: "Fuera de alcance. Se cierra el festivo y nada más.",
+      source: "[src:meet/2026-05-26@11:02]" },
+    { ordinal: 4, status: :open,
+      question: "¿Cuánto dura la ventana en la que conviven las dos versiones " \
+                "del contrato de precio?",
+      answer: nil, source: nil },
+    { ordinal: 5, status: :closed,
+      question: "¿El calendario puede seguir cacheando la tarifa?",
+      answer: "Puede cachear disponibilidad, no precio.",
+      source: "[src:meet/2026-05-02@22:40]" },
+    { ordinal: 6, status: :closed,
+      question: "¿Qué pasa si un festivo cae en fin de semana?",
+      answer: "Se aplica el recargo mayor de los dos, no los dos.",
+      source: "[src:doc/matriz-de-casos-de-precio#p2]" },
+    { ordinal: 7, status: :open,
+      question: "¿Qué pasa con las reservas ya confirmadas a precio antiguo?",
+      answer: nil, source: nil },
+    { ordinal: 8, status: :closed,
+      question: "¿Quién publica el calendario de festivos y con cuánta antelación?",
+      answer: "Operaciones, con treinta días de antelación mínima.",
+      source: "[src:meet/2026-05-14-festivos-y-tarifa@11:20]" },
+    { ordinal: 9, status: :discarded,
+      question: "¿Se migran los históricos de precio a la nueva estructura?",
+      answer: "No. El histórico se lee con el contrato viejo mientras exista.",
+      source: "[src:meet/2026-05-26@11:02]" },
+    { ordinal: 10, status: :closed,
+      question: "¿El SLA de precio cambia con la nueva autoridad?",
+      answer: "No cambia: 200 ms al percentil 95, medido en pricing-svc.",
+      source: "[src:doc/contrato-sla-precio#p3]" },
+    { ordinal: 11, status: :closed,
+      question: "¿Owner-web necesita desplegarse a la vez que booking-core?",
+      answer: "No: el contrato v1 se mantiene durante la ventana, así que " \
+              "owner-web va el último.",
+      source: "[src:doc/arquitectura-corporativa#p7]" }
+  ].freeze
+
   # Traducción de los estados de la maqueta a los del modelo. `exec` con marca
   # `✓` es `done`: la regla de glifo manda sobre lo que la maqueta pinta.
   STATUSES = { "done" => :done, "act" => :active, "gate" => :active,

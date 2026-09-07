@@ -49,6 +49,10 @@ class Initiative < ApplicationRecord
   has_many :artifacts, dependent: :destroy
   has_many :initiative_sources, dependent: :destroy
   has_many :initiative_roles, dependent: :destroy
+  # El acta del ARQUITECTO, fila a fila (F11 · B8). `destroy` y no `nullify`: una
+  # decisión sin evolutivo no es nada — a diferencia de un evento, que narra algo
+  # que pasó aunque el evolutivo desaparezca.
+  has_many :decisions, dependent: :destroy
 
   enum :current_stage, STAGES.each_with_index.to_h, prefix: :at, validate: true
   enum :current_stage_status,
