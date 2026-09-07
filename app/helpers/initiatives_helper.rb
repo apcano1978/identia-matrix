@@ -56,17 +56,13 @@ module InitiativesHelper
     end
   end
 
-  # Las pestañas del artefacto. Deshabilitada = el evolutivo todavía no tiene
-  # ese artefacto, y se pinta apagada en vez de llevar a una pantalla vacía.
-  # Las tres pestañas de evidencia. Siguen colgando de que exista el artefacto
-  # correspondiente —sin DoD no hay pantalla de DoD— pero desde F6 ya no
-  # seleccionan qué enseña el visor: cada una lleva a la suya, porque el DoD,
-  # el informe y la guía tienen cosas que enseñar —contadores, veredictos,
-  # cobertura— que un visor de markdown no puede dar.
+  # Las cuatro pestañas de evidencia. Desde F6 cada una lleva a SU pantalla y no
+  # a seleccionar un artefacto en el visor: el DoD, el informe y la guía tienen
+  # contadores, veredictos y cobertura que un visor de markdown no puede dar.
+  #
   # `acta` va la PRIMERA porque es la primera de la cadena: de ella salen la spec
-  # y, de ahí, todo lo demás. Y como las otras tres, se apaga cuando su artefacto
-  # no existe — un evolutivo abierto antes de F11 no tiene acta y nunca la
-  # tendrá, y llevar a una pantalla vacía sería peor que decirlo.
+  # y, de ahí, todo lo demás. Cuál se apaga y cuándo lo decide `tab_enabled?`,
+  # donde el acta es la excepción y está razonada.
   ARTIFACT_TABS = { "acta" => :acta, "dod" => :dod, "verify" => :verify,
                     "guide" => :guide }.freeze
 
@@ -80,8 +76,26 @@ module InitiativesHelper
       artifact = artifacts.find { |a| a.kind == kind.to_s }
 
       { label: label, artifact: artifact, current: artifact == selected,
+        enabled: tab_enabled?(label, artifact, initiative),
         path: evidence_path_for(label, project, initiative) }
     end
+  end
+
+  # Una pestaña se apaga cuando su artefacto no existe: llevar a una pantalla
+  # vacía es peor que decir que no hay nada.
+  #
+  # ⚠ EL ACTA ES LA EXCEPCIÓN, y desde B9 tiene que serlo. Su pantalla es donde
+  # se HABLA con el ARQUITECTO, así que existe antes que el artefacto y
+  # precisamente para producirlo: apagarla hasta que hubiera acta dejaría la
+  # conversación sin puerta.
+  #
+  # Solo en `need`, que es donde esa conversación ocurre. Un evolutivo que ya
+  # pasó de ahí sin acta —los abiertos antes de F11— no va a tener ninguna, y su
+  # pestaña se queda apagada como las otras tres.
+  def tab_enabled?(label, artifact, initiative)
+    return true if artifact
+
+    label == "acta" && initiative.at_need?
   end
 
   def evidence_path_for(label, project, initiative)

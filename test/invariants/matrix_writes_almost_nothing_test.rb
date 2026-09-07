@@ -90,6 +90,34 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     # el coste que ya se pagó y el motivo por el que hubo que repetirla.
     "agent_runs#create",
 
+    # ── La conversación con el ARQUITECTO (F11 · B9) ────────────────────────
+    #
+    # Contestar y cerrar. Los dos `create`, y los dos actos que ocurren una vez:
+    # un turno deja una nota citable y una fila de ejecución con su coste; el
+    # cierre publica un artefacto inmutable y mueve el evolutivo.
+    #
+    # **`turns#create` es el único de esta lista que ESCRIBE ACTUALIZANDO**, y
+    # merece la conversación que esta lista existe para provocar. Un turno
+    # reconcilia los hallazgos del agente contra las filas de `decisions`:
+    # cierra las que se resolvieron y crea las nuevas. Eso es un `UPDATE`, aunque
+    # la acción sea un `create`.
+    #
+    # Se aceptó porque **esa mutabilidad está acotada por la publicación**, no
+    # abierta indefinidamente: en cuanto el acta se publica, `Decision` se niega
+    # a que la toquen —de ella salen la spec y los deltas— y lo que cambie a
+    # partir de ahí es otro delta. Un borrador se corrige; un acta publicada, no.
+    #
+    # La alternativa —una fila nueva por cada cambio de estado de una decisión—
+    # se descartó: el ordinal es lo que llevan dentro las citas ya emitidas, y
+    # versionar decisiones habría hecho que `#abierta-4` tuviera que elegir entre
+    # varias filas. La inmutabilidad que importa es la del ACTA, y esa la da el
+    # artefacto.
+    #
+    # `turns#create` es además el único que corre dentro de la petición, sin
+    # encolar nada. Ver `TurnsController`.
+    "turns#create",
+    "closures#create",
+
     # ── El ÚNICO `update` del sistema (F9 · P2) ─────────────────────────────
     #
     # Y merece la conversación que esta lista existe para provocar. Se sopesó

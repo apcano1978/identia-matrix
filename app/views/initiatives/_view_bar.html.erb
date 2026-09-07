@@ -33,7 +33,7 @@
         enseñar —contadores, veredictos, cobertura— que un visor de markdown no
         puede dar. El artefacto sigue leyéndose desde el panel de ARTEFACTOS. %>
     <% artifact_tabs(initiative, artifacts, artifact).each do |tab| %>
-      <% if tab[:artifact] %>
+      <% if tab[:enabled] %>
         <%= link_to tab[:label], tab[:path], class: "pb-0.5" %>
       <% else %>
         <span class="text-terminal-disabled cursor-not-allowed"

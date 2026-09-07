@@ -5,9 +5,19 @@ citations:
 events:
   - kind: progress
     message: "Un turno de entrevista: dos decisiones cerradas, una abierta"
+# ⚠ NINGUNO LLEVA `reference`, y no es un descuido.
+#
+# `Decisions::Apply` se niega —bien— cuando la referencia nombra un ordinal que
+# no existe, y en un evolutivo FRESCO no existe ninguno: un fixture con
+# `reference: "1"` haría fallar SIEMPRE el primer turno de la vida real. Lo
+# llevaba hasta B9, y no se vio porque en B8 nada ejecutaba un turno.
+#
+# Lo que un turno produce sobre un acta vacía son decisiones NUEVAS, que es lo
+# que este fixture imita. La rama de actualización por ordinal la cubren los
+# tests de `Decisions::Apply`, que es donde debe estar: un fixture estático no
+# puede saber qué ordinales hay al otro lado.
 findings:
   - kind: decision
-    reference: "1"
     statement: "¿Quién decide el precio cuando calendario y reserva discrepan?"
     answer: "Una única autoridad de precio: pricing-svc. El resto consulta."
     status: closed

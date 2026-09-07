@@ -131,7 +131,15 @@ Rails.application.routes.draw do
       # PLURAL LATINO de «actum» —`"acta".pluralize` devuelve `"acta"`— y un
       # `resource :acta` a secas busca `ActaController`. Es la misma razón por la
       # que `gate_1` lo lleva.
-      resource :acta, only: :show, controller: "actas"
+      #
+      # Las dos escrituras cuelgan de ella y las dos son `create`: contestar al
+      # ARQUITECTO y cerrar el acta son actos que ocurren una vez. `turn` es el
+      # ÚNICO de todo matrix que corre dentro de la petición y no encola nada —
+      # una conversación con una cola por medio no es una conversación.
+      resource :acta, only: :show, controller: "actas" do
+        resource :turn, only: :create
+        resource :closure, only: :create
+      end
       resource :definition_of_done, only: :show, path: "dod"
       resource :verification, only: :show
       resource :guide, only: :show

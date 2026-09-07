@@ -1,8 +1,12 @@
 require "application_system_test_case"
 
-# El acta del ARQUITECTO, en pantalla. Es la mitad izquierda del rediseño: la
-# lista de decisiones con sus tres estados. La conversación —la mitad derecha—
-# llega en B9.
+# El acta del ARQUITECTO, en pantalla. Las dos mitades del rediseño: a la
+# izquierda las decisiones con sus tres estados, a la derecha la conversación que
+# las produce.
+#
+# Los primeros tests miran el acta YA CERRADA que siembra `DesignSeed` —que es
+# el estado en el que se lee— y el bloque de abajo recorre un evolutivo nuevo de
+# punta a punta: acta vacía → turno → decisiones → cierre → TANK.
 class ActaTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
@@ -125,15 +129,16 @@ class ActaTest < ApplicationSystemTestCase
     assert_selector ".rail-entry-on", text: "PROYECTOS"
   end
 
-  # B8 no añade ninguna escritura: esta pantalla se lee y nada más. La
-  # conversación —contestar al ARQUITECTO— es B9, y la pantalla lo dice en vez de
-  # enseñar un botón apagado.
-  test "es una pantalla de lectura, y dice que contestar llega después" do
+  # Cerrada el acta, la conversación no continúa: de ella salen la spec y los
+  # deltas, y lo que cambie a partir de aquí es otro delta. La pantalla pasa a
+  # ser el registro de lo que se decidió.
+  test "con el acta cerrada no hay ni formulario ni botón de cerrar" do
     open_acta
 
-    assert_no_selector "main form"
-    assert_no_selector "main input, main select, main textarea"
-    assert_text "Contestar al ARQUITECTO todavía no se puede desde aquí"
+    assert_no_selector "textarea"
+    assert_no_button "CERRAR Y PASAR A TANK"
+    assert_text "El acta está cerrada"
+    assert_text "es otro delta"
   end
 
   test "el coste del acta se cuenta como el de cualquier otro agente" do
@@ -144,7 +149,111 @@ class ActaTest < ApplicationSystemTestCase
     assert_text(/ARQUITECTO · \d+ sesi(ón|ones) ·/)
   end
 
+  # ══ B9 · LA CONVERSACIÓN ═══════════════════════════════════════════════════
+  #
+  # El recorrido entero sobre un evolutivo NUEVO: acta vacía → un turno →
+  # decisiones → cierre → TANK. Es lo que un evolutivo real vive, y ninguna otra
+  # prueba lo recorre de punta a punta.
+
+  test "un evolutivo nuevo entra con el acta vacía, y la pantalla dice qué hacer" do
+    open_nueva
+
+    assert_text "Todavía no hay ninguna decisión"
+    assert_text "TODAS · 0"
+    assert_selector "textarea"
+  end
+
+  # La pestaña `acta` es la ÚNICA que se enciende sin artefacto: su pantalla es
+  # donde se produce, así que apagarla dejaría la conversación sin puerta.
+  test "y se llega por su pestaña aunque no haya artefacto todavía" do
+    nueva = open_initiative
+    visit project_initiative_path("vivla", nueva.slug)
+
+    click_on "acta"
+
+    assert_current_path project_initiative_acta_path("vivla", nueva.slug)
+    assert_text "Todavía no hay ninguna decisión"
+  end
+
+  test "un turno deja la nota citable y las decisiones que levantó" do
+    open_nueva
+
+    fill_in "message", with: "El precio lo manda pricing-svc."
+    click_on "Responder al ARQUITECTO"
+
+    assert_text "Turno registrado"
+    assert_equal 3, all("[data-decision]").size
+    # La mitad de la persona en el diálogo, con su código citable.
+    assert_text "El precio lo manda pricing-svc."
+    assert_selector "aside", text: /\d{4}-\d{2}-\d{2}-/
+  end
+
+  # LA PROPIEDAD DEL BLOQUE, vista desde la pantalla: al volver de pulsar, las
+  # decisiones ya están. Un turno encolado habría devuelto la lista vacía.
+  test "y contesta en el acto: al recargar no hay nada esperando" do
+    open_nueva
+    fill_in "message", with: "Adelante."
+    click_on "Responder al ARQUITECTO"
+
+    assert_text "es lo único de matrix que no pasa por una cola"
+    assert_no_text "está trabajando"
+    assert_selector "[data-decision='1']"
+  end
+
+  test "cerrar publica el acta y el evolutivo entra en TANK" do
+    nueva = open_initiative
+    turn_on(nueva, "Adelante.")
+
+    click_on "CERRAR Y PASAR A TANK"
+
+    assert_current_path project_initiative_path("vivla", nueva.slug)
+    assert_text "cerrada"
+    assert_text "entra en TANK"
+    assert_predicate nueva.reload, :at_tank?
+  end
+
+  # La decisión del bloque: se cierra con abiertas, y el aviso lo dice en vez de
+  # impedirlo. Ese arrastre es el mecanismo entero.
+  test "se cierra con decisiones abiertas, avisando de lo que se arrastra" do
+    nueva = open_initiative
+    turn_on(nueva, "Adelante.")
+
+    assert_text "Se cierra con 1 decisión abierta"
+    click_on "CERRAR Y PASAR A TANK"
+
+    assert_text "sin contestar"
+    assert_text "MORFEO las levantará"
+  end
+
+  test "y un acta sin ninguna decisión no ofrece cerrarse" do
+    open_nueva
+
+    assert_no_button "CERRAR Y PASAR A TANK"
+  end
+
   private
+    # Un evolutivo recién abierto: en `need`, sin acta y sin decisiones.
+    def open_initiative
+      Initiatives::Open.call(
+        project: Project.find_by!(slug: "vivla"), title: "Cambio nuevo",
+        repositories: [ Repository.find_by!(name: "booking-core") ],
+        actor: "test")
+    end
+
+    def open_nueva
+      nueva = open_initiative
+      visit project_initiative_acta_path("vivla", nueva.slug)
+      assert_selector "h1", text: "Acta de decisiones"
+      nueva
+    end
+
+    def turn_on(initiative, message)
+      visit project_initiative_acta_path("vivla", initiative.slug)
+      fill_in "message", with: message
+      click_on "Responder al ARQUITECTO"
+      assert_text "Turno registrado"
+    end
+
     def open_acta
       visit project_initiative_acta_path("vivla", "precio-festivos")
       assert_selector "h1", text: "Acta de decisiones"
