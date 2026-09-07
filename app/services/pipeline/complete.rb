@@ -47,6 +47,6 @@ class Pipeline::Complete
     # `Artifacts::Key.prefix_for` existía desde F0 sin que lo usara nadie.
     def prefix
       Artifacts::Key.prefix_for(client: initiative.project.slug,
-                                initiative: initiative.code)
+                                initiative: initiative.slug)
     end
 end

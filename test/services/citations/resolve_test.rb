@@ -137,6 +137,45 @@ class Citations::ResolveTest < ActiveSupport::TestCase
       Citations::Parse.call!("[src:meet/2026-05-02@22:40]"), project: propio)
   end
 
+  # F11 · UNA CITA DE ARTEFACTO SE PUEDE ESCRIBIR DE DOS FORMAS, y las dos dan lo
+  # mismo: por el `code` del artefacto —que es lo que llevan dentro las citas ya
+  # emitidas— o por el NOMBRE de su evolutivo, que es la forma nueva.
+  #
+  # El orden importa y está fijado en `Resolve#artifact`: primero el código.
+  # Lo emitido no puede dejar de resolver.
+  test "resuelve por el codigo del artefacto y por el nombre del evolutivo" do
+    evolutivo = build_initiative(client: @client, code: "ev-777",
+                                 slug: "precio-festivos")
+    spec = build_artifact(initiative: evolutivo, kind: :spec, version: 2)
+
+    por_codigo = Citations::Resolve.call(
+      Citations::Parse.call!("[src:spec/#{spec.code}]"), project: project_for(@client))
+    por_nombre = Citations::Resolve.call(
+      Citations::Parse.call!("[src:spec/precio-festivos]"), project: project_for(@client))
+
+    assert_equal spec, por_codigo
+    assert_equal spec, por_nombre
+  end
+
+  # Por nombre también gana la última versión: es la vigente, igual que por código.
+  test "por nombre tambien resuelve contra la ultima version" do
+    evolutivo = build_initiative(client: @client, slug: "precio-festivos")
+    build_artifact(initiative: evolutivo, kind: :spec, version: 1)
+    cuarta = build_artifact(initiative: evolutivo, kind: :spec, version: 4)
+
+    assert_equal cuarta, Citations::Resolve.call(
+      Citations::Parse.call!("[src:spec/precio-festivos]"), project: project_for(@client))
+  end
+
+  # Y el nombre no cruza la frontera, como no la cruza nada.
+  test "el nombre de un evolutivo de otro proyecto no resuelve" do
+    ajeno = build_initiative(project: build_own_project, slug: "precio-festivos")
+    build_artifact(initiative: ajeno, kind: :spec)
+
+    assert_nil Citations::Resolve.call(
+      Citations::Parse.call!("[src:spec/precio-festivos]"), project: project_for(@client))
+  end
+
   test "una cita derivada resuelve contra la ÚLTIMA versión del artefacto" do
     build_artifact(initiative: @initiative, kind: :spec, version: 1)
     cuarta = build_artifact(initiative: @initiative, kind: :spec, version: 4)

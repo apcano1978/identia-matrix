@@ -209,9 +209,16 @@ namespace :matrix do
           "Ponlo a `platform` para hablar con identia-platform de verdad."
   end
 
-  desc "Ancla e indexa los repositorios de un evolutivo. Ej: matrix:index[ev-031]"
+  # Un evolutivo se nombra por su SLUG desde F11, pero el runbook y las guías
+  # llevan años escritos con `ev-NNN` — y el código sigue existiendo. Se aceptan
+  # los dos: primero el nombre, que es la forma nueva, y el código de respaldo.
+  def initiative_named(reference)
+    Initiative.find_by(slug: reference) || Initiative.find_by!(code: reference)
+  end
+
+  desc "Ancla e indexa los repositorios de un evolutivo. Ej: matrix:index[precio-festivos]"
   task :index, [ :code ] => :environment do |_task, args|
-    initiative = Initiative.find_by!(code: args.fetch(:code))
+    initiative = initiative_named(args.fetch(:code))
 
     puts "#{initiative.code} · #{initiative.platform_client.slug} · " \
          "fuente #{Repositories::Source.real? ? 'remota' : 'falsa'}"
@@ -259,7 +266,8 @@ namespace :matrix do
     vigentes.each { |c| puts "#{c.project.slug.ljust(20)} #{c}" }
   end
 
-  desc "Recorre un evolutivo por las doce etapas con el runtime falso"
+  desc "Recorre un evolutivo por las doce etapas con el runtime falso. " \
+       "Ej: matrix:walk_pipeline[precio-festivos,fail-once]"
   task :walk_pipeline, [ :code, :variant ] => :environment do |_task, args|
     code = args[:code].presence || "ev-999"
     # Se admite `--fail-once` además de `fail-once`: es como lo escribe la guía.

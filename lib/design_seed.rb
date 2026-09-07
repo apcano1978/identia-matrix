@@ -123,6 +123,10 @@ module DesignSeed
     initiative = Initiative.find_or_initialize_by(code: data[:code])
     client = client_for(data[:client])
 
+    # El slug SOLO AL CREAR: `FrozenSlug` lo congela después, y con razón — va
+    # dentro de las claves de los artefactos que este mismo seed publica.
+    initiative.slug = data[:slug] || data[:code] if initiative.new_record?
+
     initiative.assign_attributes(
       project_id: project_for(client).id,
       platform_project_id: Platform::Project.find_by(
@@ -489,7 +493,7 @@ module DesignSeed
     code = Artifacts::Key.code(kind: kind, number: number || initiative.number,
                                round: round)
     key = Artifacts::Key.build(client: initiative.project.slug,
-                               initiative: initiative.code, code: code,
+                               initiative: initiative.slug, code: code,
                                version: version)
     body ||= body_for(kind, initiative)
 

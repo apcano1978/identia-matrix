@@ -63,7 +63,7 @@ module Artifacts
         code = Key.code(kind: kind, round: round,
                         number: number || initiative.number)
         version ||= next_version_for(initiative, code)
-        key = Key.build(client: project.slug, initiative: initiative.code,
+        key = Key.build(client: project.slug, initiative: initiative.slug,
                         code: code, version: version)
 
         refuse_republication!(key)
@@ -76,7 +76,12 @@ module Artifacts
         #     bucket tiene que poder saber qué es sin consultar a matrix.
         attributes = FrontMatter.build(
           key: key, kind: kind, code: code, version: version,
-          initiative: initiative.code, client: client.slug,
+          # El MISMO string que el segundo segmento de la clave. Si aquí fuera
+          # el código y allí el nombre, el fichero se contradiría consigo mismo
+          # —y el front-matter existe para que quien lo saque del bucket sepa qué
+          # es sin preguntarle a matrix—. Nadie lo lee de vuelta para buscar el
+          # evolutivo: es informativo.
+          initiative: initiative.slug, client: client.slug,
           produced_by: produced_by_run&.code, produced_at: produced_at,
           derives_from: storage_key_of(derives_from), checksum: checksum)
         document = FrontMatter.render(attributes, body)

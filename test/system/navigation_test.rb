@@ -21,8 +21,8 @@ class NavigationTest < ApplicationSystemTestCase
     assert_arrived_at client_path("vivla"), crumb: "clients/vivla"
 
     click_on "Unificar precios y calendario"
-    assert_arrived_at client_initiative_path("vivla", "ev-031"),
-                      crumb: "clients/vivla/ev-031"
+    assert_arrived_at client_initiative_path("vivla", "precio-festivos"),
+                      crumb: "clients/vivla/precio-festivos"
 
     click_on "booking-core"
     assert_arrived_at client_repository_path("vivla", "booking-core"),
@@ -63,7 +63,7 @@ class NavigationTest < ApplicationSystemTestCase
   end
 
   test "el rail lleva a las tres secciones desde cualquier pantalla" do
-    visit client_initiative_path("vivla", "ev-031")
+    visit client_initiative_path("vivla", "precio-festivos")
 
     click_on "AGENTES"
     assert_arrived_at agents_path, crumb: "agents/tank"

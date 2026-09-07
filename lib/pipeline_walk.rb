@@ -67,12 +67,28 @@ module PipelineWalk
     private
       attr_reader :variant, :log
 
-      def prepare
-        initiative = Initiative.find_or_create_by!(code: @code) do |created|
-          created.project = @project
-          created.title = "Recorrido de prueba · #{variant}"
-          created.opened_at = Time.current
+      # Solo se CREA cuando la referencia es un código. Un `ev-999` que no existe
+      # es el caso normal de esta tarea: fabrica el recorrido de prueba. Un
+      # nombre que no existe no se puede fabricar —`Matrix::Sequence` es quien
+      # reparte códigos, y no se le pide uno por la puerta de atrás— así que se
+      # dice, en vez de reventar con un error de validación que no lo explica.
+      def crear_recorrido_sintetico
+        unless @code.match?(/\Aev-\d{3,}\z/)
+          abort "«#{@code}» no existe y no se puede crear: para fabricar un " \
+                "recorrido de prueba dale un código (`ev-999`), no un nombre."
         end
+
+        Initiative.create!(project: @project, code: @code, slug: @code,
+                           title: "Recorrido de prueba · #{variant}",
+                           opened_at: Time.current)
+      end
+
+      # Admite las dos formas de nombrar un evolutivo: el NOMBRE, que es la de
+      # F11, y el código, que es como lo escriben el runbook y las guías.
+      def prepare
+        initiative = Initiative.find_by(project: @project, slug: @code) ||
+                     Initiative.find_by(code: @code) ||
+                     crear_recorrido_sintetico
 
         @project.repositories.order(:name).each_with_index do |repository, index|
           InitiativeRepository.find_or_create_by!(
@@ -163,8 +179,8 @@ module PipelineWalk
         round = kind == :verify ? initiative.qa_cycles_consumed + 1 : nil
         code = Artifacts::Key.code(kind: kind, number: initiative.number,
                                    round: round)
-        key = Artifacts::Key.build(client: @client.slug,
-                                   initiative: initiative.code, code: code,
+        key = Artifacts::Key.build(client: @project.slug,
+                                   initiative: initiative.slug, code: code,
                                    version: version)
         return Artifact.find_by(storage_key: key) if Artifact.exists?(storage_key: key)
 

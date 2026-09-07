@@ -6,7 +6,7 @@ class SourcesTest < ApplicationSystemTestCase
   setup do
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
-    visit client_initiative_sources_path("vivla", "ev-031")
+    visit client_initiative_sources_path("vivla", "precio-festivos")
   end
 
   test "dice de quién es el ámbito y que no se escribe en él" do
@@ -78,11 +78,11 @@ class SourcesTest < ApplicationSystemTestCase
   end
 
   test "se llega desde el evolutivo y se vuelve" do
-    visit client_initiative_path("vivla", "ev-031")
+    visit client_initiative_path("vivla", "precio-festivos")
     click_on "sources"
 
     assert_text "Fuentes en ámbito"
-    assert_text "clients/vivla/ev-031/sources"
+    assert_text "clients/vivla/precio-festivos/sources"
 
     click_on "← ev-031"
 

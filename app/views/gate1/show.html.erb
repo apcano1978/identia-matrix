@@ -1,5 +1,5 @@
 <% signed = @signature.present? %>
-<% breadcrumb "clients", @client.slug, @initiative.code, "gate-1" %>
+<% breadcrumb "clients", @client.slug, @initiative.slug, "gate-1" %>
 <% content_for :title, "identia-matrix · GATE 1 · #{@initiative.code}" %>
 
 <%= render "shared/view_bar",

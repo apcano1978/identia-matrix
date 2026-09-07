@@ -16,7 +16,7 @@ module InitiativeScoped
   private
     def load_initiative
       @client = Platform::Client.find_by!(slug: params[:client_slug])
-      @initiative = @client.initiatives.find_by!(code: params[:initiative_code])
+      @initiative = @client.initiatives.find_by!(slug: params[:initiative_slug])
     end
 
     # El DoD vigente: el de versión más alta. Las anteriores se leen desde el

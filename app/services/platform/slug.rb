@@ -21,8 +21,15 @@ module Platform::Slug
   #
   # `fallback` lleva el `platform_id` dentro para que sea único y estable: el
   # mismo documento produce el mismo slug la próxima vez que se sincronice.
-  def derive(model, title, fallback:)
-    free(model, normalize(title).presence || normalize(fallback))
+  # `scope` acota la búsqueda de colisiones. Es ADITIVO: sin él la unicidad se
+  # mira sobre la tabla entera, que es como se comportaba antes de F11 y como
+  # siguen necesitándolo documentos y reuniones.
+  #
+  # Lo estrena `Initiative`, cuyo slug es único DENTRO del proyecto: dos
+  # proyectos pueden tener cada uno su `rediseno-interfaz`, y sin el ámbito el
+  # segundo se llamaría `rediseno-interfaz-2` sin motivo.
+  def derive(model, title, fallback:, scope: {})
+    free(model, normalize(title).presence || normalize(fallback), scope)
   end
 
   def normalize(text) = text.to_s.parameterize
@@ -34,14 +41,14 @@ module Platform::Slug
   #
   # El 1 no se usa: el primero es el slug pelado, y `acta-precios-1` daría a
   # entender que existe un `acta-precios` distinto.
-  def free(model, base)
-    return base unless taken?(model, base)
+  def free(model, base, scope = {})
+    return base unless taken?(model, base, scope)
 
     (2..).each do |suffix|
       candidate = "#{base}-#{suffix}"
-      return candidate unless taken?(model, candidate)
+      return candidate unless taken?(model, candidate, scope)
     end
   end
 
-  def taken?(model, slug) = model.exists?(slug: slug)
+  def taken?(model, slug, scope = {}) = model.where(scope).exists?(slug: slug)
 end

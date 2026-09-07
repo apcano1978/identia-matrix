@@ -7,7 +7,7 @@ class InitiativesController < ApplicationController
                          .includes(:stage_entries, :escalations, :artifacts,
                                    :platform_project,
                                    initiative_repositories: :repository)
-                         .find_by!(code: params[:code])
+                         .find_by!(slug: params[:slug])
 
     # En ORDEN DE PIPELINE, no por fecha: el seed los crea en la misma
     # transacción y `created_at` no los distingue. El último de la lista es el

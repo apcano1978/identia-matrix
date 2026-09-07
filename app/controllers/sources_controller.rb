@@ -9,7 +9,7 @@ class SourcesController < ApplicationController
     @client = Platform::Client.find_by!(slug: params[:client_slug])
     @initiative = @client.initiatives
                          .includes(initiative_repositories: :repository)
-                         .find_by!(code: params[:initiative_code])
+                         .find_by!(slug: params[:initiative_slug])
 
     @links = @initiative.initiative_repositories
                         .sort_by { |link| link.repository.name }

@@ -21,7 +21,7 @@
   </div>
 
   <% initiatives.each do |initiative| %>
-    <%= link_to client_initiative_path(client.slug, initiative.code),
+    <%= link_to client_initiative_path(client.slug, initiative.slug),
                 class: "grid gap-2.5 px-3 py-2.5 items-center border-b
                         border-[rgba(240,233,215,.07)] last:border-b-0",
                 style: "grid-template-columns: #{columns}" do %>

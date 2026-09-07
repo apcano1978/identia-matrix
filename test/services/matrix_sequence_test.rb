@@ -16,7 +16,8 @@ class MatrixSequenceTest < ActiveSupport::TestCase
     codigo = Matrix::Sequence.next_initiative_code
 
     assert_match(/\Aev-\d{3,}\z/, codigo)
-    assert Initiative.new(code: codigo, title: "x", opened_at: Time.current,
+    assert Initiative.new(code: codigo, slug: codigo, title: "x",
+                          opened_at: Time.current,
                           project: project_for(build_client)).valid?
   end
 

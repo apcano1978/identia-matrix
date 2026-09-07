@@ -83,7 +83,7 @@ Rails.application.routes.draw do
     # Cuelgan del CLIENTE y no de la raíz: es donde el evolutivo y el
     # repositorio nacen, y es lo que hace que la frontera de cliente entre por
     # la ruta en vez de por un parámetro que alguien pueda cambiar.
-    resources :initiatives, only: %i[show create], param: :code do
+    resources :initiatives, only: %i[show create], param: :slug do
       # Lo que un agente puede leer y citar para este evolutivo. Cuelga del
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.
       resources :sources, only: :index

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -375,12 +375,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_090000) do
     t.bigint "platform_project_id"
     t.bigint "project_id", null: false
     t.integer "qa_cycles_consumed", default: 0, null: false
+    t.string "slug", null: false
     t.datetime "stage_changed_at"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_initiatives_on_code", unique: true
     t.index ["platform_project_id"], name: "index_initiatives_on_platform_project_id"
     t.index ["project_id", "current_stage"], name: "index_initiatives_on_project_id_and_current_stage"
+    t.index ["project_id", "slug"], name: "index_initiatives_on_project_id_and_slug", unique: true
     t.index ["project_id"], name: "index_initiatives_on_project_id"
   end
 

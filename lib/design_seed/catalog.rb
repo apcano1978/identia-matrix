@@ -272,8 +272,14 @@ module DesignSeed::Catalog
   #
   # `exec` con marca `✓` se traduce a `done`, no a `active`. Es el tercer resto
   # de la maqueta que no se copia: pinta `»` en nodos ya completos.
+  # ⚠ El `slug` es el NOMBRE, y va dentro de la clave de cada artefacto que
+  # produzcan. Cambiarlo aquí NO renombra nada: `FrozenSlug` lo congela al crear,
+  # y una resiembra sobre una base ya sembrada choca contra el índice único de
+  # `artifacts`. Para cambiarlo hay que recrear la base.
+  #
+  # `precio-festivos` es el que usa la maqueta; los otros nueve salen del título.
   INITIATIVES = [
-    { code: "ev-031", client: "vivla", project: 2291,
+    { code: "ev-031", slug: "precio-festivos", client: "vivla", project: 2291,
       title: "Unificar precios y calendario", opened_on: "2026-05-02",
       repositories: %w[booking-core owner-web pricing-svc],
       pinned: { "booking-core" => "4f2a9c1", "owner-web" => "e91b330",
@@ -299,7 +305,7 @@ module DesignSeed::Catalog
         { stage: "seraph_verification", iteration: 3, status: "failed",
           summary: "✕1 · c3", metric: "↺" }
       ] },
-    { code: "ev-014", client: "vivla", project: 2104,
+    { code: "ev-014", slug: "motor-disponibilidad", client: "vivla", project: 2104,
       title: "Motor de disponibilidad", opened_on: "2026-04-27",
       repositories: %w[booking-core], pinned: { "booking-core" => "4f2a9c1" },
       iteration: 2, qa_cycles: 1,
@@ -316,7 +322,7 @@ module DesignSeed::Catalog
       ],
       prior: [ { stage: "neo", iteration: 1, status: "done",
                  summary: "spec-014 · v3", metric: "✓" } ] },
-    { code: "ev-027", client: "vivla", project: 2110,
+    { code: "ev-027", slug: "portal-copropietario", client: "vivla", project: 2110,
       title: "Portal del copropietario", opened_on: "2026-04-14",
       repositories: %w[owner-web], pinned: { "owner-web" => "e91b330" },
       pipe: [
@@ -332,7 +338,7 @@ module DesignSeed::Catalog
         [ "done", "validado por ap@identia", "18 may" ],
         [ "act", "close-027 v1 · 2 desvíos", "5h" ]
       ] },
-    { code: "ev-009", client: "vivla", project: 1987,
+    { code: "ev-009", slug: "alta-socio", client: "vivla", project: 1987,
       title: "Alta de socio autoservicio", opened_on: "2026-04-02",
       repositories: %w[booking-core owner-web],
       pinned: { "booking-core" => "9c04b11", "owner-web" => "71ff230" },
@@ -350,7 +356,7 @@ module DesignSeed::Catalog
         [ "done", "close-009 v1", "12 abr" ],
         [ "done", "artifacts://vivla/ev-009", "12 abr" ]
       ] },
-    { code: "ev-002", client: "vivla", project: 1840,
+    { code: "ev-002", slug: "calendario-compartido", client: "vivla", project: 1840,
       title: "Calendario compartido base", opened_on: "2026-02-18",
       repositories: %w[booking-core], pinned: { "booking-core" => "3e81f5c" },
       pipe: [
@@ -367,7 +373,7 @@ module DesignSeed::Catalog
         [ "done", "close-002 v2", "04 mar" ],
         [ "done", "artifacts://vivla/ev-002", "04 mar" ]
       ] },
-    { code: "ev-041", client: "caser", project: 2277,
+    { code: "ev-041", slug: "triaje-asistido", client: "caser", project: 2277,
       title: "Triaje asistido", opened_on: "2026-03-12",
       repositories: %w[triaje-core], pinned: { "triaje-core" => "a02f781" },
       pipe: [
@@ -379,7 +385,7 @@ module DesignSeed::Catalog
         [ "done", "pkg-031 · 14 tareas · 2 migraciones", "✓" ],
         [ "gate", "espera tu firma", "3d" ]
       ] },
-    { code: "ev-019", client: "navantia", project: 2281,
+    { code: "ev-019", slug: "migracion-plm", client: "navantia", project: 2281,
       title: "Migración PLM", opened_on: "2026-04-03",
       repositories: %w[plm-core], pinned: { "plm-core" => "5b18c73" },
       pipe: [
@@ -391,7 +397,7 @@ module DesignSeed::Catalog
         [ "done", "pkg-029 · 9 tareas", "✓" ],
         [ "gate", "espera tu firma", "1d" ]
       ] },
-    { code: "ev-022", client: "grifols", project: 2255,
+    { code: "ev-022", slug: "trazabilidad-lote", client: "grifols", project: 2255,
       title: "LIMS · trazabilidad de lote", opened_on: "2026-03-20",
       repositories: %w[lims-core], pinned: { "lims-core" => "c4d9e02" },
       pipe: [
@@ -406,7 +412,7 @@ module DesignSeed::Catalog
         [ "done", "✓12 de 12 · conforme", "ayer" ],
         [ "gate2", "guia-pruebas-022 · 4/7 pasos", "18h" ]
       ] },
-    { code: "ev-024", client: "mango", project: 2263,
+    { code: "ev-024", slug: "omnicanal-inventario", client: "mango", project: 2263,
       title: "Omnicanal · inventario", opened_on: "2026-03-28",
       repositories: %w[omni-core], pinned: { "omni-core" => "9f31a7d" },
       # Tres `?` y NINGÚN ciclo consumido: los no concluyentes no cuentan.
@@ -423,7 +429,7 @@ module DesignSeed::Catalog
         [ "esc", "?3 · entorno inestable", "1d" ]
       ],
       escalation: :inconclusive_environment },
-    { code: "ev-038", client: "cirsa", project: 2302, title: "BI de sala",
+    { code: "ev-038", slug: "bi-de-sala", client: "cirsa", project: 2302, title: "BI de sala",
       opened_on: "2026-08-01", repositories: %w[bi-ingest], pinned: {},
       pipe: [
         %w[done] + [ "", "01 ago" ],

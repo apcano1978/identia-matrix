@@ -13,7 +13,7 @@ class GatesTest < ApplicationSystemTestCase
 
   # ev-031 está firmado desde el seed, así que enseña el segundo estado.
   test "GATE 1 firmado enseña el registro, no la acción" do
-    open_gate_1 "vivla", "ev-031"
+    open_gate_1 "vivla", "precio-festivos"
 
     assert_text "REGISTRO DE FIRMA"
     assert_text "Firmado. La ejecución quedó autorizada."
@@ -23,7 +23,7 @@ class GatesTest < ApplicationSystemTestCase
 
   # Se firma sobre el commit contra el que se trabajó, no sobre el ejecutado.
   test "y los commits sellados son los anclados, no los ejecutados" do
-    open_gate_1 "vivla", "ev-031"
+    open_gate_1 "vivla", "precio-festivos"
 
     assert_text "4f2a9c1"
     assert_text "e91b330"
@@ -32,7 +32,7 @@ class GatesTest < ApplicationSystemTestCase
   end
 
   test "la secuencia de despliegue solo sale en multi-repo, con su ventana" do
-    open_gate_1 "vivla", "ev-031"
+    open_gate_1 "vivla", "precio-festivos"
 
     assert_text "SECUENCIA DE DESPLIEGUE"
     assert_text "Primero el proveedor de precio"
@@ -42,7 +42,7 @@ class GatesTest < ApplicationSystemTestCase
   # La identidad se congela: el registro sigue diciendo quién firmó aunque esa
   # persona cambie de cargo o desaparezca de platform.
   test "el registro conserva la identidad y la frase que se firmó" do
-    open_gate_1 "vivla", "ev-031"
+    open_gate_1 "vivla", "precio-festivos"
 
     assert_text "Firmé la entrega de PKG-045"
     assert_text @user.identity_snapshot
@@ -52,7 +52,7 @@ class GatesTest < ApplicationSystemTestCase
   # ── GATE 1 · firmar de verdad ─────────────────────────────────────────────
 
   test "un evolutivo sin firmar enseña la parada obligatoria" do
-    open_gate_1 "caser", "ev-041"
+    open_gate_1 "caser", "triaje-asistido"
 
     assert_text "PARADA OBLIGATORIA"
     assert_text "Nada se ejecuta sin tu firma."
@@ -61,7 +61,7 @@ class GatesTest < ApplicationSystemTestCase
   end
 
   test "firmar exige la contraseña, y una incorrecta no sella nada" do
-    open_gate_1 "caser", "ev-041"
+    open_gate_1 "caser", "triaje-asistido"
 
     fill_in "password", with: "la que no es"
     click_on "firmar y liberar"
@@ -72,7 +72,7 @@ class GatesTest < ApplicationSystemTestCase
   end
 
   test "firmar con la contraseña correcta sella y avanza" do
-    open_gate_1 "caser", "ev-041"
+    open_gate_1 "caser", "triaje-asistido"
 
     fill_in "password", with: Auth::FakeSource::DEFAULT_PASSWORD
     click_on "firmar y liberar"
@@ -88,7 +88,7 @@ class GatesTest < ApplicationSystemTestCase
     initiative = Initiative.find_by!(code: "ev-041")
     iteration = initiative.iteration
     cycles = initiative.qa_cycles_consumed
-    open_gate_1 "caser", "ev-041"
+    open_gate_1 "caser", "triaje-asistido"
 
     fill_in "note", with: "El orden de despliegue invierte los dos primeros."
     click_on "↺ devolver a TRINITY"
@@ -101,7 +101,7 @@ class GatesTest < ApplicationSystemTestCase
   end
 
   test "y exige decir qué corregir" do
-    open_gate_1 "caser", "ev-041"
+    open_gate_1 "caser", "triaje-asistido"
 
     assert_selector "input[name=note][required]"
   end
@@ -237,7 +237,7 @@ class GatesTest < ApplicationSystemTestCase
     end
 
     def open_gate_2
-      visit client_initiative_gate_2_path("vivla", "ev-031")
+      visit client_initiative_gate_2_path("vivla", "precio-festivos")
       assert_text "PASOS"
     end
 

@@ -1,4 +1,4 @@
-<% breadcrumb "clients", @client.slug, @initiative.code %>
+<% breadcrumb "clients", @client.slug, @initiative.slug %>
 <% content_for :title, "identia-matrix · #{@initiative.code}" %>
 
 <%= render "initiatives/view_bar", client: @client, initiative: @initiative,

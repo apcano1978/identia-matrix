@@ -7,7 +7,7 @@ class InitiativesTest < ApplicationSystemTestCase
   end
 
   test "los doce nodos se pintan con sus etiquetas fijas" do
-    open "ev-031"
+    open "precio-festivos"
 
     labels = all(".grid-pipeline-node span.block.font-medium").map(&:text)
     assert_equal [ "necesidad", "TANK", "NEO", "SERAPH · DoD", "MORFEO", "TRINITY",
@@ -18,39 +18,39 @@ class InitiativesTest < ApplicationSystemTestCase
   # El arco tiene coordenadas fijas de 44 px por nodo: si un nodo mide otra cosa,
   # apunta a la etapa equivocada y nadie se entera mirando.
   test "cada nodo mide 44 px, que es lo que el arco da por hecho" do
-    open "ev-031"
+    open "precio-festivos"
 
     assert_equal 44, evaluate_script(
       "document.querySelector('.grid-pipeline-node').offsetHeight")
   end
 
   test "el arco de ciclo QA sale apagado cuando el ciclo se resolvio" do
-    open "ev-031"
+    open "precio-festivos"
 
     assert_selector "svg text", text: "↺ ciclo 2 · resuelto"
   end
 
   test "y en terracota cuando sigue abierto" do
-    open "ev-014"
+    open "motor-disponibilidad"
 
     assert_selector "svg text", text: "↺ 1/2"
     assert_equal "#C98070", find("svg text")[:fill]
   end
 
   test "sin ciclos no hay arco" do
-    open "ev-027"
+    open "portal-copropietario"
 
     assert_no_selector "svg text"
   end
 
   test "el banner sale de los veredictos, no de un texto guardado" do
-    open "ev-031"
+    open "precio-festivos"
 
     assert_text "ciclo QA 2/2 · SERAPH dio conforme · c5 y c6 quedan ⊗"
   end
 
   test "el visor renderiza el markdown del artefacto" do
-    open "ev-031"
+    open "precio-festivos"
 
     assert_selector ".markdown-body h1", text: "Guía de pruebas manuales · ev-031"
     assert_selector ".markdown-body h2", text: "01 · Precio servido por pricing-svc"
@@ -61,24 +61,24 @@ class InitiativesTest < ApplicationSystemTestCase
   # veredictos, cobertura— que un visor de markdown no puede dar. El artefacto
   # sigue leyéndose desde el panel de ARTEFACTOS.
   test "las pestañas llevan a las pantallas de evidencia" do
-    open "ev-031"
+    open "precio-festivos"
     assert_text "guia-pruebas-031.md"
 
     click_on "dod"
 
-    assert_current_path client_initiative_definition_of_done_path("vivla", "ev-031")
+    assert_current_path client_initiative_definition_of_done_path("vivla", "precio-festivos")
     assert_selector "h1", text: "Definición de terminado"
   end
 
   test "y el artefacto del DoD se sigue leyendo desde el panel" do
-    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031", version: 2)
+    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031", version: 2)
 
     assert_text "dod-031.md"
     assert_selector ".markdown-body h1", text: "Definición de terminado"
   end
 
   test "y las de un evolutivo sin artefactos no navegan" do
-    open "ev-014"
+    open "motor-disponibilidad"
 
     assert_text "sin artefactos todavía"
     assert_selector "span.cursor-not-allowed", text: "dod"
@@ -90,10 +90,10 @@ class InitiativesTest < ApplicationSystemTestCase
   # `source` enseña el DOCUMENTO: la cabecera y el cuerpo, que es lo que hay en
   # el bucket. La numeración es real, no la 61 recortada de la maqueta.
   test "source enseña el markdown crudo, numerado y con su cabecera" do
-    visit client_initiative_path("vivla", "ev-031", artifact: "spec-031",
+    visit client_initiative_path("vivla", "precio-festivos", artifact: "spec-031",
                                                      view: "source")
 
-    assert_text "key: artifacts://vivla/ev-031/spec-031/v4.md"
+    assert_text "key: artifacts://vivla/precio-festivos/spec-031/v4.md"
     assert_text "checksum: sha256:"
     assert_selector "td", text: "1", match: :first
     assert_text "# Especificación · ev-031"
@@ -102,7 +102,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # §7.5 · el diff entre las dos versiones del DoD. Lo que cambió es que se
   # añadió el criterio c0, que es la historia que el seed ya contaba.
   test "el diff entre dod-031 v1 y v2 enseña el criterio que se añadió" do
-    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031",
+    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
                                                      version: 2, view: "diff")
 
     assert_text "comparando"
@@ -112,11 +112,11 @@ class InitiativesTest < ApplicationSystemTestCase
   end
 
   test "y se puede saltar entre las versiones de un artefacto" do
-    visit client_initiative_path("vivla", "ev-031", artifact: "dod-031",
+    visit client_initiative_path("vivla", "precio-festivos", artifact: "dod-031",
                                                      version: 2)
     click_on "v1"
 
-    assert_text "artifacts://vivla/ev-031/dod-031/v1.md"
+    assert_text "artifacts://vivla/precio-festivos/dod-031/v1.md"
     assert_selector ".markdown-body h2", text: "c1 · Precio resuelto en el motor"
     assert_no_selector ".markdown-body h2", text: "c0 · Compatibilidad entre servicios"
   end
@@ -124,7 +124,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # Un artefacto de una sola versión no ofrece el modo: no hay contra qué
   # comparar. Mismo tratamiento que las pestañas sin artefacto de F3.
   test "un artefacto de una sola versión no ofrece diff" do
-    visit client_initiative_path("vivla", "ev-031", artifact: "spec-031")
+    visit client_initiative_path("vivla", "precio-festivos", artifact: "spec-031")
 
     assert_selector "span.cursor-not-allowed", text: "diff"
     assert_no_selector "a", text: "diff"
@@ -136,7 +136,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # Las cifras del panel de la maqueta, sobre el seed: la spec se apoya en 9
   # citas de origen y 3 derivadas.
   test "REFS cuenta los dos niveles de procedencia" do
-    open_refs "ev-031"
+    open_refs "precio-festivos"
 
     assert_text "◆ ORIGEN"
     assert_text "↳ DERIVADO"
@@ -147,7 +147,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # El bloque que justifica que el calificador de repositorio sea obligatorio.
   # El commit va una vez por repositorio, no por cita.
   test "y agrupa el código por repositorio, con su commit fijado" do
-    open_refs "ev-031"
+    open_refs "precio-festivos"
     panel = find("[data-pane='refs']")
 
     assert panel.has_text?("booking-core"), "falta booking-core"
@@ -158,7 +158,7 @@ class InitiativesTest < ApplicationSystemTestCase
   end
 
   test "el extracto de origen resalta la frase citada" do
-    open_refs "ev-031"
+    open_refs "precio-festivos"
 
     assert_selector "[data-pane='refs']", text: "[src:doc/acta-precios#p2]"
     assert_selector "[data-pane='refs'] mark",
@@ -167,30 +167,30 @@ class InitiativesTest < ApplicationSystemTestCase
 
   # 3 de 12 es el 25 % justo: el umbral es inclusive y la maqueta avisa ahí.
   test "y avisa cuando el corpus empieza a alimentarse de si mismo" do
-    open_refs "ev-031"
+    open_refs "precio-festivos"
 
     assert_text "3 de 12 citas son derivadas"
   end
 
   test "un evolutivo sin artefactos no finge tener procedencia" do
-    open "ev-014"
+    open "motor-disponibilidad"
     click_on "REFS"
 
     assert_text "Sin artefacto seleccionado"
   end
 
   test "META y LOG cambian sin recargar" do
-    open "ev-031"
+    open "precio-festivos"
     assert_text "REPOSITORIOS ANCLADOS"
 
     click_on "LOG"
 
     assert_no_text "REPOSITORIOS ANCLADOS"
-    assert_current_path client_initiative_path("vivla", "ev-031")
+    assert_current_path client_initiative_path("vivla", "precio-festivos")
   end
 
   test "el nexo con platform es un enlace de salida, no una edicion" do
-    open "ev-031"
+    open "precio-festivos"
 
     assert_text "platform ↗ proj-2291"
     # La aserción es sobre PLATFORM, no sobre la aplicación entera: desde F4
@@ -205,7 +205,7 @@ class InitiativesTest < ApplicationSystemTestCase
   # ── El conflicto de nivel · INVARIANTE 8 ──────────────────────────────────
 
   test "el conflicto de nivel enfrenta las dos citas y da la razón al origen" do
-    open_refs "ev-031", artifact: "pkg-045"
+    open_refs "precio-festivos", artifact: "pkg-045"
     panel = find("[data-pane='refs']")
 
     assert panel.has_text?("CONFLICTO DE NIVEL")
@@ -215,7 +215,7 @@ class InitiativesTest < ApplicationSystemTestCase
   end
 
   test "y se resuelve a favor del origen, que es la única salida que hay" do
-    open_refs "ev-031", artifact: "pkg-045"
+    open_refs "precio-festivos", artifact: "pkg-045"
 
     assert_no_text "resolver · gana el derivado"
     click_on "resolver · gana el origen"
@@ -233,7 +233,7 @@ class InitiativesTest < ApplicationSystemTestCase
     initiative = Initiative.find_by!(code: "ev-031")
     initiative.update_columns(current_stage: "tank", current_stage_status: "active")
 
-    open "ev-031"
+    open "precio-festivos"
 
     assert_button "▶ poner a trabajar a TANK"
   end
@@ -244,7 +244,7 @@ class InitiativesTest < ApplicationSystemTestCase
     initiative = Initiative.find_by!(code: "ev-031")
     initiative.update_columns(current_stage: "gate_1", current_stage_status: "active")
 
-    open "ev-031"
+    open "precio-festivos"
 
     assert_text "Esta etapa la mueve una persona"
     assert_no_button "▶ poner a trabajar a TANK"
@@ -259,23 +259,24 @@ class InitiativesTest < ApplicationSystemTestCase
                      iteration: initiative.iteration, code: "tank/ev-031-context-9",
                      status: :running, started_at: Time.current)
 
-    open "ev-031"
+    open "precio-festivos"
 
     assert_text "está trabajando"
     assert_no_button "▶ poner a trabajar a TANK"
   end
 
   private
-    def open(code)
-      visit client_initiative_path("vivla", code)
+    # Por NOMBRE desde F11: es lo que dice la URL.
+    def open(slug)
+      visit client_initiative_path("vivla", slug)
       assert_text "PIPELINE"
     end
 
     # REFS enseña la procedencia del artefacto que el visor tiene abierto. El
     # panel de la maqueta es el de la SPEC, que no es el que se abre por defecto
     # —ese es el último del pipeline—, así que se pide explícitamente.
-    def open_refs(code, artifact: "spec-031")
-      visit client_initiative_path("vivla", code, artifact: artifact)
+    def open_refs(slug, artifact: "spec-031")
+      visit client_initiative_path("vivla", slug, artifact: artifact)
       assert_text "PIPELINE"
       click_on "REFS"
       assert_text "TODAS"

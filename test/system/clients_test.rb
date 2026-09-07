@@ -5,6 +5,10 @@ class ClientsTest < ApplicationSystemTestCase
     DesignSeed.call
     sign_in_as Platform::User.find_by!(platform_id: 1)
     click_on "CLIENTES"
+    # La barrera del setup. Sin ella el primer clic de cada test puede caer sobre
+    # el panel todavía, y el fallo sale en un test distinto cada vez según el
+    # orden — que es lo que hace difícil de leer esta familia de fallos.
+    assert_text "6 clientes"
   end
 
   test "las seis tarjetas se pintan con sus evolutivos y repositorios" do
@@ -37,11 +41,11 @@ class ClientsTest < ApplicationSystemTestCase
     open_vivla
 
     # ev-031 toca los tres y sigue vivo: tres puntos en oro.
-    assert_equal %w[oro oro oro], cells_for("ev-031")
+    assert_equal %w[oro oro oro], cells_for("precio-festivos")
     # ev-014 toca solo booking-core.
-    assert_equal %w[oro vacío vacío], cells_for("ev-014")
+    assert_equal %w[oro vacío vacío], cells_for("motor-disponibilidad")
     # ev-009 tocó dos y ya cerró: verde, no oro.
-    assert_equal %w[verde verde vacío], cells_for("ev-009")
+    assert_equal %w[verde verde vacío], cells_for("alta-socio")
   end
 
   test "el pie cuenta los multi-repo sobre todos, no sobre la pagina" do
@@ -94,7 +98,7 @@ class ClientsTest < ApplicationSystemTestCase
   test "de la matriz se entra al evolutivo y del repositorio a su ficha" do
     open_vivla
     click_on "Motor de disponibilidad"
-    assert_current_path client_initiative_path("vivla", "ev-014")
+    assert_current_path client_initiative_path("vivla", "motor-disponibilidad")
 
     page.go_back
     click_on "booking-core"
@@ -140,8 +144,9 @@ class ClientsTest < ApplicationSystemTestCase
 
     def matrix_columns = all("[data-matrix-column]").map(&:text)
 
-    def cells_for(code)
-      find("a[href$='/#{code}']").all("span.text-center span").map do |cell|
+    # Por NOMBRE: es lo que lleva la URL desde F11.
+    def cells_for(slug)
+      find("a[href$='/#{slug}']").all("span.text-center span").map do |cell|
         next "vacío" if cell.text == "·"
 
         cell[:class].include?("text-glyph-done") ? "verde" : "oro"

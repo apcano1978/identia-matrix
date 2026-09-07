@@ -59,7 +59,7 @@ class ShellSmokeTest < ActionDispatch::IntegrationTest
 
     { root_path => "status", clients_path => "clients",
       client_path("vivla") => "clients/vivla",
-      client_initiative_path("vivla", "ev-031") => "clients/vivla/ev-031",
+      client_initiative_path("vivla", "precio-festivos") => "clients/vivla/precio-festivos",
       client_repository_path("vivla", "booking-core") => "clients/vivla/repos/booking-core",
       agents_path => "agents/tank" }.each do |path, crumb|
       get path

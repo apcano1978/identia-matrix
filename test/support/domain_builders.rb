@@ -87,12 +87,16 @@ module DomainBuilders
                        **attributes)
   end
 
-  def build_initiative(client: nil, project: nil, code: nil, **attributes)
+  def build_initiative(client: nil, project: nil, code: nil, slug: nil, **attributes)
     client ||= project&.platform_client || build_client
+    code ||= "ev-#{format('%03d', next_platform_id % 1000)}"
 
     Initiative.create!(
       project: project || project_for(client),
-      code: code || "ev-#{format('%03d', next_platform_id % 1000)}",
+      code: code,
+      # El código es un slug válido, así que sirve de nombre por defecto. Los
+      # tests que prueben la resolución por nombre pasan el suyo.
+      slug: slug || code,
       title: "Un evolutivo", opened_at: Time.current, **attributes)
   end
 

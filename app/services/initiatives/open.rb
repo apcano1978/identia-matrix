@@ -65,12 +65,30 @@ class Initiatives::Open
   end
 
   def create_initiative
+    code = Matrix::Sequence.next_initiative_code
+
     Initiative.create!(
       project: project,
       platform_project: platform_project,
-      code: Matrix::Sequence.next_initiative_code,
+      code: code,
+      slug: slug_for(code),
       title: title,
       opened_at: Time.current)
+  end
+
+  # El NOMBRE, derivado del título y acotado al proyecto.
+  #
+  # Se congela al crear —va dentro de las claves de los artefactos que este
+  # evolutivo produzca— así que esta es la única oportunidad de elegirlo. El
+  # formulario de alta lo enseñará y dejará editarlo en F11 · B7; hasta entonces
+  # se deriva y ya.
+  #
+  # El respaldo es el CÓDIGO, y es un respaldo bueno: `ev-031` es un slug válido,
+  # así que un título del que `parameterize` no saque nada aprovechable —«···»—
+  # deja un evolutivo con nombre utilizable en vez de una fila sin slug.
+  def slug_for(code)
+    Platform::Slug.derive(Initiative, title, fallback: code,
+                                             scope: { project_id: project&.id })
   end
 
   def link_repositories(initiative)

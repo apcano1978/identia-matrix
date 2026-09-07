@@ -4,6 +4,8 @@
 # No es hijo de Repository ni padre suyo: se cruzan en `initiative_repositories`,
 # que es la matriz evolutivo × repositorio de la ficha de cliente.
 class Initiative < ApplicationRecord
+  include FrozenSlug
+
   # Las doce etapas, en orden. El orden ES el dato: `Pipeline::Advance` avanza
   # por él y los saltos hacia atrás se miden contra él.
   STAGES = %w[
@@ -53,6 +55,30 @@ class Initiative < ApplicationRecord
        { pending: 0, active: 1, done: 2, failed: 3, escalated: 4 },
        prefix: :status, validate: true
 
+  # EL NOMBRE, y lo que va dentro de la clave del artefacto desde F11.
+  #
+  # Kebab estricto —el `SLUG` de `Artifacts::Key`, solo guiones— y único DENTRO
+  # del proyecto: dos proyectos pueden tener cada uno su `rediseno-interfaz`, y
+  # lo que hace única una clave es la pareja proyecto + evolutivo.
+  #
+  # ⚠ PROHIBIDO PARECERSE A UN CÓDIGO DE ARTEFACTO. Un evolutivo llamado
+  # `spec-031` haría ambiguo el locator de `[src:spec/spec-031]`, que desde F11
+  # puede nombrar tanto el código del artefacto como el slug del evolutivo. Con
+  # esta guarda los dos espacios de nombres no se solapan y la resolución sigue
+  # siendo determinista.
+  #
+  # `ev-031` SÍ se admite: es lo que deja el relleno de la migración, y por eso
+  # ninguna clave ya emitida deja de ser válida.
+  #
+  # Sin tope de longitud, igual que en `Project` y por lo mismo: el tope de
+  # cuarenta es una regla del formulario de alta, no de la raíz del modelo.
+  ARTIFACT_CODE = /\A(?:dossier|spec|dod|pkg|verify|guia-pruebas|close|arquitecto)-\d{3,}\z/
+
+  validates :slug, presence: true,
+                   uniqueness: { scope: :project_id },
+                   format: { with: /\A#{Artifacts::Key::SLUG}\z/ }
+  validate :slug_is_not_an_artifact_code
+
   validates :code, presence: true, uniqueness: true,
                    format: { with: /\Aev-\d{3,}\z/ }
   validates :title, presence: true
@@ -64,6 +90,9 @@ class Initiative < ApplicationRecord
   scope :open, -> { where.not(current_stage: :publication) }
 
   # El número que comparten los artefactos del evolutivo: ev-031 → 31.
+  # Del CÓDIGO, no del slug: un slug no lleva número. De aquí salen los códigos
+  # de artefacto (`ev-031` → `dod-031`), y es media razón de que `code` siga
+  # existiendo.
   def number = code.delete_prefix("ev-").to_i
 
   def multi_repo? = initiative_repositories.size > 1
@@ -80,7 +109,18 @@ class Initiative < ApplicationRecord
     at_gate_1? || at_gate_2? || open_escalation.present?
   end
 
-  def to_param = code
+  # La URL habla en NOMBRE desde F11. `code` sigue siendo la identidad interna
+  # —y la que viaja al brain, donde su forma está congelada— pero no es lo que
+  # se lee en una barra de direcciones.
+  def to_param = slug
 
   def to_s = "#{code} · #{title}"
+
+  private
+    def slug_is_not_an_artifact_code
+      return if slug.blank? || !slug.match?(ARTIFACT_CODE)
+
+      errors.add(:slug, "no puede tener forma de código de artefacto: haría " \
+                        "ambigua una cita como [src:spec/#{slug}]")
+    end
 end

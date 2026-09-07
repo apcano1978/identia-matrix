@@ -136,12 +136,35 @@ module Citations
           [ reference.locator, reference.author, reference.note_slug ].compact.join("-")
         end
 
-        # Una cita derivada apunta a un artefacto por su `code`, que no lleva
-        # versión: resuelve contra la última publicada. Corregir un artefacto es
-        # publicar la siguiente versión, así que la última es la vigente.
+        # Una cita de artefacto apunta a él por su `code` —`[src:spec/spec-031]`—
+        # o, desde F11, por el NOMBRE de su evolutivo —`[src:spec/precio-festivos]`—.
+        # Ninguna de las dos lleva versión: resuelven contra la última publicada,
+        # porque corregir un artefacto es publicar la siguiente.
+        #
+        # ⚠ EL ORDEN IMPORTA, y es este y no el contrario. Por `code` primero,
+        # porque es lo que llevan dentro las citas YA EMITIDAS, y esas viven en
+        # markdown que nadie puede reescribir: lo que hoy resuelve tiene que
+        # seguir resolviendo igual. El nombre es la vía nueva, y va de respaldo.
+        #
+        # Los dos espacios de nombres no se solapan: `Initiative::ARTIFACT_CODE`
+        # prohíbe que un evolutivo se llame `spec-031`. Sin esa guarda, este
+        # método tendría que elegir, y elegir en silencio dentro de un artefacto
+        # inmutable es justo lo que la procedencia existe para evitar.
         def artifact(reference, project)
-          Artifact.where(project_id: project.id,
-                         code: reference.locator).latest_first.first
+          por_codigo = Artifact.where(project_id: project.id,
+                                      code: reference.locator).latest_first.first
+          return por_codigo if por_codigo
+
+          por_nombre(reference, project)
+        end
+
+        # El último artefacto de ese tipo del evolutivo que se llama así.
+        def por_nombre(reference, project)
+          initiative = Initiative.find_by(project_id: project.id,
+                                          slug: reference.locator)
+          return nil if initiative.nil?
+
+          initiative.artifacts.where(kind: reference.kind).latest_first.first
         end
     end
   end
