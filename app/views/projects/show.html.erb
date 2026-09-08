@@ -32,6 +32,9 @@
     <%= render "projects/new_initiative", project: @project,
                repositories: @repositories, projects: @platform_projects %>
 
+    <%= render "projects/documents", project: @project,
+               documents: @documents, retired: @retired_documents %>
+
     <%= section_header "REPOSITORIOS", count: @repositories.size, tone: :gate2,
                        gloss: "eje de memoria · qué se hizo antes ahí" %>
     <div class="grid grid-cols-3 gap-3 mt-2.5">

@@ -118,6 +118,32 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     "turns#create",
     "closures#create",
 
+    # ── Los documentos propios (F12 · B3) ───────────────────────────────────
+    #
+    # La primera vez que matrix acepta un fichero. Los dos `create`, y los dos
+    # actos que ocurren una vez: subir un documento y retirarlo.
+    #
+    # **No hay `project_documents#show`**, y no es un olvido: los bytes no se
+    # sirven a nadie. Matrix enseña TEXTO, nunca ficheros — el visor renderiza
+    # markdown y la ficha de cliente lista sus documentos sin un solo enlace. Lo
+    # que se lee y se cita es el cuerpo extraído; el fichero se guarda por
+    # procedencia. `ArtifactAccess` cierra además la puerta del proxy de Active
+    # Storage para todo lo que no cuelgue de un artefacto, y eso incluye estos.
+    #
+    # **Y `retirements#create` ESCRIBE ACTUALIZANDO una fila**, que es la segunda
+    # vez que pasa en esta lista —la primera fue `turns#create` en B9— y merece
+    # la conversación que esta lista existe para provocar. Retirar pone
+    # `retired_at` y nada más: el documento sale del ámbito de los evolutivos
+    # NUEVOS y **sigue resolviendo las citas ya emitidas**, así que un artefacto
+    # publicado hace meses que lo nombra sigue diciendo la verdad.
+    #
+    # Se aceptó porque el efecto es **una marca acotada y de un solo sentido**,
+    # no la edición abierta de un documento: no se deshace, y lo único que toca
+    # es la fecha. La alternativa —borrar— rompería las citas; la otra —una tabla
+    # de retiros— sería una fila nueva para decir una fecha.
+    "project_documents#create",
+    "retirements#create",
+
     # ── El ÚNICO `update` del sistema (F9 · P2) ─────────────────────────────
     #
     # Y merece la conversación que esta lista existe para provocar. Se sopesó

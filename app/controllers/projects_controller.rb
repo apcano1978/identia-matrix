@@ -78,6 +78,14 @@ class ProjectsController < ApplicationController
     # emitidos, pero no se empieza trabajo nuevo sobre algo que ya no existe.
     @platform_projects = @project.platform_client&.platform_projects
                                  &.where(missing_since: nil)&.order(:name) || []
+
+    # Los documentos SUBIDOS (F12). Los vigentes y los retirados por separado:
+    # un retirado sale del ámbito de los evolutivos nuevos y sigue existiendo,
+    # así que se enseña, apagado, en vez de desaparecer.
+    documents = @project.project_documents.includes(:uploaded_by_user,
+                                                    file_attachment: :blob)
+                        .order(created_at: :desc).to_a
+    @documents, @retired_documents = documents.partition { |d| !d.retired? }
   end
 
   private

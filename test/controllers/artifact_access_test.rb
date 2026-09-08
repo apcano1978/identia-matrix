@@ -84,6 +84,24 @@ class ArtifactAccessTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # ⚠ Y EL CASO QUE F12 ESTRENA. Desde B1 matrix guarda documentos subidos, así
+  # que «un blob suelto» ya no es una anomalía: es una fila legítima con bytes
+  # legítimos. La guarda **sigue devolviendo 404**, y eso es lo correcto y lo
+  # deliberado — matrix enseña TEXTO, nunca ficheros: el visor renderiza
+  # markdown y la ficha de cliente lista sus documentos sin un solo enlace.
+  #
+  # Se escribe aquí para que quede claro que es una decisión y no un descuido:
+  # el día que alguien quiera ofrecer la descarga, este test se pone rojo y le
+  # obliga a abrir la guarda a propósito, con su policy y su porqué.
+  test "y el fichero de un documento subido tampoco, ni con sesión" do
+    sign_in_as build_platform_user(role: :admin)
+    document = build_project_document(slug: "acta-precios")
+
+    get rails_storage_proxy_path(document.file)
+
+    assert_response :not_found
+  end
+
   private
     def sign_in_as(user, **)
       super

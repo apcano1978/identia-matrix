@@ -113,12 +113,13 @@ class ProjectsTest < ApplicationSystemTestCase
   test "y no ofrece editar la proyeccion por ningun sitio" do
     open_vivla
 
-    # Los dos formularios de la pantalla son altas de lo que es de matrix.
-    # Ninguno apunta a la proyección, que es de solo lectura.
+    # Los formularios de la pantalla son altas de lo que es DE MATRIX: el
+    # evolutivo, el repositorio y —desde F12— la subida de documentos. Ninguno
+    # apunta a la proyección, que es de solo lectura.
     acciones = all("main form", visible: :all).map { |f| f[:action] }
 
-    assert_equal 2, acciones.size
-    assert acciones.all? { |a| a.end_with?("/initiatives", "/repositories") },
+    assert_equal 3, acciones.size
+    assert acciones.all? { |a| a.end_with?("/initiatives", "/repositories", "/documents") },
            "hay un formulario que no es un alta de matrix: #{acciones.inspect}"
   end
 

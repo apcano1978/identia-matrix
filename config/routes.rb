@@ -167,6 +167,17 @@ Rails.application.routes.draw do
     # restricción Rails se comería el sufijo tomándolo por un formato.
     resources :repositories, only: %i[show create], param: :name,
                              constraints: { name: %r{[^/]+} }
+
+    # Los documentos SUBIDOS (F12). `create` y nada más: no hay `show` porque
+    # los bytes no se sirven a nadie —matrix enseña texto, nunca ficheros— y no
+    # hay `destroy` porque en matrix no se borra.
+    #
+    # Retirar cuelga del documento y es un `create`: es un acto que ocurre una
+    # vez y deja constancia. Marca `retired_at`, que lo saca del ámbito de los
+    # evolutivos nuevos y lo deja resolviendo las citas ya emitidas.
+    resources :documents, only: :create, controller: "project_documents" do
+      resource :retirement, only: :create
+    end
   end
 
   resources :agents, only: %i[index show], param: :key do

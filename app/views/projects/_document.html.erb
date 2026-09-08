@@ -1,0 +1,58 @@
+<%# Una fila de documento: su nombre de cita, su estado y de qué va.
+
+    El estado sale de las COLUMNAS —`extracted_at`, `body`, `extraction_error`—
+    y no de un enum paralelo que pueda discrepar de ellas. Los tres que puede
+    tener están en `document_state`. %>
+<% state = document_state(document) %>
+
+<div class="grid-repo-history items-baseline px-3 py-2.5
+            border-b border-[rgba(240,233,215,.07)] last:border-b-0"
+     data-document="<%= document.slug %>">
+  <span class="text-t11 <%= state.tone %>"><%= state.glyph %> <%= document.slug %></span>
+
+  <span class="text-t95 text-terminal-muted"><%= document_size(document) %></span>
+
+  <span class="text-t95 <%= state.tone %>"><%= state.label %></span>
+
+  <div class="min-w-0">
+    <div class="text-t12 text-terminal-fg"><%= document.title %></div>
+
+    <p class="mt-1 text-t105 leading-[1.6] text-terminal-fg-3">
+      <% if document.citable? %>
+        <%= document.body.to_s.squish.truncate(160) %>
+      <% else %>
+        <%# Por qué no hay cuerpo, con las palabras del extractor: un PDF
+            escaneado y uno roto no son lo mismo, y decirlo evita que alguien
+            vuelva a subirlo esperando otro resultado. %>
+        <span class="text-terminal-disabled">
+          <%= document.extraction_error.presence || "el texto se está extrayendo" %>
+        </span>
+      <% end %>
+    </p>
+
+    <div class="mt-1.5 flex items-baseline gap-2.5 text-t95 text-terminal-muted">
+      <%# El nivel, que es lo que la maqueta marca: un documento subido es ORIGEN,
+          igual que uno de platform. La cita solo la enseñamos cuando de verdad
+          resuelve — componerla sin cuerpo sería ofrecer algo que no funciona. %>
+      <% if document.citable? %>
+        <span class="text-antique-gold">◆ origen</span>
+        <span class="text-terminal-fg-4"><%= document.citation %></span>
+      <% else %>
+        <span class="text-terminal-disabled">no citable todavía</span>
+      <% end %>
+      <span>subido por <%= document.uploaded_by_user.name %></span>
+
+      <span class="ml-auto">
+        <%= button_to "retirar",
+                      project_document_retirement_path(project, document),
+                      form_class: "inline",
+                      class: "cursor-pointer border-0 bg-transparent p-0 text-t95
+                              text-terminal-fg-3 underline hover:text-antique-gold",
+                      data: { turbo_confirm: "Retirar #{document.title}. Sale del " \
+                                             "ámbito de los evolutivos nuevos; las " \
+                                             "citas que ya lo nombran siguen " \
+                                             "resolviendo. No se deshace." } %>
+      </span>
+    </div>
+  </div>
+</div>
