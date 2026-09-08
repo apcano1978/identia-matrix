@@ -220,15 +220,19 @@ namespace :matrix do
   task :index, [ :code ] => :environment do |_task, args|
     initiative = initiative_named(args.fetch(:code))
 
-    puts "#{initiative.code} · #{initiative.platform_client.slug} · " \
+    # Por el PROYECTO, que es la frontera desde F11 y la que puede no tener
+    # cliente detrás. Con `initiative.platform_client.slug` esto era un
+    # `NoMethodError` sobre un proyecto propio — y es el paso 5 del runbook, así
+    # que reventaba justo en el camino de abrir el primero.
+    puts "#{initiative.code} · #{initiative.project.slug} · " \
          "fuente #{Repositories::Source.real? ? 'remota' : 'falsa'}"
     Repositories::Index.call(initiative: initiative, actor: "manual").each do |result|
       puts "  #{result}"
     end
   end
 
-  desc "Guarda la credencial de LECTURA de un cliente. Ej: TOKEN=ghp_… matrix:credential[evalora,github.com]"
-  task :credential, [ :client, :host ] => :environment do |_task, args|
+  desc "Guarda la credencial de LECTURA de un proyecto. Ej: TOKEN=ghp_… matrix:credential[identia-interno,github.com]"
+  task :credential, [ :project, :host ] => :environment do |_task, args|
     # El valor llega por variable de entorno y no por argumento: lo que se
     # escribe en la línea de `rake` queda en el historial del shell, y esto es
     # un secreto. Por la misma razón no hay formulario — un token en un POST
@@ -236,16 +240,22 @@ namespace :matrix do
     token = ENV["TOKEN"].to_s.strip
     abort "Falta TOKEN=… en el entorno." if token.empty?
 
-    client = Platform::Client.find_by!(slug: args.fetch(:client))
+    # Por PROYECTO y no por cliente, que es a quien pertenece la credencial desde
+    # F11 —`RepositoryCredential.project`— y lo que hace posible que un proyecto
+    # PROPIO tenga la suya. Antes se buscaba el cliente y de ahí su proyecto, así
+    # que uno propio no podía tener credencial en absoluto.
+    #
+    # No rompe lo escrito: el proyecto de un cliente heredó su slug, así que
+    # `matrix:credential[vivla,github.com]` sigue resolviendo lo mismo.
+    proyecto = Project.find_by!(slug: args.fetch(:project))
     host = args[:host].presence || "github.com"
 
-    proyecto = Project.find_by!(platform_client_id: client.id)
     anterior = RepositoryCredential.current_for(proyecto, host)
     credential = RepositoryCredential.create!(
       host: host, token: token, project: proyecto,
       note: "emitida a mano#{anterior ? ' · rota la anterior' : ''}")
 
-    puts "#{client.slug} · #{credential}"
+    puts "#{proyecto.slug} · #{credential}"
     puts "Manda la más reciente; la anterior queda como rastro." if anterior
     puts "SOLO LECTURA: matrix no escribe en un repositorio ajeno en ninguna fase."
   end

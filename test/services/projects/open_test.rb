@@ -7,12 +7,12 @@ require "test_helper"
 # dentro de las claves de todos los artefactos que el proyecto llegue a producir.
 class Projects::OpenTest < ActiveSupport::TestCase
   test "abre un proyecto propio, sin cliente detrás" do
-    proyecto = Projects::Open.call(slug: "matrix-interna",
-                                   name: "Matrix interna", actor: "antonio")
+    proyecto = Projects::Open.call(slug: "proyecto-de-prueba",
+                                   name: "Proyecto de prueba", actor: "antonio")
 
     assert proyecto.own?, "un alta manual no puede tener cliente"
-    assert_equal "matrix-interna", proyecto.slug
-    assert_equal "Matrix interna", proyecto.name
+    assert_equal "proyecto-de-prueba", proyecto.slug
+    assert_equal "Proyecto de prueba", proyecto.name
     assert proyecto.opened_at.present?
   end
 

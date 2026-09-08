@@ -137,7 +137,7 @@ class Artifacts::PublishTest < ActiveSupport::TestCase
   # escribir sobre su propio trabajo, que es justo lo que «matrix interna»
   # necesita.
   test "un proyecto propio publica, y su cabecera dice quién es sin cliente" do
-    propio = build_own_project(slug: "matrix-interna", name: "Matrix interna")
+    propio = build_own_project(slug: "identia-interno", name: "IDENTIA INTERNO")
     interno = build_initiative(project: propio, slug: "rediseno-interfaz")
 
     artifact = Artifacts::Publish.call(
@@ -145,9 +145,9 @@ class Artifacts::PublishTest < ActiveSupport::TestCase
       produced_at: Time.zone.parse("2026-05-02 10:00"),
       produced_by_run: build_run(initiative: interno)).artifact
 
-    assert_equal "matrix-interna", artifact.stored_front_matter[:project]
+    assert_equal "identia-interno", artifact.stored_front_matter[:project]
     assert_nil artifact.stored_front_matter[:client]
-    assert artifact.storage_key.start_with?("artifacts://matrix-interna/rediseno-interfaz/"),
+    assert artifact.storage_key.start_with?("artifacts://identia-interno/rediseno-interfaz/"),
            "el primer segmento de la clave sale del proyecto: #{artifact.storage_key}"
   end
 

@@ -94,13 +94,13 @@ class Artifacts::KeyTest < ActiveSupport::TestCase
   end
 
   # F11 · el segundo segmento pasa de `ev-\d{3,}` a SLUG, para que un artefacto
-  # se llame `artifacts://matrix-interna/rediseno-interfaz/...` y no por número.
+  # se llame `artifacts://identia-interno/rediseno-interfaz/...` y no por número.
   test "una clave con nombre parsea, y las emitidas con codigo siguen parseando" do
-    assert Artifacts::Key.valid?("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
+    assert Artifacts::Key.valid?("artifacts://identia-interno/rediseno-interfaz/spec-042/v1.md")
     assert Artifacts::Key.valid?("artifacts://vivla/ev-031/dod-031/v2.md")
 
-    parsed = Artifacts::Key.parse!("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
-    assert_equal "matrix-interna",   parsed.client
+    parsed = Artifacts::Key.parse!("artifacts://identia-interno/rediseno-interfaz/spec-042/v1.md")
+    assert_equal "identia-interno",   parsed.client
     assert_equal "rediseno-interfaz", parsed.initiative
   end
 
@@ -122,7 +122,7 @@ class Artifacts::KeyTest < ActiveSupport::TestCase
   # Y el número NO sale del segmento: sale del `code` del evolutivo. Los dos se
   # parecen desde que el segmento es un slug, y son cosas distintas.
   test "el numero no se saca del segmento de la clave" do
-    parsed = Artifacts::Key.parse!("artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md")
+    parsed = Artifacts::Key.parse!("artifacts://identia-interno/rediseno-interfaz/spec-042/v1.md")
 
     assert_raises(ArgumentError) { Artifacts::Key.number_from_initiative(parsed.initiative) }
   end

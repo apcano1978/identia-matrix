@@ -2,7 +2,7 @@
 #
 # **Por qué esto no es una preferencia de estilo.** El slug del proyecto es el
 # primer segmento de la clave de todos sus artefactos
-# —`artifacts://matrix-interna/rediseno-interfaz/…`— y el del evolutivo es el
+# —`artifacts://identia-interno/rediseno-interfaz/…`— y el del evolutivo es el
 # segundo. Esas claves viven en un bucket sin borrado y dentro de citas escritas
 # en markdown inmutable. Cambiar un slug después no renombra nada: deja huérfanas
 # todas las claves ya emitidas y convierte en mentira cada cita que las nombra.

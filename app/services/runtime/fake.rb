@@ -19,7 +19,10 @@ module Runtime::Fake
       "agent" => request.agent,
       "purpose" => request.purpose,
       "body" => interpolate(body, request),
-      "citations" => metadata.fetch("citations", []),
+      # La lista declarada se interpola igual que el cuerpo. El contrato la
+      # valida contra la gramática y matrix la contrasta con lo que el cuerpo
+      # cita: si una se reescribe y la otra no, dejan de coincidir.
+      "citations" => metadata.fetch("citations", []).map { |c| interpolate(c, request) },
       "events" => metadata.fetch("events", []),
       "findings" => metadata.fetch("findings", []),
       "usage" => metadata.fetch("usage", default_usage),
@@ -37,9 +40,36 @@ module Runtime::Fake
   def interpolate(body, request)
     config = request.payload["config"]
 
-    body.gsub("{{initiative}}", config.dig("initiative", "code").to_s)
-        .gsub("{{title}}", config.dig("initiative", "title").to_s)
-        .gsub("{{client}}", config.dig("client", "slug").to_s)
+    repoint_code(
+      body.gsub("{{initiative}}", config.dig("initiative", "code").to_s)
+          .gsub("{{title}}", config.dig("initiative", "title").to_s)
+          # El proyecto de respaldo: un proyecto PROPIO no tiene cliente, y el
+          # cuerpo saldría con el hueco en blanco.
+          .gsub("{{client}}", config.dig("client", "slug").presence ||
+                              config.dig("project", "slug").to_s),
+      config)
+  end
+
+  # ⚠ REAPUNTA LAS CITAS DE CÓDIGO al repositorio del evolutivo que se está
+  # ejecutando, y es una propiedad del runtime FALSO, no del sistema.
+  #
+  # Un fixture está escrito para un mundo —el del seed, donde el repositorio se
+  # llama `booking-core`— y se ejecuta en otro. Sobre un evolutivo que no lo
+  # tiene, `Citation` rechaza la cita: **el calificador de repositorio es
+  # obligatorio en una cita de código** y no puede resolver contra un
+  # repositorio que no está en el proyecto. Es el invariante haciendo su
+  # trabajo, no un fallo — así que lo que se corrige es el fixture, aquí, y no
+  # la validación.
+  #
+  # No se puede hacer con un marcador `{{...}}` porque la cita entera tiene que
+  # parsear contra la gramática **también en el fichero sin interpolar**: es lo
+  # que `fixtures_test` comprueba, y es lo que hace que los fixtures sean el
+  # único texto real contra el que el parser se prueba.
+  def repoint_code(body, config)
+    repository = config.fetch("repositories", []).first&.fetch("name", nil)
+    return body if repository.blank?
+
+    body.gsub(%r{\[src:code/[a-z0-9]+(?:-[a-z0-9]+)*:}, "[src:code/#{repository}:")
   end
 
   def pause

@@ -7,7 +7,7 @@ class ProjectTest < ActiveSupport::TestCase
   test "un proyecto de cliente y uno propio se distinguen por la clave, no por un tipo" do
     cliente = build_client(slug: "vivla")
     de_cliente = project_for(cliente)
-    propio = build_own_project(slug: "matrix-interna")
+    propio = build_own_project(slug: "identia-interno")
 
     assert_predicate de_cliente, :for_client?
     refute_predicate de_cliente, :own?
@@ -20,28 +20,28 @@ class ProjectTest < ActiveSupport::TestCase
   end
 
   test "el slug se congela al crear" do
-    project = build_own_project(slug: "matrix-interna")
+    project = build_own_project(slug: "identia-interno")
 
     error = assert_raises(ActiveRecord::ReadOnlyRecord) do
       project.update!(slug: "otro-nombre")
     end
 
     assert_match "las claves de artefacto dependen de él", error.message
-    assert_equal "matrix-interna", project.reload.slug
+    assert_equal "identia-interno", project.reload.slug
   end
 
   test "el nombre si se puede cambiar" do
-    project = build_own_project(slug: "matrix-interna")
+    project = build_own_project(slug: "identia-interno")
     project.update!(name: "Matrix, por dentro")
 
     assert_equal "Matrix, por dentro", project.reload.name
   end
 
   test "dos proyectos no comparten slug" do
-    build_own_project(slug: "matrix-interna")
+    build_own_project(slug: "identia-interno")
 
     assert_raises(ActiveRecord::RecordInvalid) do
-      build_own_project(slug: "matrix-interna")
+      build_own_project(slug: "identia-interno")
     end
   end
 
@@ -75,7 +75,7 @@ class ProjectTest < ActiveSupport::TestCase
     proyecto = build_own_project(slug: "matrix-intena")
 
     error = assert_raises(ActiveRecord::ReadOnlyRecord) do
-      proyecto.update!(slug: "matrix-interna")
+      proyecto.update!(slug: "identia-interno")
     end
 
     assert_match "las claves de artefacto dependen de él", error.message

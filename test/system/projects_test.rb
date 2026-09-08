@@ -20,30 +20,33 @@ class ProjectsTest < ApplicationSystemTestCase
   # que no dice cuántos hay detrás no invita a pulsarla.
   test "las dos pestañas cuentan las dos, y arranca en la de cliente" do
     assert_text "DE CLIENTE · 6"
-    assert_text "PROPIOS · 0"
+    assert_text "PROPIOS · 1"
     assert_selector ".bg-terminal-fg", text: "DE CLIENTE"
     assert_text "VIVLA"
   end
 
-  test "y la de propios enseña lo que falta en vez de quedarse en blanco" do
-    click_on "PROPIOS · 0"
+  # `identia-interno` es el proyecto propio que siembra `DesignSeed` desde B10:
+  # identia trabajando sobre sí misma, repartida entre sus tres repositorios.
+  test "y la de propios lleva el proyecto propio, no los de cliente" do
+    click_on "PROPIOS · 1"
 
     assert_current_path projects_path(tab: "propios")
-    assert_text "Matrix todavía no trabaja sobre nada suyo"
+    assert_text "IDENTIA INTERNO"
+    assert_text "Todavía no tiene ningún evolutivo"
     assert_no_text "VIVLA"
   end
 
   test "un proyecto propio aparece en su pestaña y no en la otra" do
-    Projects::Open.call(slug: "matrix-interna", name: "Matrix interna",
+    Projects::Open.call(slug: "proyecto-de-prueba", name: "Proyecto de prueba",
                         actor: "test")
 
     visit projects_path(tab: "propios")
-    assert_text "PROPIOS · 1"
-    assert_text "Matrix interna"
+    assert_text "PROPIOS · 2"
+    assert_text "Proyecto de prueba"
     assert_text "PROPIO"
 
     visit projects_path
-    assert_no_text "Matrix interna"
+    assert_no_text "Proyecto de prueba"
   end
 
   # Un `tab` que no existe no revienta ni enseña la lista entera: cae en el

@@ -107,6 +107,31 @@ module DesignSeed
         project.opened_at = Time.current
       end
     end
+
+    seed_own_project
+  end
+
+  # `identia-interno`, con sus tres repositorios y ningún evolutivo.
+  #
+  # Va en el seed y no solo en el recorrido a mano porque es el ÚNICO sitio donde
+  # se ve el estado vacío que el rediseño describe: la pestaña PROPIOS salía
+  # siempre en cero y la tarjeta de un proyecto sin evolutivos no se pintaba
+  # nunca.
+  def seed_own_project
+    project = Project.find_or_create_by!(slug: Catalog::OWN_PROJECT[:slug]) do |created|
+      created.name = Catalog::OWN_PROJECT[:name]
+      created.opened_at = Time.current
+    end
+
+    Catalog::OWN_REPOSITORIES.each do |data|
+      repository = Repository.find_or_initialize_by(
+        project_id: project.id, name: data[:name])
+      # ⚠ Con `remote_url` y CI desde el alta: matrix no tiene ningún `update`,
+      # así que lo que no se pida al registrarlo no se puede añadir después.
+      repository.update!(data.except(:name).merge(last_synced_at: nil))
+    end
+
+    project
   end
 
   def seed_repositories
@@ -566,9 +591,13 @@ module DesignSeed
     return guide_body if agent.blank?
 
     _metadata, body = Runtime::Fixture.read(agent: agent, purpose: purpose)
+    # `{{client}}` cae al PROYECTO cuando no hay cliente: los fixtures hablan de
+    # vivla porque son los de la maqueta, y sobre un proyecto propio esto era un
+    # `NoMethodError`. Se conserva el nombre del marcador —está dentro de los
+    # ficheros de fixture— y lo que cambia es de dónde sale el valor.
     body.gsub("{{initiative}}", initiative.code)
         .gsub("{{title}}", initiative.title)
-        .gsub("{{client}}", initiative.platform_client.slug)
+        .gsub("{{client}}", initiative.platform_client&.slug || initiative.project.slug)
   end
 
   def guide_body

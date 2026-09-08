@@ -7,7 +7,7 @@ require "test_helper"
 # No es una preferencia de estilo. El slug del proyecto es el primer segmento de
 # la clave de todos sus artefactos y el del evolutivo es el segundo:
 #
-#   artifacts://matrix-interna/rediseno-interfaz/spec-042/v1.md
+#   artifacts://identia-interno/rediseno-interfaz/spec-042/v1.md
 #
 # Esas claves viven en un bucket sin borrado y dentro de citas escritas en
 # markdown inmutable. Cambiar un slug después no renombra nada: deja huérfanas
@@ -17,10 +17,10 @@ require "test_helper"
 # desde F8, y por la misma razón.
 class UnSlugNoSePuedeCambiarTest < ActiveSupport::TestCase
   test "el de un proyecto" do
-    project = build_own_project(slug: "matrix-interna")
+    project = build_own_project(slug: "identia-interno")
 
     assert_raises(ActiveRecord::ReadOnlyRecord) { project.update!(slug: "otro") }
-    assert_equal "matrix-interna", project.reload.slug
+    assert_equal "identia-interno", project.reload.slug
   end
 
   test "y el de un evolutivo" do

@@ -234,6 +234,33 @@ module DesignSeed::Catalog
     { initiative: "ev-014", doc: "acta-precios",                 refs: 3 }
   ].freeze
 
+  # EL PROYECTO PROPIO · identia trabajando sobre sí misma (F11 · B10).
+  #
+  # No tiene cliente detrás y no se sincroniza con nada: es lo que F11 hizo
+  # posible. Nace **sin evolutivos**, que es el estado que el rediseño describe
+  # literalmente —«Todavía no tiene ningún evolutivo. Empieza aportando
+  # documentación o una idea»— y que hasta ahora no había forma de ver.
+  #
+  # Y es MULTI-REPO desde el primer día, que es lo que lo distingue de un ensayo:
+  # el trabajo propio de identia se reparte entre las tres aplicaciones, así que
+  # la matriz evolutivo × repositorio tiene aquí su segundo caso real.
+  #
+  # ⚠ El repositorio de `identia-brain` se llama `identia-ai` en GitHub, que no
+  # es como la carpeta. Está aquí escrito y no derivado por eso mismo.
+  OWN_PROJECT = { slug: "identia-interno", name: "IDENTIA INTERNO" }.freeze
+
+  OWN_REPOSITORIES = [
+    { name: "identia-matrix", default_branch: "develop",
+      remote_url: "git@github.com:apcano1978/identia-matrix.git",
+      ci_provider: "github", ci_repo_slug: "apcano1978/identia-matrix" },
+    { name: "identia-brain", default_branch: "main",
+      remote_url: "git@github.com:apcano1978/identia-ai.git",
+      ci_provider: "github", ci_repo_slug: "apcano1978/identia-ai" },
+    { name: "identia-platform", default_branch: "main",
+      remote_url: "git@github.com:apcano1978/identia-platform.git",
+      ci_provider: "github", ci_repo_slug: "apcano1978/identia-platform" }
+  ].freeze
+
   REPOSITORIES = [
     { client: "vivla", name: "booking-core", head_sha: "f7b2e04",
       files_count: 3412 },

@@ -29,15 +29,15 @@ class OwnProjectTest < ApplicationSystemTestCase
     visit new_project_path
 
     assert_text "un proyecto es una frontera: nada se lee de fuera"
-    fill_in "slug", with: "matrix-interna"
-    fill_in "name", with: "Matrix interna"
+    fill_in "slug", with: "proyecto-de-prueba"
+    fill_in "name", with: "Proyecto de prueba"
     click_on "ABRIR EL PROYECTO ⏎"
 
-    assert_current_path project_path("matrix-interna")
-    assert_selector "h1", text: "Matrix interna"
+    assert_current_path project_path("proyecto-de-prueba")
+    assert_selector "h1", text: "Proyecto de prueba"
     assert_text "PROPIO"
     assert_text "proyecto propio · nada que sincronizar"
-    assert Project.find_by!(slug: "matrix-interna").own?
+    assert Project.find_by!(slug: "proyecto-de-prueba").own?
   end
 
   # La pantalla enseña la opción de cliente APAGADA, y eso es lo que enseña de
@@ -54,11 +54,11 @@ class OwnProjectTest < ApplicationSystemTestCase
   test "el nombre corto mal escrito se rechaza diciendo por qué" do
     visit new_project_path
     fill_in "slug", with: "Matrix Interna"
-    fill_in "name", with: "Matrix interna"
+    fill_in "name", with: "Proyecto de prueba"
     click_on "ABRIR EL PROYECTO ⏎"
 
     assert_text "claves de artefacto"
-    assert_nil Project.find_by(name: "Matrix interna")
+    assert_nil Project.find_by(name: "Proyecto de prueba")
   end
 
   test "y uno que ya usa un cliente tampoco vale" do
@@ -75,7 +75,7 @@ class OwnProjectTest < ApplicationSystemTestCase
   # Es el recorrido que rompía. Cada `assert` de aquí abajo era una excepción
   # antes de B7b, y ninguna suite pasaba por ellas.
   test "se le registra un repositorio, se le abre un evolutivo y todo sigue en pie" do
-    open_matrix_interna
+    open_proyecto_de_prueba
 
     assert_text "Para abrir un evolutivo hace falta al menos un repositorio"
 
@@ -83,13 +83,13 @@ class OwnProjectTest < ApplicationSystemTestCase
     fill_in "name", with: "identia-matrix"
     click_on "registrar ⏎"
 
-    assert_current_path project_repository_path("matrix-interna", "identia-matrix")
+    assert_current_path project_repository_path("proyecto-de-prueba", "identia-matrix")
     assert_text "registro · nada que atender"
 
-    visit project_path("matrix-interna")
+    visit project_path("proyecto-de-prueba")
     find("summary", text: "abrir un evolutivo").click
     fill_in "title", with: "Rediseño de la interfaz"
-    check "repo-#{Repository.find_by!(name: 'identia-matrix').id}"
+    check "repo-#{repo_of('proyecto-de-prueba', 'identia-matrix').id}"
     click_on "abrir ⏎"
 
     assert_text "Rediseño de la interfaz"
@@ -102,13 +102,13 @@ class OwnProjectTest < ApplicationSystemTestCase
   test "la ficha del evolutivo se pinta, y su panel dice el proyecto en vez del cliente" do
     initiative = own_initiative
 
-    visit project_initiative_path("matrix-interna", initiative.slug)
+    visit project_initiative_path("proyecto-de-prueba", initiative.slug)
 
     assert_text "PIPELINE"
     panel = find("[data-pane='meta']")
 
     assert panel.has_text?("proyecto"), "el panel nombra la raíz"
-    assert panel.has_text?("Matrix interna")
+    assert panel.has_text?("Proyecto de prueba")
     assert panel.has_no_text?("cliente"), "no hay ninguno, y la fila no se pinta vacía"
   end
 
@@ -122,8 +122,8 @@ class OwnProjectTest < ApplicationSystemTestCase
     visit root_path
 
     assert_text "Rediseño de la interfaz"
-    assert_text "matrix-interna/identia-matrix"
-    assert_selector "a[href='#{project_initiative_gate_1_path('matrix-interna', initiative.slug)}']"
+    assert_text "proyecto-de-prueba/identia-matrix"
+    assert_selector "a[href='#{project_initiative_gate_1_path('proyecto-de-prueba', initiative.slug)}']"
   end
 
   # Un proyecto propio no hereda documentación de ningún cliente, y eso NO es un
@@ -132,7 +132,7 @@ class OwnProjectTest < ApplicationSystemTestCase
   test "sus fuentes están vacías y la pantalla no finge heredar de nadie" do
     initiative = own_initiative
 
-    visit project_initiative_sources_path("matrix-interna", initiative.slug)
+    visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
 
     assert_text "Fuentes en ámbito"
     assert_text "identia-matrix"
@@ -143,10 +143,10 @@ class OwnProjectTest < ApplicationSystemTestCase
   # El formulario de evolutivo no enseña un desplegable vacío: dice por qué no
   # hay ninguno al otro lado.
   test "el alta de evolutivo no ofrece vincular con platform, y lo explica" do
-    open_matrix_interna
+    open_proyecto_de_prueba
     build_repository_through_screen
 
-    visit project_path("matrix-interna")
+    visit project_path("proyecto-de-prueba")
     find("summary", text: "abrir un evolutivo").click
 
     assert_text "este es un proyecto propio y no hay nada al otro lado"
@@ -173,7 +173,7 @@ class OwnProjectTest < ApplicationSystemTestCase
 
     config = Runtime::Request.for(run).payload["config"]
 
-    assert_equal({ "slug" => "matrix-interna", "name" => "Matrix interna" },
+    assert_equal({ "slug" => "proyecto-de-prueba", "name" => "Proyecto de prueba" },
                  config["project"])
     assert_not config.key?("client"),
                "la clave se OMITE, no se manda a null: el contrato espera un objeto"
@@ -183,18 +183,119 @@ class OwnProjectTest < ApplicationSystemTestCase
     initiative = own_initiative
     place(initiative, :tank)
 
-    visit project_initiative_path("matrix-interna", initiative.slug)
+    visit project_initiative_path("proyecto-de-prueba", initiative.slug)
 
     assert_button "▶ poner a trabajar a TANK"
     assert_no_text "Los agentes todavía no trabajan sobre proyectos propios"
   end
 
+  # ══ EL ENTREGABLE DE F11 ═══════════════════════════════════════════════════
+  #
+  # `identia-interno` es el proyecto propio de verdad: identia trabajando sobre
+  # sí misma, repartida entre sus tres repositorios. Lo siembra `DesignSeed` sin
+  # evolutivos, que es el estado con el que nace un proyecto.
+  #
+  # Este test recorre lo que once bloques construyeron —abrir el evolutivo,
+  # contarle la idea al ARQUITECTO, cerrar el acta, poner a trabajar a TANK— y
+  # termina en la única aserción que resume la fase entera: **la clave del
+  # artefacto empieza por el nombre del proyecto y el del evolutivo**, ninguno de
+  # los cuales existía antes de F11.
+
+  test "identia-interno nace sembrado, propio y multi-repo, sin un solo evolutivo" do
+    visit projects_path(tab: "propios")
+
+    assert_text "PROPIOS · 1"
+    assert_text "IDENTIA INTERNO"
+    assert_text "Todavía no tiene ningún evolutivo"
+
+    click_on "IDENTIA INTERNO"
+    assert_selector "h1", text: "IDENTIA INTERNO"
+    assert_text "PROPIO"
+    assert_text "proyecto propio · nada que sincronizar"
+    # Los tres repositorios de identia, que es lo que lo hace multi-repo desde el
+    # primer día y no un ensayo con uno.
+    %w[identia-matrix identia-brain identia-platform].each { |repo| assert_text repo }
+  end
+
+  test "y recorre la fase entera hasta publicar con su propia clave" do
+    # 1 · El evolutivo, sobre el repositorio que se va a tocar.
+    visit project_path("identia-interno")
+    find("summary", text: "abrir un evolutivo").click
+    fill_in "title", with: "Rediseño de la interfaz"
+    check "repo-#{repo_of('identia-interno', 'identia-matrix').id}"
+    click_on "abrir ⏎"
+    assert_text "PIPELINE"
+
+    # ⚠ El slug se DERIVA del título —solo el del proyecto se escribe a mano—,
+    # así que «Rediseño de la interfaz» da `rediseno-de-la-interfaz`. La guía usa
+    # `rediseno-interfaz` como ilustración; lo que la clave lleva dentro es esto.
+    initiative = Initiative.find_by!(slug: "rediseno-de-la-interfaz")
+
+    # 2 · La idea, por el acta. Es la única fuente de nivel ORIGEN que un
+    #     proyecto propio tiene hasta F12, y ya es citable.
+    visit project_initiative_acta_path("identia-interno", initiative.slug)
+    assert_text "Todavía no hay ninguna decisión"
+    fill_in "message", with: "Hay que rehacer la interfaz sobre el proyecto como raíz."
+    click_on "Responder al ARQUITECTO"
+    assert_text "Turno registrado"
+    assert_selector "[data-decision='1']"
+
+    # 3 · Cerrar el acta saca de la etapa 1 y entra en TANK.
+    click_on "CERRAR Y PASAR A TANK"
+    # ⚠ La barrera es el PATH, no el texto. «entra en TANK» ya está en el panel
+    # de cerrar antes de pulsar —«Publica el acta y el evolutivo entra en TANK»—
+    # así que esperar por él daba por buena la pantalla anterior. Es la misma
+    # familia de fallo que P18: la barrera tiene que ser algo que solo existe
+    # en el destino.
+    assert_current_path project_initiative_path("identia-interno", initiative.slug)
+    assert_predicate initiative.reload, :at_tank?
+
+    # 4 · ANCLAR E INDEXAR, que es el paso que el runbook avisa que se olvida.
+    #
+    # ⚠ Sin él `pinned_sha` queda nulo, `Runtime::Request#repositories_of` —que
+    # solo manda los ANCLADOS— deja el material vacío y **TANK trabaja a ciegas
+    # sin que nada avise**. Que se encole solo es F12; hasta entonces es un paso
+    # a mano, y por eso está aquí y no escondido en un helper.
+    Repositories::Index.call(initiative: initiative, actor: "test")
+
+    assert initiative.initiative_repositories.reload.all? { |link| link.pinned_sha.present? },
+           "sin sha anclado no se puede citar código, y TANK no lo diría"
+
+    # 5 · TANK, en `fake`.
+    #
+    # ⚠ Por `Agents::Run` y no pulsando el botón: el botón encola por Sidekiq y
+    #    en test el adaptador NO corre en línea. Es el mismo objeto que llama el
+    #    job, y que el botón encola está probado aparte.
+    artifact = Agents::Run.call(initiative: initiative, agent: "tank",
+                                purpose: "context").artifact
+
+    # 6 · LA ASERCIÓN DE LA FASE. Antes de F11 la clave habría sido
+    # `artifacts://<cliente>/ev-NNN/…`, y aquí no hay cliente ni código.
+    assert artifact.storage_key.start_with?(
+      "artifacts://identia-interno/rediseno-de-la-interfaz/"),
+           "la clave tiene que llevar el proyecto y el nombre: #{artifact.storage_key}"
+
+    # Y el acta, publicada por el mismo camino, con la misma raíz.
+    acta = initiative.artifacts.kind_acta.sole
+
+    assert acta.storage_key.start_with?("artifacts://identia-interno/rediseno-de-la-interfaz/")
+    assert_nil acta.stored_front_matter[:client], "no hay cliente, y no se inventa"
+    assert_equal "identia-interno", acta.stored_front_matter[:project]
+  end
+
   private
-    def open_matrix_interna
-      Projects::Open.call(slug: "matrix-interna", name: "Matrix interna",
+    # ⚠ Acotado al PROYECTO: `identia-matrix` es un repositorio del proyecto
+    # sembrado Y del de prueba, y un `find_by!(name:)` a secas elegiría uno de
+    # los dos por orden de inserción.
+    def repo_of(project_slug, name)
+      Project.find_by!(slug: project_slug).repositories.find_by!(name: name)
+    end
+
+    def open_proyecto_de_prueba
+      Projects::Open.call(slug: "proyecto-de-prueba", name: "Proyecto de prueba",
                           actor: "test")
-      visit project_path("matrix-interna")
-      assert_selector "h1", text: "Matrix interna"
+      visit project_path("proyecto-de-prueba")
+      assert_selector "h1", text: "Proyecto de prueba"
     end
 
     def build_repository_through_screen
@@ -207,7 +308,7 @@ class OwnProjectTest < ApplicationSystemTestCase
     # El evolutivo ya abierto, por el camino de dominio: los tests de arriba ya
     # prueban que la pantalla lo abre, y repetirlo aquí solo alarga la suite.
     def own_initiative
-      project = Projects::Open.call(slug: "matrix-interna", name: "Matrix interna",
+      project = Projects::Open.call(slug: "proyecto-de-prueba", name: "Proyecto de prueba",
                                     actor: "test")
       repository = Repository.create!(project: project, name: "identia-matrix",
                                       default_branch: "main")
