@@ -80,6 +80,25 @@ module DomainBuilders
     end
   end
 
+  # Un documento SUBIDO a un proyecto (F12). Con bytes, porque sin ellos no es
+  # un documento: `has_one_attached` es la mitad de la fila.
+  #
+  # El slug se deriva como en producción —libre entre las dos tablas— salvo que
+  # el test pida uno concreto.
+  def build_project_document(project: nil, title: "Acta de precios", slug: nil,
+                             body: nil, content: "# Un documento\n", **attributes)
+    project ||= build_own_project
+
+    document = ProjectDocument.new(
+      project: project, uploaded_by_user: build_platform_user,
+      title: title, slug: slug || ProjectDocument.slug_for(title, project: project),
+      body: body, **attributes)
+    document.file.attach(io: StringIO.new(content), filename: "#{document.slug}.md",
+                         content_type: "text/markdown")
+    document.save!
+    document
+  end
+
   # `project ||` y no `client ||=`: con un proyecto PROPIO, `platform_client` es
   # nulo, y encadenar el respaldo fabricaría un cliente que nadie usa. Se mira
   # primero si ya hay proyecto, que es la raíz desde F11.

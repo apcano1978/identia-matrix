@@ -31,6 +31,15 @@
 !/tmp/storage/
 !/tmp/storage/.keep
 
+# Los documentos subidos a un proyecto (F12). Almacén SEPARADO del de
+# artefactos y hermano suyo, no anidado: `Artifacts::Store#disk_keys` recorre su
+# raíz con `glob("**/*")`, así que meterlo dentro habría anulado la separación.
+/storage-documents/*
+!/storage-documents/.keep
+/tmp/storage-documents/*
+!/tmp/storage-documents/
+!/tmp/storage-documents/.keep
+
 /public/assets
 
 # Ignore master key for decrypting credentials and more.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -509,6 +509,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_160000) do
     t.index ["platform_id"], name: "index_platform_users_on_platform_id", unique: true
   end
 
+  create_table "project_documents", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.datetime "extracted_at"
+    t.string "extraction_error"
+    t.bigint "project_id", null: false
+    t.datetime "retired_at"
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_user_id", null: false
+    t.index ["project_id", "retired_at"], name: "index_project_documents_on_project_id_and_retired_at"
+    t.index ["project_id", "slug"], name: "index_project_documents_on_project_id_and_slug", unique: true
+    t.index ["project_id"], name: "index_project_documents_on_project_id"
+    t.index ["uploaded_by_user_id"], name: "index_project_documents_on_uploaded_by_user_id"
+  end
+
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -714,6 +731,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_160000) do
   add_foreign_key "platform_meetings", "platform_clients"
   add_foreign_key "platform_meetings", "platform_projects"
   add_foreign_key "platform_projects", "platform_clients"
+  add_foreign_key "project_documents", "platform_users", column: "uploaded_by_user_id"
+  add_foreign_key "project_documents", "projects"
   add_foreign_key "projects", "platform_clients"
   add_foreign_key "repositories", "projects"
   add_foreign_key "repository_credentials", "projects"

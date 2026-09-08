@@ -34,6 +34,9 @@ class Project < ApplicationRecord
   has_many :initiatives, dependent: :restrict_with_exception
   # La frontera desnormalizada del acta: el invariante 10 consulta por aquí.
   has_many :decisions, dependent: :restrict_with_exception
+  # Los documentos SUBIDOS (F12). Los de platform llegan proyectados y cuelgan
+  # del cliente, no del proyecto: son dos orígenes distintos que se citan igual.
+  has_many :project_documents, dependent: :restrict_with_exception
 
   validates :name, presence: true
   # Kebab, el mismo formato que el slug de cliente: de ahí se hereda cuando el

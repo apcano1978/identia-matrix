@@ -4,8 +4,10 @@ require "test_helper"
 
 # EL SLUG SE ELIGE UNA VEZ Y NO SE MUEVE.
 #
-# No es una preferencia de estilo. El slug del proyecto es el primer segmento de
-# la clave de todos sus artefactos y el del evolutivo es el segundo:
+# No es una preferencia de estilo. Son ya TRES los slugs congelados del sistema —
+# el del proyecto, el del evolutivo y, desde F12, el de un documento subido— y
+# los tres por la misma razón. El del proyecto es el primer segmento de la clave
+# de todos sus artefactos y el del evolutivo es el segundo:
 #
 #   artifacts://identia-interno/rediseno-interfaz/spec-042/v1.md
 #
@@ -28,6 +30,16 @@ class UnSlugNoSePuedeCambiarTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::ReadOnlyRecord) { initiative.update!(slug: "otro") }
     assert_equal "precio-festivos", initiative.reload.slug
+  end
+
+  # Y el de un documento subido, desde F12: se cita como
+  # `[src:doc/acta-precios#p2]` y esa cita viaja dentro de artefactos inmutables
+  # igual que las otras dos.
+  test "y el de un documento subido a un proyecto" do
+    document = build_project_document(slug: "acta-precios")
+
+    assert_raises(ActiveRecord::ReadOnlyRecord) { document.update!(slug: "otra") }
+    assert_equal "acta-precios", document.reload.slug
   end
 
   # Lo que SÍ se puede cambiar, para que quede escrito de qué va la regla: el

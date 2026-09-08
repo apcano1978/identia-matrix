@@ -68,6 +68,47 @@ class Platform::SlugTest < ActiveSupport::TestCase
                  Platform::Document.order(:platform_id).pluck(:slug)
   end
 
+  # ── `among`, la enmienda de F12 ───────────────────────────────────────────
+  #
+  # Un documento SUBIDO y uno de platform se citan igual —`[src:doc/…]`— y viven
+  # en tablas distintas. Sin mirar las dos, dos documentos del mismo proyecto
+  # podrían llamarse igual y `Citations::Resolve` tendría que elegir en silencio
+  # entre ellos, dentro de una cita ya escrita en markdown inmutable.
+  test "esquiva un nombre que ya usa OTRA tabla" do
+    project = build_own_project
+    build_project_document(project: project, slug: "informe")
+
+    libre = Platform::Slug.derive(
+      Platform::Document, "Informe", fallback: "doc",
+      among: [ ProjectDocument.where(project_id: project.id) ])
+
+    assert_equal "informe-2", libre
+  end
+
+  test "y sigue contando hasta encontrar uno libre en las dos" do
+    project = build_own_project
+    build_project_document(project: project, slug: "informe")
+    build_project_document(project: project, slug: "informe-2")
+    crear_documento(build_client, "Informe-3")
+
+    libre = Platform::Slug.derive(
+      Platform::Document, "Informe", fallback: "doc",
+      among: [ ProjectDocument.where(project_id: project.id) ])
+
+    assert_equal "informe-4", libre
+  end
+
+  # ADITIVO: los llamantes de hoy no lo pasan y no se enteran. Es la misma forma
+  # que tuvo `scope:` al llegar en F11.
+  test "sin `among` no cambia nada para quien no lo pasa" do
+    client = build_client
+    crear_documento(client, "Informe")
+    build_project_document(project: build_own_project, slug: "informe")
+
+    assert_equal "informe-2",
+                 Platform::Slug.derive(Platform::Document, "Informe", fallback: "doc")
+  end
+
   private
 
   def crear_documento(client, title)

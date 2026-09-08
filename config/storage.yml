@@ -18,3 +18,35 @@ artifacts:
   secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
   region:            <%= ENV.fetch("AWS_REGION", "eu-west-1") %>
   bucket:            <%= ENV["AWS_ARTIFACTS_BUCKET"] %>
+
+# Los documentos SUBIDOS a un proyecto (F12). Almacén propio, y no es higiene.
+#
+# ⚠ `Artifacts::Verify#orphans` enumera el almacén de artefactos y llama huérfano
+# a todo objeto que no reclame un `Artifact`. Puede permitírselo porque ahí no se
+# guarda otra cosa — y un documento subido al mismo sitio dejaría
+# `matrix:verify_artifacts` en rojo para siempre, con un huérfano por fichero.
+#
+# Y separar el servicio de Active Storage NO basta por sí solo, en ninguno de los
+# dos almacenes:
+#
+#   · En S3, `Store.s3_keys` hace `service.bucket.objects`: enumera el BUCKET
+#     entero, así que un prefijo dentro del de artefactos se contaría igual.
+#     Bucket propio, no prefijo.
+#   · En disco, `Store.disk_keys` hace `root.glob("**/*")`: por eso la raíz va
+#     FUERA de la de artefactos —`storage-documents`, no `storage/documents`—.
+#     Anidarlas habría anulado la separación sin que nada avisara.
+#
+# Un servicio con nombre se resuelve igual en todos los entornos, así que el
+# interruptor va aquí dentro. El fichero ya es ERB para las variables del bucket
+# de arriba.
+documents:
+<% if Rails.env.production? %>
+  service: S3
+  access_key_id:     <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  region:            <%= ENV.fetch("AWS_REGION", "eu-west-1") %>
+  bucket:            <%= ENV["AWS_DOCUMENTS_BUCKET"] %>
+<% else %>
+  service: Disk
+  root: <%= Rails.root.join(Rails.env.test? ? "tmp/storage-documents" : "storage-documents") %>
+<% end %>

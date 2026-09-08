@@ -107,7 +107,24 @@ module Platform::Projection
 
     row.slug = Platform::Slug.derive(
       row.class, attributes[campo],
-      fallback: "#{row.class.name.demodulize.downcase}-#{attributes[:platform_id]}")
+      fallback: "#{row.class.name.demodulize.downcase}-#{attributes[:platform_id]}",
+      among: also_taken_by(row))
+  end
+
+  # LA OTRA DIRECCIÓN DE LA UNICIDAD DE F12, y es la que se olvida.
+  #
+  # Un documento SUBIDO y uno de platform se citan igual —`[src:doc/acta-precios]`—
+  # y `Citations::Resolve` los resuelve dentro del mismo proyecto. `ProjectDocument`
+  # ya mira aquí al derivar el suyo; sin esto, una sincronización POSTERIOR
+  # crearía la ambigüedad que aquella evitó, y lo haría en silencio.
+  #
+  # Solo para documentos: las reuniones se citan por fecha —`[src:meet/…]`— y no
+  # comparten espacio de nombres con nada.
+  def also_taken_by(row)
+    return [] unless row.is_a?(Platform::Document)
+
+    [ ProjectDocument.joins(:project)
+                     .where(projects: { platform_client_id: row.platform_client_id }) ]
   end
 
   # Lo que ya no viene del origen se MARCA, no se borra. Es el invariante 1 por
