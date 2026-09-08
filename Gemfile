@@ -52,6 +52,11 @@ gem "json_schemer", "~> 2.3"
 # Render del markdown de los artefactos (spec, DoD, guía, cierre).
 gem "commonmarker", "~> 2.0"
 
+# Texto de los PDF que se suben a un proyecto (F12). MISMA VERSIÓN que
+# identia-platform, que lleva desde F5 extrayendo con ella contra ficheros
+# reales: lo que se cita es el texto, no el fichero.
+gem "pdf-reader", "~> 2.14"
+
 # Paginación de listados largos.
 gem "pagy", "~> 9.0"
 

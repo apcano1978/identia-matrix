@@ -86,15 +86,20 @@ module DomainBuilders
   # El slug se deriva como en producción —libre entre las dos tablas— salvo que
   # el test pida uno concreto.
   def build_project_document(project: nil, title: "Acta de precios", slug: nil,
-                             body: nil, content: "# Un documento\n", **attributes)
+                             body: nil, content: "# Un documento\n",
+                             filename: nil, content_type: "text/markdown",
+                             **attributes)
     project ||= build_own_project
 
     document = ProjectDocument.new(
       project: project, uploaded_by_user: build_platform_user,
       title: title, slug: slug || ProjectDocument.slug_for(title, project: project),
       body: body, **attributes)
-    document.file.attach(io: StringIO.new(content), filename: "#{document.slug}.md",
-                         content_type: "text/markdown")
+    # `binmode` en el StringIO: los tests de extracción pasan bytes de un PDF y
+    # de un csv en Latin-1, y sin esto Ruby los reinterpreta al leerlos.
+    io = StringIO.new(content.dup.force_encoding(Encoding::BINARY))
+    document.file.attach(io: io, filename: filename || "#{document.slug}.md",
+                         content_type: content_type)
     document.save!
     document
   end
