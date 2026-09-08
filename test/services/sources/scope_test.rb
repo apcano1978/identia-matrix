@@ -77,6 +77,106 @@ class Sources::ScopeTest < ActiveSupport::TestCase
                         ajeno
   end
 
+  # ── El tercer origen: lo SUBIDO al proyecto (F12) ─────────────────────────
+
+  test "los documentos del proyecto son un origen aparte del cliente" do
+    propio = build_project_document(project: @initiative.project,
+                                    title: "Acta arranque", body: "Lo acordado.")
+
+    own = Sources::Scope.own(@initiative)
+
+    assert_equal [ propio ], own[:documents].sources
+    # No se cuela entre lo del cliente: son dos consultas y dos fronteras.
+    assert_not_includes Sources::Scope.inherited(@initiative)[:documents].sources,
+                        propio
+  end
+
+  test "y un proyecto propio, que no hereda nada, sí tiene los suyos" do
+    proyecto = build_own_project(slug: "identia-interno")
+    evolutivo = build_initiative(project: proyecto, code: "ev-900")
+    propio = build_project_document(project: proyecto, title: "Acta arranque",
+                                    body: "Lo acordado.")
+
+    assert_equal [ propio ], Sources::Scope.own(evolutivo)[:documents].sources
+    assert_empty Sources::Scope.inherited(evolutivo)[:documents].sources
+  end
+
+  # Retirar saca del ámbito POR DEFECTO. Es la mitad de lo que significa; la
+  # otra mitad —que las citas ya emitidas siguen resolviendo— la prueba
+  # `Citations::Resolve`.
+  test "un documento retirado sale de lo disponible" do
+    propio = build_project_document(project: @initiative.project,
+                                    title: "Acta vieja", body: "Ya no vale.")
+    propio.update!(retired_at: Time.current)
+
+    assert_empty Sources::Scope.own(@initiative)[:documents].sources
+  end
+
+  # ⚠ Pero NO sale de lo ya acotado: un evolutivo en marcha no pierde una fuente
+  # bajo los pies porque alguien retire el documento desde la ficha.
+  test "pero no de lo que ya estaba acotado" do
+    propio = build_project_document(project: @initiative.project,
+                                    title: "Acta viva", body: "Vale.")
+    scope!(@initiative, propio, refs: 2)
+    propio.update!(retired_at: Time.current)
+
+    assert_includes Sources::Scope.scoped(@initiative)[:documents].sources, propio
+  end
+
+  test "y uno acotado deja de estar en lo disponible, como los de platform" do
+    propio = build_project_document(project: @initiative.project,
+                                    title: "Acta arranque", body: "Lo acordado.")
+    scope!(@initiative, propio, refs: 1)
+
+    assert_empty Sources::Scope.own(@initiative)[:documents].sources
+    assert_includes Sources::Scope.scoped(@initiative)[:documents].sources, propio
+  end
+
+  # INVARIANTE 10, del lado propio: `own` filtra por `project_id`, así que el
+  # documento de otro proyecto del MISMO cliente tampoco aparece.
+  test "el documento de otro proyecto del mismo cliente no aparece" do
+    otro_proyecto = Project.create!(platform_client_id: @client.id,
+                                    slug: "vivla-dos", name: "Vivla dos",
+                                    opened_at: Time.current)
+    ajeno = build_project_document(project: otro_proyecto, title: "Acta ajena",
+                                   body: "De otro proyecto.")
+
+    assert_not_includes Sources::Scope.own(@initiative)[:documents].sources, ajeno
+  end
+
+  # ── `in_scope`: lo que de verdad viaja ────────────────────────────────────
+
+  test "in_scope devuelve lo acotado cuando hay filas" do
+    in_scope = Sources::Scope.in_scope(@initiative)
+
+    assert_equal [ @acotado ], in_scope[:documents].sources
+    assert_equal [ @reunion ], in_scope[:meetings].sources
+    assert_not_includes in_scope[:documents].sources, @heredado
+  end
+
+  # ⚠ EL DEFECTO QUE B4 ARREGLA. «La ausencia de fila ES la herencia» era verdad
+  # en la pantalla y mentira en el payload: un evolutivo recién abierto mandaba
+  # cero fuentes mientras su pantalla enseñaba las del cliente.
+  test "y sin ninguna fila devuelve todo lo disponible, propio y heredado" do
+    propio = build_project_document(project: @otro.project,
+                                    title: "Acta arranque", body: "Lo acordado.")
+
+    in_scope = Sources::Scope.in_scope(@otro)
+
+    assert_equal 0, @otro.initiative_sources.count
+    assert_includes in_scope[:documents].sources, propio
+    assert_includes in_scope[:documents].sources, @acotado
+    assert_includes in_scope[:documents].sources, @heredado
+    assert_equal [ @reunion ], in_scope[:meetings].sources
+  end
+
+  test "y lo propio va primero, que es lo más cercano al evolutivo" do
+    propio = build_project_document(project: @otro.project,
+                                    title: "Acta arranque", body: "Lo acordado.")
+
+    assert_equal propio, Sources::Scope.in_scope(@otro)[:documents].sources.first
+  end
+
   private
     def scope!(initiative, source, refs:)
       InitiativeSource.create!(initiative: initiative, source: source,

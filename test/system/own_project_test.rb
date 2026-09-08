@@ -129,7 +129,7 @@ class OwnProjectTest < ApplicationSystemTestCase
   # Un proyecto propio no hereda documentación de ningún cliente, y eso NO es un
   # hueco: es la frontera funcionando. La consulta sale con `platform_client_id`
   # nulo y devuelve vacío, que es lo correcto.
-  test "sus fuentes están vacías y la pantalla no finge heredar de nadie" do
+  test "sus fuentes no fingen heredar de nadie" do
     initiative = own_initiative
 
     visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
@@ -138,6 +138,37 @@ class OwnProjectTest < ApplicationSystemTestCase
     assert_text "identia-matrix"
     assert_no_text "HEREDADAS DE"
     assert_no_text "acta-precios"
+  end
+
+  # ⚠ F12 · Y LO QUE ARREGLA ESE VACÍO. Hasta B4 esta pantalla no tenía nada que
+  # enseñarle a un proyecto propio: sin cliente detrás, ninguna sección se podía
+  # llenar nunca. Los documentos SUBIDOS son su única fuente posible, y salen por
+  # la sección DEL PROYECTO.
+  test "pero lo que se le sube sí sale, que es su única fuente posible" do
+    initiative = own_initiative
+    upload_document_to("proyecto-de-prueba")
+
+    visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
+
+    documentos = find("[data-card='docs-proyecto']")
+
+    assert documentos.has_text?("acta-arranque")
+    assert_text "subidos a proyecto-de-prueba"
+    assert_no_text "HEREDADAS DE"
+  end
+
+  # Sin cuerpo NO viaja al agente —`Runtime::Request` filtra por `citable?`— y la
+  # pantalla lo dice en vez de listarlo como si sirviera.
+  test "y el que todavía no tiene cuerpo se lista diciendo que no viaja" do
+    initiative = own_initiative
+    upload_document_to("proyecto-de-prueba", extract: false)
+
+    visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
+
+    documentos = find("[data-card='docs-proyecto']")
+
+    assert documentos.has_text?("acta-arranque")
+    assert documentos.has_text?("sin cuerpo · no viaja")
   end
 
   # El formulario de evolutivo no enseña un desplegable vacío: dice por qué no
@@ -315,6 +346,28 @@ class OwnProjectTest < ApplicationSystemTestCase
 
       Initiatives::Open.call(project: project, title: "Rediseño de la interfaz",
                              repositories: [ repository ], actor: "test")
+    end
+
+    # Sube un documento por la pantalla del proyecto, que es la única forma que
+    # hay: no se fabrica la fila a mano porque lo que se quiere probar es el
+    # camino entero, desde el fichero hasta la pantalla de fuentes.
+    #
+    # La extracción es un job y en test el adaptador es el de Sidekiq, así que
+    # `perform_later` encola de verdad: se corre a mano, que es lo que hará el
+    # worker. Sin `extract:` queda el estado intermedio que el usuario ve.
+    def upload_document_to(project_slug, extract: true)
+      path = Rails.root.join("tmp", "acta arranque.md")
+      path.write("# Acta de arranque\n\nLo acordado en el arranque.\n")
+
+      visit project_path(project_slug)
+      attach_file "files[]", path.to_s
+      assert_no_text "Todavía no hay ninguno"
+
+      return unless extract
+
+      ProjectDocument.where(extracted_at: nil).find_each do |document|
+        ProjectDocuments::Extract.call(document)
+      end
     end
 
     # A una etapa que aparece en una bandeja del dashboard con su enlace.

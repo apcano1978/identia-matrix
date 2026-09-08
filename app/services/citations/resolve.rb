@@ -17,10 +17,11 @@ module Citations
   #
   # ── La frontera se mudó en F11, y quedó ASIMÉTRICA a propósito ─────────────
   #
-  # Tres de las cinco consultas filtran por `project_id` —repositorio, nota y
-  # artefacto— porque son tablas nativas de matrix y el proyecto es su raíz.
+  # Las consultas contra tablas nativas de matrix —repositorio, nota y
+  # artefacto— filtran por `project_id`, porque el proyecto es su raíz.
   #
-  # Las otras dos —documento y reunión— **siguen filtrando por
+  # Las que van contra la proyección —documento de platform y reunión— **siguen
+  # filtrando por
   # `platform_client_id`**, y eso NO es un resto por limpiar. Son la proyección
   # de solo lectura de platform: llegan sin ninguna noción de proyecto de matrix,
   # y un documento puede alimentar legítimamente a dos proyectos del mismo
@@ -32,9 +33,15 @@ module Citations
   # deja de ver el material de otro proyecto del mismo cliente. Eso es lo que
   # hizo segura la migración.
   #
-  # En un proyecto PROPIO, `[src:doc/…]` y `[src:meet/…]` devuelven `nil`: no hay
-  # cliente detrás y por tanto no hay proyección. No es un hueco — es que matrix
-  # no acepta documentos propios hasta F12.
+  # Desde F12 hay una tercera: `ProjectDocument`, el documento SUBIDO a matrix.
+  # Esa sí filtra por `project_id`, porque nace dentro de un proyecto y no viene
+  # de ninguna parte. Así que `[src:doc/…]` resuelve por dos caminos —y `B1` hizo
+  # que no puedan chocar: el slug es único dentro del proyecto venga de donde
+  # venga, así que nunca hay dos candidatos.
+  #
+  # En un proyecto PROPIO, `[src:meet/…]` sigue devolviendo `nil`: no hay cliente
+  # detrás y matrix no acepta transcripciones propias. `[src:doc/…]` ya no — es
+  # justo lo que F12 vino a abrir.
   #
   # Ninguna consulta navega asociaciones para llegar a la frontera: es la misma
   # disciplina que exige
@@ -83,15 +90,40 @@ module Citations
                              name: reference.repository)
         end
 
+        # Un documento puede venir de platform o haberse subido a este proyecto.
+        # Los dos son ORIGEN y se citan igual: quien escribe `[src:doc/acta]` no
+        # tiene por qué saber por dónde entró.
+        #
+        # ⚠ EL ORDEN ES DELIBERADO, aunque hoy no pueda haber empate: B1 hizo el
+        # slug único dentro del proyecto entre las dos tablas. Platform primero
+        # porque es lo que llevan dentro las citas YA EMITIDAS, que viven en
+        # markdown que nadie puede reescribir — la misma disciplina que `artifact`.
+        #
+        # Un documento RETIRADO sigue resolviendo, y es la mitad de lo que
+        # retirar significa: sale del ámbito de los evolutivos nuevos, no de las
+        # citas que ya lo nombran. Una cita que deja de resolver es procedencia
+        # rota.
+        def document(reference, project)
+          from_platform(reference, project) || uploaded(reference, project)
+        end
+
         # El slug del documento es propiedad de matrix y está congelado desde la
         # primera sincronización: aunque en platform renombren el documento, la
         # cita que lo nombra sigue resolviendo.
-        def document(reference, project)
+        def from_platform(reference, project)
           client_id = client_id_of(project)
           return nil if client_id.blank?
 
           Platform::Document.find_by(platform_client_id: client_id,
                                      slug: reference.locator)
+        end
+
+        # El subido. Filtra por `project_id` —la frontera de verdad, no navegando
+        # asociaciones— así que un documento de otro proyecto no resuelve aquí ni
+        # aunque el cliente sea el mismo. Ese es el invariante 10, y es más
+        # estrecho que lo que le pasa a los de platform.
+        def uploaded(reference, project)
+          ProjectDocument.find_by(project_id: project.id, slug: reference.locator)
         end
 
         # El locator de una reunión es la FECHA. El sufijo —la enmienda aditiva

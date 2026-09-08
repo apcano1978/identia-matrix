@@ -96,6 +96,77 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     assert_empty Runtime::Request.for(run).payload.dig("config", "sources").to_a
   end
 
+  # ── F12 · lo que se manda cuando NO hay ámbito acotado ────────────────────
+
+  # ⚠ EL DEFECTO QUE B4 ARREGLA. El runbook dice «la ausencia de fila ES la
+  # herencia», y eso era verdad en la pantalla y mentira aquí: un evolutivo
+  # recién abierto mandaba CERO fuentes mientras su pantalla enseñaba las del
+  # cliente. Pasó desapercibido porque el único evolutivo con agentes de verdad
+  # tiene sus filas sembradas.
+  test "sin ninguna fila de ambito se manda todo lo disponible" do
+    run = agent_run
+    client = run.initiative.platform_client
+    build_document(client: client, slug: "glosario-negocio", body: "El glosario.")
+    build_document(client: client, slug: "acta-precios", body: "Lo acordado.")
+
+    sources = Runtime::Request.for(run).payload.dig("config", "sources")
+
+    assert_equal 0, run.initiative.initiative_sources.count
+    assert_equal %w[acta-precios glosario-negocio], sources.map { |s| s["slug"] }.sort
+  end
+
+  test "y con filas se manda solo eso, que es lo que acotar significa" do
+    run = agent_run
+    client = run.initiative.platform_client
+    acotado = build_document(client: client, slug: "acta-precios", body: "Lo acordado.")
+    build_document(client: client, slug: "glosario-negocio", body: "El glosario.")
+    InitiativeSource.create!(initiative: run.initiative, source: acotado)
+
+    sources = Runtime::Request.for(run).payload.dig("config", "sources")
+
+    assert_equal [ "acta-precios" ], sources.map { |s| s["slug"] }
+  end
+
+  # El documento SUBIDO. Viaja como cualquier otro y se cita igual: lo único que
+  # cambia es que no lleva `platform_id`, porque no existe en platform.
+  test "un documento subido viaja, y sin platform_id" do
+    run = agent_run
+    build_project_document(project: run.initiative.project,
+                           title: "Acta arranque", body: "Lo acordado.")
+
+    source = Runtime::Request.for(run).payload.dig("config", "sources").first
+
+    assert_equal "document", source["kind"]
+    assert_equal "acta-arranque", source["slug"]
+    assert_equal "Lo acordado.", source["body"]
+    # ⚠ AUSENTE, no nulo: no es un id que falte, es que no tiene ninguno.
+    refute source.key?("platform_id")
+    assert_empty Contracts.errors(:matrix_brain_agent_run,
+                                  Runtime::Request.for(run).payload)
+  end
+
+  test "y uno cuya extraccion no ha corrido todavia no viaja" do
+    run = agent_run
+    build_project_document(project: run.initiative.project,
+                           title: "Acta arranque", body: nil)
+
+    assert_empty Runtime::Request.for(run).payload.dig("config", "sources").to_a
+  end
+
+  # Un proyecto PROPIO no hereda nada de ningún cliente, así que hasta F12 su
+  # agente trabajaba sin una sola fuente. Es el caso que abre `identia-interno`.
+  test "en un proyecto propio, lo subido es todo lo que hay" do
+    initiative = place(build_initiative(project: build_own_project), :tank)
+    run = AgentRun.create!(initiative: initiative, agent: :tank,
+                           purpose: :context, code: "run-propio", status: :running)
+    build_project_document(project: initiative.project, title: "Acta arranque",
+                           body: "Lo acordado.")
+
+    sources = Runtime::Request.for(run).payload.dig("config", "sources")
+
+    assert_equal [ "acta-arranque" ], sources.map { |s| s["slug"] }
+  end
+
   test "TANK recibe las notas humanas del evolutivo" do
     run = agent_run
     client = run.initiative.platform_client

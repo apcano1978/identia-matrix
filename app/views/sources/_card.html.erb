@@ -1,6 +1,7 @@
 <%# Una tarjeta de fuentes. El borde dice de qué tipo de ámbito se trata:
-    continuo y oro lo acotado a este evolutivo, DISCONTINUO lo heredado del
-    cliente — el mismo idioma que el chip de cita derivada.
+    continuo y oro lo acotado a este evolutivo, DISCONTINUO lo que entra por
+    defecto —del proyecto o del cliente— el mismo idioma que el chip de cita
+    derivada.
 
     Se enseña el SLUG, no un nombre de fichero: es lo que va dentro de la cita,
     y por tanto lo único que sirve para escribirla. La maqueta los pinta con
@@ -45,8 +46,17 @@
             </span>
           <% end %>
 
-          <% if source.missing_in_platform? %>
+          <%# `try`: solo la proyección de platform puede desaparecer de allí.
+              Un documento subido a matrix no tiene dónde ausentarse. %>
+          <% if source.try(:missing_in_platform?) %>
             <span class="text-glyph-fail">· ausente en platform</span>
+          <% end %>
+
+          <%# Sin cuerpo NO viaja al agente: `Runtime::Request` filtra por
+              `citable?`. Decirlo aquí es la diferencia entre una lista de lo
+              que hay y una lista de lo que se puede citar. %>
+          <% unless source.citable? %>
+            <span class="text-terminal-disabled">· sin cuerpo · no viaja</span>
           <% end %>
         </li>
       <% end %>

@@ -126,8 +126,9 @@ class Citations::ResolveTest < ActiveSupport::TestCase
   end
 
   # Un proyecto propio no tiene cliente, así que no alcanza ninguna proyección.
-  # No es un hueco: es que matrix no acepta documentos propios hasta F12.
-  test "un proyecto propio no resuelve citas de documento ni de reunion" do
+  # Sigue sin resolver lo del cliente —eso es la frontera— y desde F12 sí
+  # resuelve lo suyo.
+  test "un proyecto propio no alcanza la proyeccion de ningun cliente" do
     build_document(client: @client, slug: "acta-precios")
     propio = build_own_project
 
@@ -135,6 +136,63 @@ class Citations::ResolveTest < ActiveSupport::TestCase
       Citations::Parse.call!("[src:doc/acta-precios#p2]"), project: propio)
     assert_nil Citations::Resolve.call(
       Citations::Parse.call!("[src:meet/2026-05-02@22:40]"), project: propio)
+  end
+
+  # ── F12 · el documento SUBIDO ──────────────────────────────────────────────
+
+  test "una cita de documento resuelve tambien contra uno subido" do
+    document = build_project_document(project: project_for(@client),
+                                      title: "Acta arranque", body: "Lo acordado.")
+
+    assert_equal document, resolve("[src:doc/acta-arranque#p1]")
+  end
+
+  # ⚠ LO QUE B4 DESBLOQUEA. Hasta aquí `document` salía por lo alto en cuanto el
+  # proyecto no tenía cliente, así que en un proyecto PROPIO ninguna cita de
+  # documento resolvía nunca — y un proyecto propio no tiene otra forma de tener
+  # documentos.
+  test "y en un proyecto propio, que es donde antes era imposible" do
+    propio = build_own_project(slug: "identia-interno")
+    document = build_project_document(project: propio, title: "Acta arranque",
+                                      body: "Lo acordado.")
+
+    assert_equal document, Citations::Resolve.call(
+      Citations::Parse.call!("[src:doc/acta-arranque#p1]"), project: propio)
+  end
+
+  # INVARIANTE 10. `ProjectDocument` filtra por `project_id`, que es más estrecho
+  # que lo que le pasa a la proyección de platform: dos proyectos del mismo
+  # cliente NO se prestan documentos subidos.
+  test "un documento subido a otro proyecto no resuelve" do
+    otro = Project.create!(platform_client_id: @client.id, slug: "vivla-dos",
+                           name: "Vivla dos", opened_at: Time.current)
+    build_project_document(project: otro, title: "Acta ajena", body: "De otro.")
+
+    assert_nil resolve("[src:doc/acta-ajena#p1]")
+  end
+
+  # Retirar saca del ámbito de los evolutivos nuevos, NO de las citas ya
+  # emitidas. Una cita que deja de resolver es procedencia rota, y la pantalla lo
+  # promete con esas palabras al confirmar la retirada.
+  test "y uno retirado sigue resolviendo: eso es lo que retirar significa" do
+    document = build_project_document(project: project_for(@client),
+                                      title: "Acta vieja", body: "Lo acordado.")
+    document.update!(retired_at: Time.current)
+
+    assert_equal document, resolve("[src:doc/acta-vieja#p1]")
+  end
+
+  # El orden de `document`: platform primero, porque es lo que llevan dentro las
+  # citas ya emitidas. Hoy no puede haber empate —B1 hizo el slug único entre las
+  # dos tablas dentro del proyecto— y este test lo comprueba desde fuera.
+  test "el slug no se puede repetir entre las dos tablas del mismo proyecto" do
+    build_document(client: @client, slug: "acta-precios")
+    document = build_project_document(project: project_for(@client),
+                                      title: "Acta precios", body: "Lo acordado.")
+
+    assert_equal "acta-precios-2", document.slug
+    assert_instance_of Platform::Document, resolve("[src:doc/acta-precios#p1]")
+    assert_equal document, resolve("[src:doc/acta-precios-2#p1]")
   end
 
   # F11 · UNA CITA DE ARTEFACTO SE PUEDE ESCRIBIR DE DOS FORMAS, y las dos dan lo

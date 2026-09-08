@@ -64,6 +64,33 @@
                shared: @shared, scoped: true %>
   </div>
 
+  <%# ── DEL PROYECTO ──────────────────────────────────────────────────────
+      Los documentos SUBIDOS aquí (F12). Van entre lo acotado y lo del cliente
+      porque ese es el orden de cercanía: lo de este evolutivo, lo de este
+      proyecto, lo de quien está detrás del proyecto.
+
+      Se pinta SIEMPRE, también vacía y también en un proyecto de cliente: a
+      diferencia de la del cliente —que promete una carpeta que un proyecto
+      propio nunca va a tener— esta sí se puede llenar desde la ficha del
+      proyecto, y decir que está vacía es decir dónde se empieza. %>
+  <%= section_header "DEL PROYECTO",
+                     count: @own.values.sum(&:size), tone: :gate2,
+                     gloss: "subidos a #{@project.slug} · " \
+                            "se citan igual, sin pasar por platform" %>
+
+  <div class="mt-[9px] grid grid-cols-2 gap-3">
+    <%= render "sources/card", label: "DOCS · PROYECTO",
+               group: @own[:documents], shared: @shared, scoped: false %>
+    <%# La segunda columna no es una tarjeta vacía: matrix no acepta
+        transcripciones propias, y una tarjeta «REUNIONES · PROYECTO» diciendo
+        «Ninguna» insinuaría que algún día se llenará por aquí. %>
+    <p class="self-start p-[11px_12px] border border-dashed border-terminal-border
+              text-t105 leading-[1.65] text-terminal-fg-3">
+      Las transcripciones no se suben a matrix: llegan de identia-platform, que
+      es donde se graban las reuniones.
+    </p>
+  </div>
+
   <%# ── HEREDADAS ─────────────────────────────────────────────────────────
       Lo que NO está acotado a este evolutivo. El borde discontinuo es el mismo
       idioma que el chip de cita derivada: lo que no se declaró explícitamente.

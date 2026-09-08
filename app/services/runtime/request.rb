@@ -222,23 +222,38 @@ module Runtime::Request
     end
   end
 
-  # Las fuentes en ámbito, cuerpo incluido. Solo las CITABLES: una fuente sin
-  # texto no se puede citar por ancla, y mandarla invitaría al agente a citar
-  # algo que después no resuelve.
+  # Las fuentes en ámbito, cuerpo incluido.
+  #
+  # ⚠ `in_scope`, no `scoped`: **lo acotado si hay filas, todo lo disponible si
+  # no**. Hasta F12 esto llamaba a `scoped`, y un evolutivo recién abierto salía
+  # con cero fuentes mientras su pantalla le enseñaba las del cliente como
+  # heredadas. La regla vive en `Sources::Scope` porque la pantalla tiene que
+  # contestar exactamente lo mismo.
+  #
+  # Solo las CITABLES: una fuente sin texto no se puede citar por ancla, y
+  # mandarla invitaría al agente a citar algo que después no resuelve. Eso es lo
+  # que deja fuera al documento subido cuya extracción todavía no ha corrido, o
+  # al PDF escaneado del que no salió nada.
   def sources_of(initiative)
-    Sources::Scope.scoped(initiative).flat_map do |kind, group|
+    Sources::Scope.in_scope(initiative).flat_map do |kind, group|
       group.sources.select(&:citable?).map { |source| source_payload(kind, source) }
     end
   end
 
+  # ⚠ `platform_id` se OMITE cuando no lo hay, en vez de viajar en `nil`. Un
+  # documento subido a matrix no existe en platform: no es que le falte el id, es
+  # que no tiene ninguno. El contrato lo dejó de exigir en F12 y el brain lo
+  # declara opcional; mandarlo nulo diría otra cosa.
+  #
+  # Lo que hace citable a un documento es el `slug`, y ese viaja siempre.
   def source_payload(kind, source)
     payload = {
       "kind" => kind == :documents ? "document" : "meeting",
-      "platform_id" => source.platform_id,
       "title" => source.title,
       "slug" => source.slug,
       "body" => source.body
     }
+    payload["platform_id"] = source.platform_id if source.try(:platform_id)
     payload["occurred_on"] = source.held_on.iso8601 if source.respond_to?(:held_on) && source.held_on
     payload
   end

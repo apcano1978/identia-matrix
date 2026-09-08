@@ -159,13 +159,12 @@
         },
         "sources": {
           "type": "array",
-          "description": "Documentos y transcripciones en ámbito. El ámbito es un filtro, nunca una copia: un mismo documento puede servir a varios evolutivos.",
+          "description": "Documentos y transcripciones en ámbito, vengan de identia-platform o subidos al propio proyecto. El ámbito es un filtro, nunca una copia: un mismo documento puede servir a varios evolutivos.",
           "default": [],
           "items": {
             "type": "object",
             "required": [
               "kind",
-              "platform_id",
               "title"
             ],
             "additionalProperties": false,
@@ -177,6 +176,7 @@
                 ]
               },
               "platform_id": {
+                "description": "El id en identia-platform, cuando la fuente viene de allí. Un documento subido a matrix (F12) no lo tiene: lo que lo hace citable es el slug.",
                 "type": "integer",
                 "minimum": 1
               },

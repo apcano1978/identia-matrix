@@ -19,6 +19,10 @@ class SourcesController < ApplicationController
     @links = @initiative.initiative_repositories
                         .sort_by { |link| link.repository.name }
     @scoped = Sources::Scope.scoped(@initiative)
+    # Los documentos SUBIDOS a este proyecto que no estén acotados (F12). Es la
+    # única sección que un proyecto propio puede llenar, y por eso va antes que
+    # la del cliente: de lo más suyo a lo menos.
+    @own = Sources::Scope.own(@initiative)
     @inherited = Sources::Scope.inherited(@initiative)
     @shared = Sources::Scope.shared(@initiative)
   end

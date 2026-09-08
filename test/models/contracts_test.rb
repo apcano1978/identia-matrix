@@ -100,6 +100,28 @@ class ContractsTest < ActiveSupport::TestCase
     assert Contracts.valid?(:matrix_brain_agent_run, payload)
   end
 
+  # F12 · un documento SUBIDO a matrix no existe en platform, así que no tiene
+  # `platform_id`. Lo que lo hace citable es el `slug`, y ese sí es obligatorio
+  # de facto porque sin él el agente no puede escribir `[src:doc/...]`.
+  test "una fuente sin platform_id valida: es un documento subido a matrix" do
+    payload = agent_run_payload(config: {
+      sources: [ { kind: "document", title: "Acta de arranque",
+                   slug: "acta-arranque", body: "Lo acordado." } ]
+    })
+
+    assert_valid_contract(:matrix_brain_agent_run, payload)
+  end
+
+  # Lo que sigue siendo obligatorio: sin título no hay nada que enseñarle al
+  # agente, y sin tipo no se sabe cómo se cita.
+  test "pero una fuente sin titulo no valida" do
+    payload = agent_run_payload(config: {
+      sources: [ { kind: "document", slug: "acta-arranque" } ]
+    })
+
+    refute Contracts.valid?(:matrix_brain_agent_run, payload)
+  end
+
   test "la peticion rechaza un codigo de evolutivo que no sea ev-nnn" do
     payload = agent_run_payload(config: { initiative: { code: "proj-2291", title: "x" } })
 
