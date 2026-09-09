@@ -126,4 +126,139 @@ class Initiatives::OpenTest < ActiveSupport::TestCase
   test "y sin proyecto también se abre" do
     assert_nil abrir.platform_project
   end
+
+  # ── El ámbito documental (F12 · B5) ───────────────────────────────────────
+  #
+  # La regla entera cabe en una frase: **se sella si lo marcado ≠ lo citable
+  # disponible**. Sellar es lo que convierte «recortar» en un acto fechado, y es
+  # lo que hace que «ninguna fuente» se pueda decir.
+
+  test "sin hablar de ámbito no se sella nada: se hereda todo" do
+    build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+
+    initiative = abrir
+
+    refute_predicate initiative, :sources_scoped?
+    assert_equal 0, initiative.initiative_sources.count
+    assert_equal 1, Sources::Scope.in_scope(initiative).values.sum(&:size)
+  end
+
+  # ⚠ Y DEJAR EL MARCADO POR DEFECTO TAMPOCO SELLA. Es la mitad de la regla:
+  # quien no recorta sigue heredando lo que se suba mañana, y sellarle el ámbito
+  # por haber pulsado «abrir» se lo quitaría sin que lo pidiera.
+  test "marcar todo lo citable tampoco: no recortó" do
+    uno = build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    dos = build_document(client: @client, slug: "glosario-negocio", body: "El glosario.")
+
+    initiative = abrir(sources: [ uno, dos ])
+
+    refute_predicate initiative, :sources_scoped?
+    assert_equal 0, initiative.initiative_sources.count
+  end
+
+  test "pero desmarcar una sí sella, y el ámbito es lo marcado" do
+    uno = build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    build_document(client: @client, slug: "glosario-negocio", body: "El glosario.")
+
+    initiative = abrir(sources: [ uno ])
+
+    assert_predicate initiative, :sources_scoped?
+    assert_equal [ uno ], Sources::Scope.in_scope(initiative)[:documents].sources
+  end
+
+  # ⚠ CERO MARCADAS ES CERO FUENTES, no «todas». Es el «arrancar solo con
+  # conversación» del rediseño, y hasta que la fecha existió era inexpresable:
+  # cero filas volvía a leerse como herencia.
+  test "y no marcar ninguna sella con cero: el evolutivo arranca sin fuentes" do
+    build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+
+    initiative = abrir(sources: [])
+
+    assert_predicate initiative, :sources_scoped?
+    assert_equal 0, initiative.initiative_sources.count
+    assert_equal 0, Sources::Scope.in_scope(initiative).values.sum(&:size)
+  end
+
+  # Un documento sin cuerpo sale DESMARCADO del formulario y no viajaría igual,
+  # así que dejarlo fuera no es recortar.
+  test "dejar fuera lo que no tiene cuerpo no cuenta como recortar" do
+    citable = build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    build_document(client: @client, slug: "escaneado", body: nil)
+
+    refute_predicate abrir(sources: [ citable ]), :sources_scoped?
+  end
+
+  # ⚠ Y MARCARLO TAMPOCO, que es lo contrario de lo que este test decía al
+  # escribirlo. Recortar es DEJAR FUERA algo que podía entrar; añadir de más una
+  # fuente sin cuerpo no quita nada y no cambia lo que el agente recibe, así que
+  # no puede congelar el ámbito.
+  #
+  # La regla se enderezó cuando la pantalla de fuentes contradijo su propio
+  # rótulo: decía «márcalo todo para volver a heredarlo todo» y marcarlo todo
+  # —incluidas las nueve sin cuerpo del catálogo— no lo hacía.
+  test "y marcarlo de más tampoco: añadir no es recortar" do
+    citable = build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    sin_cuerpo = build_document(client: @client, slug: "escaneado", body: nil)
+
+    refute_predicate abrir(sources: [ citable, sin_cuerpo ]), :sources_scoped?
+  end
+
+  # ── Lo adjuntado en el mismo formulario ───────────────────────────────────
+
+  # ⚠ ADJUNTAR NO ES RECORTAR. Nadie pudo marcar una casilla que no existía
+  # cuando envió, así que arrastrar un fichero no puede sellar el ámbito por su
+  # cuenta — y no hace falta: sin sellar, lo subido entra solo.
+  test "adjuntar un documento no sella el ámbito" do
+    ya_estaba = build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    nuevo = build_project_document(project: project_for(@client), title: "Acta arranque",
+                                   body: "Lo acordado ahora.")
+
+    initiative = abrir(sources: [ ya_estaba ], attached: [ nuevo ])
+
+    refute_predicate initiative, :sources_scoped?
+    assert_includes Sources::Scope.in_scope(initiative)[:documents].sources, nuevo
+  end
+
+  test "y si se recortó, lo adjuntado entra igual" do
+    build_document(client: @client, slug: "acta-precios", body: "Lo acordado.")
+    build_document(client: @client, slug: "glosario-negocio", body: "El glosario.")
+    nuevo = build_project_document(project: project_for(@client), title: "Acta arranque",
+                                   body: "Lo acordado ahora.")
+
+    initiative = abrir(sources: [], attached: [ nuevo ])
+
+    assert_predicate initiative, :sources_scoped?
+    assert_equal [ nuevo ], initiative.initiative_sources.map(&:source)
+  end
+
+  # ── INVARIANTE 10, del lado documental ────────────────────────────────────
+
+  test "una fuente de otro cliente no entra, y el alta se niega entera" do
+    ajena = build_document(client: build_client(slug: "caser"), slug: "acta-ajena",
+                           body: "De otro.")
+
+    error = assert_raises(Initiatives::Open::Refused) { abrir(sources: [ ajena ]) }
+
+    assert_match "acta-ajena", error.message
+    assert_equal 0, Initiative.count
+  end
+
+  test "ni un documento subido a otro proyecto del mismo cliente" do
+    otro = Project.create!(platform_client_id: @client.id, slug: "vivla-dos",
+                           name: "Vivla dos", opened_at: Time.current)
+    ajeno = build_project_document(project: otro, title: "Acta ajena", body: "De otro.")
+
+    assert_raises(Initiatives::Open::Refused) { abrir(sources: [ ajeno ]) }
+  end
+
+  # Retirar saca del ámbito de los evolutivos NUEVOS, y este es el sitio donde
+  # eso se hace verdad: un retirado no está en `available_for`, así que marcarlo
+  # es marcar algo que no se ofreció.
+  test "ni uno retirado, que ya no se ofrece" do
+    retirado = build_project_document(project: project_for(@client), title: "Acta vieja",
+                                      body: "Ya no vale.")
+    retirado.update!(retired_at: Time.current)
+
+    assert_raises(Initiatives::Open::Refused) { abrir(sources: [ retirado ]) }
+  end
 end

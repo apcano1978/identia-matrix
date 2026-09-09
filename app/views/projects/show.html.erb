@@ -30,7 +30,8 @@
                total: @initiatives_count, multi_repo: @multi_repo_count %>
 
     <%= render "projects/new_initiative", project: @project,
-               repositories: @repositories, projects: @platform_projects %>
+               repositories: @repositories, projects: @platform_projects,
+               sources: @available_sources %>
 
     <%= render "projects/documents", project: @project,
                documents: @documents, retired: @retired_documents %>

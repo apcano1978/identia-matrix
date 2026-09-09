@@ -14,11 +14,15 @@ module Sources
   # hacer inspeccionable esa frontera, y sería raro que fuera el único sitio que
   # la cruza.
   #
-  # ── Los tres orígenes ─────────────────────────────────────────────────────
+  # ── Los tres orígenes, y lo que sale de juntarlos ─────────────────────────
   #
-  #   scoped     lo acotado explícitamente a este evolutivo
-  #   own        los documentos SUBIDOS a este proyecto, sin acotar   (F12)
-  #   inherited  lo del CLIENTE que no esté acotado
+  #   scoped         lo acotado explícitamente a este evolutivo
+  #   own            los documentos SUBIDOS a este proyecto, sin acotar   (F12)
+  #   inherited      lo del CLIENTE que no esté acotado
+  #
+  #   available_for  todo lo que podría entrar en un PROYECTO — sin evolutivo
+  #   in_scope       lo que de verdad entra: una de las dos ramas, según la
+  #                  fecha de `initiatives.sources_scoped_at`
   #
   # `inherited` sigue siendo del cliente, no del proyecto, y no es un resto por
   # limpiar: `Platform::Document` y `Platform::Meeting` son la proyección de
@@ -76,13 +80,20 @@ module Sources
 
       # ⚠ LO QUE DE VERDAD ENTRA EN ÁMBITO, que es lo que viaja al agente.
       #
-      # **Lo acotado si hay filas; si no, todo lo disponible.** Esa es la regla
-      # que el runbook enuncia —«la ausencia de fila ES la herencia»— y hasta F12
-      # era verdad en la pantalla y mentira en el payload: `Runtime::Request`
-      # mandaba solo lo acotado, así que un evolutivo recién abierto salía con
-      # CERO fuentes mientras su pantalla enseñaba las del cliente. No se notó
-      # porque el único evolutivo con agentes de verdad tiene sus filas
-      # sembradas.
+      # **Lo acotado si alguien lo recortó; si no, todo lo disponible.** Es la
+      # regla que el runbook enuncia —«la ausencia de decisión ES la herencia»—
+      # y hasta B4 era verdad en la pantalla y mentira en el payload:
+      # `Runtime::Request` mandaba solo lo acotado, así que un evolutivo recién
+      # abierto salía con CERO fuentes mientras su pantalla enseñaba las del
+      # cliente. No se notó porque el único evolutivo con agentes de verdad tiene
+      # sus filas sembradas.
+      #
+      # ⚠ Y quien decide la rama es la FECHA, no el conteo de filas. B4 contaba
+      # filas y B5 tuvo que dejar de hacerlo, porque contar no sabe decir dos
+      # cosas que la pantalla nueva permite: que marcar una reunión apagaba la
+      # herencia de todos los documentos (P25), y que «ninguna fuente» —el
+      # «arrancar solo con conversación» del rediseño— volvía a leerse como
+      # «todas». Con la fecha, cero filas SON cero fuentes.
       #
       # Vive aquí y no en `Runtime::Request` porque es el concepto de ámbito, no
       # un detalle de cómo se compone una petición: la pantalla y el agente
@@ -91,17 +102,58 @@ module Sources
       # Devuelve el mismo `{ kind => Group }` que los otros tres, para que quien
       # llama no tenga que saber por cuál de las dos ramas salió.
       def in_scope(initiative)
-        acotado = scoped(initiative)
-        return acotado if acotado.values.sum(&:size).positive?
+        return scoped(initiative) if initiative.sources_scoped?
 
-        disponible = inherited(initiative)
-        propio = own(initiative)
-
-        { documents: Group.new(
-            sources: propio[:documents].sources + disponible[:documents].sources,
-            refs: {}),
-          meetings: disponible[:meetings] }
+        available_for(initiative.project)
       end
+
+      # TODO lo que podría entrar en un proyecto, sin evolutivo por medio.
+      #
+      # Existe porque el alta necesita pintar las casillas **antes** de que el
+      # evolutivo exista, y porque es la lista LEGAL contra la que
+      # `Initiatives::Open` comprueba lo que llega del formulario: de aquí no se
+      # sale, y así el invariante 10 no depende de que la vista pinte bien.
+      #
+      # Los propios PRIMERO: es lo más cercano al proyecto, y es el orden en que
+      # la pantalla los enseña.
+      def available_for(project)
+        { documents: Group.new(
+            sources: available(ProjectDocument, project).to_a +
+                     available(Platform::Document, project).to_a,
+            refs: {}),
+          meetings: Group.new(sources: available(Platform::Meeting, project).to_a,
+                              refs: {}) }
+      end
+
+      # LO QUE EL FORMULARIO OFRECE MARCADO DE FÁBRICA: lo citable de lo
+      # disponible.
+      #
+      # Vive aquí porque lo miran los DOS sitios que escriben el ámbito —el alta
+      # y la pantalla de fuentes— para decidir lo mismo: si lo marcado coincide
+      # con esto, nadie recortó. Dos copias de ese criterio serían dos criterios,
+      # y la pantalla acabaría prometiendo un ámbito distinto del que se guarda.
+      #
+      # `plus:` es lo que ya está acotado y podría no estar disponible: un
+      # documento acotado y luego retirado sigue en el ámbito de ese evolutivo,
+      # y quien lo edite tiene que poder conservarlo.
+      def offered(project, plus: [])
+        (available_for(project).values.flat_map(&:sources) + plus)
+          .uniq.select(&:citable?)
+      end
+
+      # ⚠ ¿RECORTÓ? **Sí cuando alguna de las ofrecidas se quedó sin marcar.**
+      #
+      # Es una RESTA y no una igualdad, y la diferencia se pagó descubriéndola:
+      # con `Set == Set`, marcar todo lo que la pantalla enseña —incluido lo que
+      # no tiene cuerpo— no desacotaba, porque lo ofrecido solo cuenta lo
+      # citable. La pantalla decía «márcalo todo para volver a heredarlo todo» y
+      # marcarlo todo no lo hacía.
+      #
+      # Con la resta, recortar significa lo que significa en la cabeza de quien
+      # lo hace: **quitar algo que podía entrar**. Añadir de más una fuente sin
+      # cuerpo no recorta nada —no viajaría igual, `Runtime::Request` la filtra—
+      # así que no cambia el resultado, y no tiene por qué congelar el ámbito.
+      def narrowed?(chosen, offered) = (offered - chosen).any?
 
       # Para cada fuente en ámbito, los OTROS evolutivos que también la acotan.
       # Es lo que produce el «también en ev-014», y con ello lo que demuestra en

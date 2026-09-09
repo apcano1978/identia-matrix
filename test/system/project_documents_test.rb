@@ -102,7 +102,7 @@ class ProjectDocumentsTest < ApplicationSystemTestCase
       raise ProjectDocuments::Upload::Refused, "volcado.csv pesa 40 MB y el tope son 25 MB"
     }) do
       visit project_path("identia-interno")
-      attach_file "files[]", fixture_path_for("con-texto.md", "text/markdown")
+      attach_file "files", fixture_path_for("con-texto.md", "text/markdown")
       assert_text "No se ha subido nada"
     end
 
@@ -125,7 +125,10 @@ class ProjectDocumentsTest < ApplicationSystemTestCase
       # ⚠ `attach_file` necesita el input ALCANZABLE. Está visible a propósito:
       # es lo que hace que la subida funcione sin JS, y ocultarlo para dejar solo
       # la zona de arrastre dejaría esta pantalla sin forma de probarse.
-      attach_file "files[]", fixture_path_for(name, type)
+      #
+      # Por ID y no por nombre: desde B5 el alta de un evolutivo tiene su propio
+      # `files[]` en esta misma pantalla, y buscar por nombre sería ambiguo.
+      attach_file "files", fixture_path_for(name, type)
       assert_no_text "Todavía no hay ninguno"
     end
 

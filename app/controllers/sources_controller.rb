@@ -19,6 +19,14 @@ class SourcesController < ApplicationController
     @links = @initiative.initiative_repositories
                         .sort_by { |link| link.repository.name }
     @scoped = Sources::Scope.scoped(@initiative)
+    # Qué sale marcado (F12 · B5). Recortado: exactamente lo acotado. Sin
+    # recortar: todo, porque todo entra — la pantalla tiene que enseñar el ámbito
+    # que el agente va a recibir, no una lista vacía.
+    @marked = if @initiative.sources_scoped?
+      @scoped.values.flat_map(&:sources)
+    else
+      Sources::Scope.available_for(@project).values.flat_map(&:sources)
+    end
     # Los documentos SUBIDOS a este proyecto que no estén acotados (F12). Es la
     # única sección que un proyecto propio puede llenar, y por eso va antes que
     # la del cliente: de lo más suyo a lo menos.

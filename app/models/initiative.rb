@@ -101,6 +101,16 @@ class Initiative < ApplicationRecord
 
   def multi_repo? = initiative_repositories.size > 1
 
+  # ¿Alguien decidió QUÉ fuentes entran, o entra todo lo que haya? (F12 · B5)
+  #
+  # La pregunta no la contesta el conteo de `initiative_sources`, y ahí está el
+  # porqué de la columna: sin ella, cero filas significaba «todas» y no había
+  # forma de decir «ninguna». Con ella, recortar es un acto fechado.
+  #
+  # Lo que hace con la respuesta es `Sources::Scope.in_scope`, que es donde vive
+  # el concepto de ámbito.
+  def sources_scoped? = sources_scoped_at.present?
+
   def qa_cycles_exhausted? = qa_cycles_consumed >= MAX_QA_CYCLES
 
   # La escalada abierta, si la hay. Un evolutivo detenido tiene exactamente una.

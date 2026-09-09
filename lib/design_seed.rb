@@ -620,7 +620,15 @@ module DesignSeed
   # El ámbito documental de cada evolutivo. Es un FILTRO: lo que NO está aquí
   # no desaparece, se hereda del cliente. Por eso `acta-precios` aparece en dos
   # evolutivos sin duplicarse en ninguno — un documento vive una sola vez.
+  #
+  # ⚠ Y hay que SELLARLO (F12 · B5). Desde que el ámbito lo decide una fecha y no
+  # el conteo de filas, sembrar las nueve filas de ev-031 sin poner
+  # `sources_scoped_at` lo dejaría heredando toda la documentación de vivla: la
+  # maqueta enseñaría un ámbito recortado y el agente recibiría otro. La
+  # migración rellenó lo que ya existía; esto lo mantiene cierto en cada siembra.
   def seed_initiative_sources
+    acotados = []
+
     Catalog::INITIATIVE_SOURCES.each do |data|
       initiative = Initiative.find_by(code: data[:initiative])
       source = if data[:doc]
@@ -633,6 +641,11 @@ module DesignSeed
       row = InitiativeSource.find_or_initialize_by(initiative: initiative,
                                                    source: source)
       row.update!(refs_count: data[:refs])
+      acotados << initiative
+    end
+
+    acotados.uniq.each do |initiative|
+      initiative.update!(sources_scoped_at: initiative.opened_at)
     end
   end
 

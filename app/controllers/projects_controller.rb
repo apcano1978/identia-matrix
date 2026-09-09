@@ -86,6 +86,12 @@ class ProjectsController < ApplicationController
                                                     file_attachment: :blob)
                         .order(created_at: :desc).to_a
     @documents, @retired_documents = documents.partition { |d| !d.retired? }
+
+    # Lo que podría entrar en el ámbito de un evolutivo nuevo (F12 · B5). Del
+    # PROYECTO y no de un evolutivo: aquí todavía no hay ninguno, y esa es
+    # justamente la razón de que `available_for` exista.
+    @available_sources = Sources::Scope.available_for(@project)
+                                       .values.flat_map(&:sources)
   end
 
   private

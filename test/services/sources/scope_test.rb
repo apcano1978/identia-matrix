@@ -178,8 +178,13 @@ class Sources::ScopeTest < ActiveSupport::TestCase
   end
 
   private
+    # ⚠ SELLA, que es lo que hace la aplicación. Desde B5 el ámbito lo decide la
+    # fecha y no el conteo de filas: escribir filas sin sellar deja un evolutivo
+    # que enseña un ámbito recortado y hereda todo, que es justo la
+    # incoherencia que la columna vino a cerrar.
     def scope!(initiative, source, refs:)
       InitiativeSource.create!(initiative: initiative, source: source,
                                refs_count: refs)
+      initiative.update!(sources_scoped_at: Time.current)
     end
 end

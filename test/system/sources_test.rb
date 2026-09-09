@@ -48,6 +48,36 @@ class SourcesTest < ApplicationSystemTestCase
     assert_equal "(9)", count_of("HEREDADAS DE VIVLA")
   end
 
+  # ⚠ ESTA PANTALLA DEJÓ DE SER DE SOLO LECTURA EN F12 · B5, y era la última que
+  # lo prometía. El motivo no es cosmético: el alta decide el ámbito una vez, y
+  # sin esto quien acotara de más dejaría al agente sin material para siempre.
+  # El rediseño ya lo pedía al pie del alcance —«se puede ampliar más tarde».
+  test "el ámbito se puede recortar desde aquí" do
+    fuera = find("[data-source='acta-precios'] input[type=checkbox]")
+
+    assert fuera.checked?, "lo acotado tiene que salir marcado"
+    fuera.uncheck
+    click_on "guardar el ámbito ⏎"
+
+    assert_text "Ámbito recortado a 8 fuentes"
+    assert_equal "(8)", count_of("EN EL ÁMBITO DE ESTE EVOLUTIVO")
+    # Y lo que sale del ámbito no desaparece: vuelve a lo heredado del cliente,
+    # porque el ámbito es un filtro y no posesión.
+    assert find("[data-card='docs-cliente']").has_text?("acta-precios")
+  end
+
+  # Marcarlo todo NO es «acotar a todo»: es decir que no hay recorte. La
+  # diferencia se ve mañana, y es lo que hace reversible el recorte.
+  test "y marcarlo todo lo dessella, que es como se vuelve a heredar" do
+    all("input[type=checkbox]").each(&:check)
+    click_on "guardar el ámbito ⏎"
+
+    assert_text "Ámbito sin recortar"
+    assert_text "también lo que se suba después"
+    assert_no_text "EN EL ÁMBITO DE ESTE EVOLUTIVO"
+    assert_equal 0, Initiative.find_by!(slug: "precio-festivos").initiative_sources.count
+  end
+
   # F12 · la sección de lo SUBIDO. En vivla está vacía —el seed no sube nada— y
   # se pinta igual: decir que está vacía es decir dónde se empieza.
   test "y la sección del proyecto, vacía, dice de dónde saldría" do
@@ -110,9 +140,18 @@ class SourcesTest < ApplicationSystemTestCase
     assert_selector ".rail-entry-on", text: "PROYECTOS"
   end
 
-  test "es una pantalla de lectura: no se edita nada desde aquí" do
-    assert_no_selector "main form"
-    assert_no_selector "main input, main select, main textarea"
+  # Lo que SIGUE siendo cierto después de B5, y es lo que aquel test protegía de
+  # verdad: matrix no escribe en ningún origen. Lo único editable de esta
+  # pantalla es el ÁMBITO, que es una tabla de matrix —un filtro— y no toca ni
+  # un documento, ni una reunión, ni un artefacto ya publicado.
+  test "lo único que se edita aquí es el ámbito, que es de matrix" do
+    acciones = all("main form", visible: :all).map { |f| f[:action] }
+
+    assert_equal 1, acciones.size
+    assert acciones.sole.end_with?("/scope"),
+           "hay un formulario que no es el del ámbito: #{acciones.inspect}"
+    # Ni un campo de texto: no se escribe nada, se marca.
+    assert_no_selector "main input[type=text], main select, main textarea"
   end
 
   private

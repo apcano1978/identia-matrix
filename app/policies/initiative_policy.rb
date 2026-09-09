@@ -13,6 +13,11 @@ class InitiativePolicy < ApplicationPolicy
   # evolutivo —todavía no existe— así que la pregunta es la de acceso.
   def create? = user&.may_access_matrix? || false
 
+  # Recortar el ámbito documental (F12 · B5). Misma pregunta que abrirlo: decidir
+  # qué lee un agente es operar el sistema, y quien pudo abrir el evolutivo eligió
+  # ya ese ámbito una vez.
+  def scope? = create?
+
   # Lanzar al agente de la etapa. Es operar el sistema, igual que abrirlo: el
   # agente no decide nada por sí mismo —escribe un artefacto que después pasa
   # por MORFEO, por las puertas y por una persona—, así que no pide más papel

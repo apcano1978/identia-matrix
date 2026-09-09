@@ -184,6 +184,83 @@ class OwnProjectTest < ApplicationSystemTestCase
     assert_no_selector "select#platform_project_id"
   end
 
+  # ── La documentación de partida, desde el alta (F12 · B5) ─────────────────
+
+  # ⚠ UN SOLO FORMULARIO: se sube el documento Y se abre el evolutivo con una
+  # sola pulsación. Antes de B5 había que dar el rodeo por la ficha del proyecto,
+  # subirlo allí y volver.
+  test "se abre un evolutivo subiendo su documentación de partida" do
+    open_proyecto_de_prueba
+    build_repository_through_screen
+
+    visit project_path("proyecto-de-prueba")
+    find("summary", text: "abrir un evolutivo").click
+
+    assert_text "DOCUMENTACIÓN DE PARTIDA"
+    assert_text "Arrastra documentos aquí"
+    assert_text "MORFEO lo verá como derivado"
+
+    fill_in "title", with: "Rediseño de la interfaz"
+    check "repo-#{repo_de_prueba.id}"
+    attach_file "initiative-files", acta_de_arranque
+    click_on "abrir ⏎"
+
+    assert_text "1 documentos subidos"
+    # Sin recortar: nadie desmarcó nada, así que el evolutivo hereda todo lo que
+    # haya —también lo que se suba mañana— y no se escribió ni una fila.
+    assert_text "sin recortar el ámbito"
+
+    initiative = Initiative.find_by!(slug: "rediseno-de-la-interfaz")
+    refute_predicate initiative, :sources_scoped?
+    assert_equal 1, initiative.project.project_documents.count
+  end
+
+  # Y lo subido llega a las fuentes del evolutivo aunque nadie lo marcara: la
+  # casilla no existía cuando se envió el formulario.
+  test "y lo subido en el alta es fuente de ese evolutivo" do
+    open_proyecto_de_prueba
+    build_repository_through_screen
+    upload_document_to("proyecto-de-prueba")
+    extract_pending
+
+    visit project_path("proyecto-de-prueba")
+    find("summary", text: "abrir un evolutivo").click
+    fill_in "title", with: "Rediseño de la interfaz"
+    check "repo-#{repo_de_prueba.id}"
+    click_on "abrir ⏎"
+
+    # La barrera es la PANTALLA DE DESTINO, no un texto que ya estaba: es la
+    # familia de P18.
+    assert_text "PIPELINE"
+
+    initiative = Initiative.find_by!(slug: "rediseno-de-la-interfaz")
+    visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
+
+    assert find("[data-card='docs-proyecto']").has_text?("acta-arranque")
+  end
+
+  # ⚠ EL «ARRANCAR SOLO CON CONVERSACIÓN» del rediseño, que hasta B5 era
+  # inexpresable: cero filas volvía a leerse como «todas».
+  test "y se puede abrir sin ninguna fuente, a propósito" do
+    open_proyecto_de_prueba
+    build_repository_through_screen
+    upload_document_to("proyecto-de-prueba")
+    extract_pending
+
+    visit project_path("proyecto-de-prueba")
+    find("summary", text: "abrir un evolutivo").click
+    fill_in "title", with: "Rediseño de la interfaz"
+    check "repo-#{repo_de_prueba.id}"
+    uncheck_all_sources
+    click_on "abrir ⏎"
+
+    assert_text "ámbito recortado a 0 fuentes"
+
+    initiative = Initiative.find_by!(slug: "rediseno-de-la-interfaz")
+    assert_predicate initiative, :sources_scoped?
+    assert_equal 0, Sources::Scope.in_scope(initiative).values.sum(&:size)
+  end
+
   # ── Y desde B9½, también se le puede poner a trabajar un agente ───────────
   #
   # Estos dos tests decían lo contrario hasta B9½, y ese es exactamente su valor:
@@ -360,11 +437,36 @@ class OwnProjectTest < ApplicationSystemTestCase
       path.write("# Acta de arranque\n\nLo acordado en el arranque.\n")
 
       visit project_path(project_slug)
-      attach_file "files[]", path.to_s
+      # ⚠ POR ID: desde B5 hay dos inputs `files[]` en la ficha —el de la zona de
+      # subida y el del alta de un evolutivo— y `attach_file "files[]"` sería
+      # ambiguo. Este es el de la ficha.
+      attach_file "files", path.to_s
       assert_no_text "Todavía no hay ninguno"
 
-      return unless extract
+      extract_pending if extract
+    end
 
+    # ⚠ POR EL PROYECTO, no por nombre. `identia-matrix` es también uno de los
+    # repositorios que el seed le da a `identia-interno`, así que un
+    # `Repository.find_by!(name:)` devuelve el del seed y su casilla no está en
+    # esta pantalla. Es la misma trampa que apareció en F11 · B10.
+    def repo_de_prueba
+      Project.find_by!(slug: "proyecto-de-prueba")
+             .repositories.find_by!(name: "identia-matrix")
+    end
+
+    # Las casillas de «documentación de partida», que salen todas marcadas.
+    def uncheck_all_sources
+      all("[data-scope-target='box']").each(&:uncheck)
+    end
+
+    def acta_de_arranque
+      path = Rails.root.join("tmp", "acta arranque.md")
+      path.write("# Acta de arranque\n\nLo acordado en el arranque.\n")
+      path.to_s
+    end
+
+    def extract_pending
       ProjectDocument.where(extracted_at: nil).find_each do |document|
         ProjectDocuments::Extract.call(document)
       end

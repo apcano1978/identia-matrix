@@ -18,30 +18,14 @@ class ProjectDocumentsController < ApplicationController
     project = Project.find_by!(slug: params[:project_slug])
     authorize ProjectDocument, :create?
 
-    subidos, rechazos = upload_each(project)
+    subida = ProjectDocuments::UploadAll.call(
+      project: project, files: params[:files], uploader: Current.user)
 
     redirect_to project_path(project), status: :see_other,
-                **flash_for(subidos, rechazos)
+                **flash_for(subida.count, subida.refusals)
   end
 
   private
-    # Cada fichero por su cuenta: uno rechazado no tira a los demás, que es lo
-    # que hace utilizable arrastrar una carpeta entera.
-    def upload_each(project)
-      subidos = 0
-      rechazos = []
-
-      Array(params[:files]).reject(&:blank?).each do |file|
-        ProjectDocuments::Upload.call(project: project, file: file,
-                                      uploader: Current.user)
-        subidos += 1
-      rescue ProjectDocuments::Upload::Refused => error
-        rechazos << error.message
-      end
-
-      [ subidos, rechazos ]
-    end
-
     def flash_for(subidos, rechazos)
       return { alert: "No se ha subido nada: #{rechazos.to_sentence}." } if subidos.zero? && rechazos.any?
       return { alert: "No se ha elegido ningún fichero." } if subidos.zero?

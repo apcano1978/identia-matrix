@@ -5,7 +5,13 @@
 
     Se enseña el SLUG, no un nombre de fichero: es lo que va dentro de la cita,
     y por tanto lo único que sirve para escribirla. La maqueta los pinta con
-    extensión (`acta-precios.pdf`) y eso no se copia. %>
+    extensión (`acta-precios.pdf`) y eso no se copia.
+
+    `selectable` (F12 · B5) convierte cada fila en una casilla. La tarjeta sigue
+    siendo la misma —mismos `data-card`, mismo idioma de bordes— porque lo que
+    cambia no es qué se enseña, sino que ahora se puede tocar. %>
+<% selectable = local_assigns.fetch(:selectable, false) %>
+<% marked = local_assigns.fetch(:marked, []) %>
 <div data-card="<%= label.parameterize %>" class="px-3.5 py-3 <%= scoped ?
      'border border-terminal-border-gold bg-[rgba(196,155,94,.06)]' :
      'border border-dashed border-terminal-border-strong' %>">
@@ -25,8 +31,21 @@
   <% else %>
     <ul class="mt-2 flex flex-col gap-0.5 text-t105 leading-[1.7]">
       <% group.sources.each do |source| %>
-        <li class="<%= scoped ? 'text-terminal-fg' : 'text-terminal-fg-2' %>">
-          <%= source.slug %>
+        <li class="<%= scoped ? 'text-terminal-fg' : 'text-terminal-fg-2' %>"
+            data-source="<%= source.slug %>">
+          <%# `label` envolviendo la fila entera cuando se puede marcar: se pulsa
+              en cualquier sitio, que es lo que la maqueta dibuja. Sin
+              `selectable` no hay etiqueta ni casilla y la fila queda como
+              estaba. %>
+          <%= tag.label class: ("cursor-pointer" if selectable) do %>
+            <% if selectable %>
+              <%= check_box_tag source_field(source), source.id,
+                                marked.include?(source), id: nil,
+                                class: "accent-antique-gold align-baseline mr-1",
+                                data: { scope_target: "box",
+                                        scope_default: source_checked_by_default?(source) } %>
+            <% end %>
+            <%= source.slug %>
           <% if source.try(:held_on) %>
             <span class="text-terminal-muted">
               · <%= l(source.held_on, format: :default) %>
@@ -55,8 +74,9 @@
           <%# Sin cuerpo NO viaja al agente: `Runtime::Request` filtra por
               `citable?`. Decirlo aquí es la diferencia entre una lista de lo
               que hay y una lista de lo que se puede citar. %>
-          <% unless source.citable? %>
-            <span class="text-terminal-disabled">· sin cuerpo · no viaja</span>
+            <% unless source.citable? %>
+              <span class="text-terminal-disabled">· sin cuerpo · no viaja</span>
+            <% end %>
           <% end %>
         </li>
       <% end %>

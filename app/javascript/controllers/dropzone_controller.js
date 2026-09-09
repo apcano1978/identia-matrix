@@ -10,9 +10,16 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Lo que este controlador añade es el arrastre; lo que hace que la pantalla
 // exista es el input.
+//
+// ⚠ `autosubmit` (F12 · B5). En la ficha del proyecto la subida ES el
+// formulario, así que soltar envía. En el alta de un evolutivo el mismo
+// formulario lleva además el título y las casillas de ámbito: enviar al soltar
+// mandaría el evolutivo a medio escribir. Ahí el arrastre solo rellena el input,
+// y quien envía es el botón de abrir.
 export default class extends Controller {
   static targets = ["input", "zone"]
   static classes = ["over"]
+  static values = { autosubmit: { type: Boolean, default: true } }
 
   // `dragover` hay que interceptarlo aunque no haga nada visible: sin
   // `preventDefault` el navegador abre el fichero en la pestaña y se lleva la
@@ -35,12 +42,17 @@ export default class extends Controller {
     if (!files || files.length === 0) return
 
     this.inputTarget.files = files
+    // `change` no salta al asignar `files` por código, y hay quien escucha —la
+    // línea de ámbito del alta cuenta los adjuntos—. Se dispara a mano.
+    this.inputTarget.dispatchEvent(new Event("change", { bubbles: true }))
     this.submit()
   }
 
   // Elegir por el diálogo envía igual: un paso menos, y evita que alguien
   // seleccione ficheros y se quede mirando sin saber que falta pulsar.
   submit() {
+    if (!this.autosubmitValue) return
+
     this.element.requestSubmit()
   }
 }

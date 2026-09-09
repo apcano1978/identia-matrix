@@ -77,7 +77,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     run = agent_run
     client = run.initiative.platform_client
     document = build_document(client: client, slug: "acta-precios", body: "Lo acordado.")
-    InitiativeSource.create!(initiative: run.initiative, source: document)
+    scope!(run.initiative, document)
 
     sources = Runtime::Request.for(run).payload.dig("config", "sources")
 
@@ -90,8 +90,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     # que después no resuelve.
     run = agent_run
     client = run.initiative.platform_client
-    InitiativeSource.create!(initiative: run.initiative,
-                             source: build_document(client: client, body: nil))
+    scope!(run.initiative, build_document(client: client, body: nil))
 
     assert_empty Runtime::Request.for(run).payload.dig("config", "sources").to_a
   end
@@ -120,7 +119,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     client = run.initiative.platform_client
     acotado = build_document(client: client, slug: "acta-precios", body: "Lo acordado.")
     build_document(client: client, slug: "glosario-negocio", body: "El glosario.")
-    InitiativeSource.create!(initiative: run.initiative, source: acotado)
+    scope!(run.initiative, acotado)
 
     sources = Runtime::Request.for(run).payload.dig("config", "sources")
 
@@ -191,9 +190,7 @@ class Runtime::RequestTest < ActiveSupport::TestCase
     # que se pone rojo si alguien «optimiza» dándole a LINK lo de NEO.
     initiative = place(build_initiative, :tank)
     client = initiative.platform_client
-    InitiativeSource.create!(
-      initiative: initiative,
-      source: build_document(client: client, slug: "acta", body: "Lo acordado."))
+    scope!(initiative, build_document(client: client, slug: "acta", body: "Lo acordado."))
 
     neo = config_for(initiative, agent: :neo, purpose: :spec)
     link = config_for(initiative, agent: :link, purpose: :closure)
@@ -276,6 +273,14 @@ class Runtime::RequestTest < ActiveSupport::TestCase
       HumanNote.create!(initiative: initiative, project: initiative.project,
                         author_user: author, body: body,
                         code: HumanNote.code_for(author, project: project_for(client)))
+    end
+
+    # Acotar de verdad: la fila Y la fecha. Desde B5 el ámbito lo decide
+    # `sources_scoped_at`, así que una fila suelta no recorta nada — y ese es el
+    # punto de la columna.
+    def scope!(initiative, source)
+      InitiativeSource.create!(initiative: initiative, source: source)
+      initiative.update!(sources_scoped_at: Time.current)
     end
 
     def agent_run

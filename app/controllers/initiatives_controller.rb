@@ -44,26 +44,93 @@ class InitiativesController < ApplicationController
     project = Project.find_by!(slug: params[:project_slug])
     authorize Initiative, :create?
 
+    # ⚠ LOS FICHEROS PRIMERO, y fuera de la transacción del alta. Un documento es
+    # del PROYECTO, no del evolutivo: si el alta se niega —sin título, sin
+    # repositorio— lo subido se queda, y el aviso lo dice. Deshacerlo obligaría a
+    # volver a arrastrar los ficheros, que es lo único que el navegador no puede
+    # rehacer solo.
+    #
+    # Y `authorize` con `ProjectDocument`, aparte: son dos permisos distintos y
+    # dejar que uno arrastre al otro es como se cuelan los huecos.
+    subida = upload_documents(project)
     initiative = Initiatives::Open.call(
       project: project,
       title: params[:title],
       # DENTRO del proyecto, nunca por id suelto: un `Repository.find` a secas es
       # la forma más fácil de cruzar la frontera sin darse cuenta.
       repositories: project.repositories.where(id: params[:repository_ids]),
+      # Lo marcado y lo recién subido, por separado: «adjuntadas ahora · pasan a
+      # ser fuentes de este evolutivo», pero adjuntar no es recortar. El porqué
+      # de que sean dos parámetros está en `Initiatives::Open`.
+      sources: chosen_sources(project),
+      attached: subida.documents,
       platform_project: project.platform_client
                                &.platform_projects
                                &.find_by(id: params[:platform_project_id]),
       actor: Current.user.to_s)
 
     redirect_to project_initiative_path(project, initiative), status: :see_other,
-                notice: "#{initiative.code} abierto. Espera a TANK, que llega en F9."
+                notice: opened_notice(initiative, subida)
   rescue Initiatives::Open::Refused => error
     redirect_to project_path(project), status: :see_other,
-                alert: "No se ha abierto el evolutivo: #{error.message}."
+                alert: refused_alert(error, subida)
   end
 
   private
     MODES = %i[rendered source diff].freeze
+
+    def upload_documents(project)
+      return ProjectDocuments::UploadAll::Result.new(documents: [], refusals: []) \
+        if Array(params[:files]).reject(&:blank?).empty?
+
+      authorize ProjectDocument, :create?
+      ProjectDocuments::UploadAll.call(project: project, files: params[:files],
+                                       uploader: Current.user)
+    end
+
+    # Lo marcado en «documentación de partida», o `nil` si el formulario no traía
+    # el bloque. La diferencia la usa `Initiatives::Open`: `nil` es «no me hables
+    # de ámbito» y `[]` es «cero fuentes, a propósito».
+    #
+    # ⚠ Tres consultas ACOTADAS al proyecto, y el tipo no sale nunca de un
+    # parámetro. Un `params[:source_type].constantize` habría sido más corto y
+    # habría dejado que alguien nombrara cualquier clase del sistema.
+    #
+    # La frontera se vuelve a comprobar en el servicio, que es donde vive: esto
+    # de aquí es la consulta, no la garantía.
+    def chosen_sources(project)
+      return nil unless params.key?(:scope)
+
+      client_id = project.platform_client_id
+
+      project.project_documents.where(id: params[:project_document_ids]).to_a +
+        Platform::Document.where(platform_client_id: client_id,
+                                 id: params[:platform_document_ids]).to_a +
+        Platform::Meeting.where(platform_client_id: client_id,
+                                id: params[:meeting_ids]).to_a
+    end
+
+    def opened_notice(initiative, subida)
+      partes = [ "#{initiative.code} abierto" ]
+      partes << "#{subida.count} documentos subidos" if subida.any?
+      partes << if initiative.sources_scoped?
+        "ámbito recortado a #{initiative.initiative_sources.count} fuentes"
+      else
+        "sin recortar el ámbito: entra todo, también lo que se suba después"
+      end
+
+      "#{partes.join(' · ')}. Espera a TANK, que llega en F9."
+    end
+
+    # Lo subido NO se pierde, y hay que decirlo: si no, quien vea «no se ha
+    # abierto» dará por hecho que no pasó nada y volverá a arrastrar los mismos
+    # ficheros.
+    def refused_alert(error, subida)
+      aviso = "No se ha abierto el evolutivo: #{error.message}."
+      return aviso if subida.none?
+
+      "#{aviso} Los #{subida.count} documentos sí se subieron al proyecto."
+    end
 
     # Las pestañas `dod`, `verify` y `guide` de la maqueta llevan a pantallas
     # propias que son F6. Hasta entonces seleccionan qué artefacto enseña el

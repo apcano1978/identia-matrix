@@ -7,7 +7,8 @@
 #
 #   1. La fila, con el código que reparte el asignador.
 #   2. Los enlaces a los repositorios que toca.
-#   3. La entrada de etapa en `need` — sin ella `StageCache.derive` devuelve
+#   3. El ámbito documental, si es que se recortó (F12 · B5).
+#   4. La entrada de etapa en `need` — sin ella `StageCache.derive` devuelve
 #      nulo y el evolutivo no tiene ni etapa ni glifo.
 #
 # El caché se DERIVA de la entrada, no se escribe a mano: el caché solo es
@@ -18,12 +19,30 @@ class Initiatives::Open
 
   def self.call(...) = new(...).call
 
-  def initialize(project:, title:, repositories:, actor:, platform_project: nil)
+  # `sources:` es OPCIONAL y `nil` no es lo mismo que `[]`.
+  #
+  #   nil  →  quien llama no habla de ámbito: no se recorta nada
+  #   []   →  se marcaron cero fuentes, y eso es una decisión: cero fuentes
+  #
+  # La diferencia importa porque `Array(nil)` es `[]`, y confundirlas dejaría a
+  # cada evolutivo abierto por código —el seed, los tests, `matrix:walk_pipeline`—
+  # sin una sola fuente.
+  #
+  # `attached:` son los documentos que se acaban de SUBIR en el mismo formulario,
+  # y van aparte de lo marcado por una razón concreta: **adjuntar no es
+  # recortar**. Nadie pudo marcar una casilla que no existía cuando envió, así
+  # que contarlos como elección dejaría el ámbito sellado por el simple hecho de
+  # arrastrar un fichero. Entran siempre en el ámbito —y si no se recortó, entran
+  # solos, porque lo que no está sellado hereda todo lo disponible—.
+  def initialize(project:, title:, repositories:, actor:, platform_project: nil,
+                 sources: nil, attached: [])
     @project = project
     @title = title.to_s.strip
     @repositories = Array(repositories)
     @actor = actor
     @platform_project = platform_project
+    @sources = sources
+    @attached = Array(attached)
   end
 
   def call
@@ -32,6 +51,7 @@ class Initiatives::Open
     Initiative.transaction do
       initiative = create_initiative
       link_repositories(initiative)
+      scope_sources(initiative)
       enter_need(initiative)
       refresh_cache(initiative)
       record_event(initiative)
@@ -42,7 +62,8 @@ class Initiatives::Open
 
   private
 
-  attr_reader :project, :title, :repositories, :actor, :platform_project
+  attr_reader :project, :title, :repositories, :actor, :platform_project, :sources,
+              :attached
 
 
   # **La frontera de proyecto, comprobada aquí y no en la vista.** Un formulario
@@ -54,10 +75,27 @@ class Initiatives::Open
     raise Refused, "hace falta al menos un repositorio" if repositories.empty?
 
     intrusos = repositories.reject { |repository| repository.project_id == project&.id }
+    unless intrusos.empty?
+      raise Refused, "esos repositorios no son de #{project&.slug}: " \
+                     "#{intrusos.map(&:name).join(', ')}"
+    end
+
+    validate_sources!
+  end
+
+  # La misma comprobación, del lado documental. Aquí no basta con mirar una
+  # columna: un documento de platform pertenece al CLIENTE y uno subido al
+  # PROYECTO, así que la frontera de cada tipo es distinta. Lo que sí es una
+  # lista cerrada es `available_for`, y comparar contra ella responde por los
+  # tres tipos a la vez sin repetir la asimetría.
+  def validate_sources!
+    return if sources.nil?
+
+    intrusos = (sources + attached) - available
     return if intrusos.empty?
 
-    raise Refused, "esos repositorios no son de #{project&.slug}: " \
-                   "#{intrusos.map(&:name).join(', ')}"
+    raise Refused, "esas fuentes no son de #{project&.slug}: " \
+                   "#{intrusos.map(&:slug).join(', ')}"
   end
 
   def create_initiative
@@ -94,6 +132,43 @@ class Initiatives::Open
     end
   end
 
+  # ⚠ EL ÁMBITO DOCUMENTAL, y la regla entera de cuándo se recorta (F12 · B5).
+  #
+  # **Se sella si lo marcado ≠ lo citable disponible.** Dicho al revés, que es
+  # como se lee en la pantalla: dejar el marcado por defecto no escribe ni una
+  # fila, y quien no recorta sigue heredando lo que se suba mañana.
+  #
+  # Vive aquí y no en el controlador porque es una regla de dominio: se puede
+  # probar sin pantalla, y el día que haya otra forma de abrir un evolutivo
+  # seguirá valiendo.
+  #
+  # Recortar es DEJAR FUERA algo que podía entrar, y quien lo dice es
+  # `Sources::Scope.narrowed?` — ahí está el porqué de que sea una resta.
+  #
+  # Se comparan LAS CASILLAS QUE HABÍA, sin lo recién adjuntado: `available` se
+  # calcula después de subir, así que incluye lo nuevo, y contarlo sellaría el
+  # ámbito de quien solo arrastró un fichero.
+  def scope_sources(initiative)
+    return if sources.nil?
+    return unless Sources::Scope.narrowed?(sources, offered)
+
+    (sources + attached).uniq.each do |source|
+      initiative.initiative_sources.create!(source: source)
+    end
+    initiative.update!(sources_scoped_at: Time.current)
+  end
+
+  # Lo que el formulario ofreció marcado: lo citable que ya existía. El criterio
+  # vive en `Sources::Scope` porque lo comparte con `Sources::Rescope`, que es el
+  # otro sitio desde el que se decide un ámbito.
+  def offered = Sources::Scope.offered(project) - attached
+
+  # Lo que este proyecto puede ofrecer, hoy. Se calcula una vez: lo miran la
+  # validación y el sellado, y entre las dos no puede cambiar.
+  def available
+    @available ||= Sources::Scope.available_for(project).values.flat_map(&:sources)
+  end
+
   # `active` y no `pending`: el evolutivo está en `need` desde que se abre, y la
   # necesidad la escribió quien lo dio de alta. Lo que espera es a TANK, que
   # llega en F9.
@@ -114,8 +189,18 @@ class Initiatives::Open
     Event.create!(
       occurred_at: Time.current, actor: actor, kind: "initiative_opened",
       initiative: initiative, platform_client: project.platform_client, project: project,
-      message: "#{initiative.code} · alta · #{repositories.map(&:name).join(', ')}",
+      message: "#{initiative.code} · alta · #{repositories.map(&:name).join(', ')}" \
+               "#{scope_note(initiative)}",
       payload: { repositories: repositories.map(&:name),
+                 sources_scoped: initiative.sources_scoped?,
+                 sources: initiative.initiative_sources.count,
                  platform_project_ref: platform_project&.platform_project_ref })
+  end
+
+  # Recortar deja constancia; no recortar no dice nada, porque no pasó nada.
+  def scope_note(initiative)
+    return "" unless initiative.sources_scoped?
+
+    " · ámbito recortado a #{initiative.initiative_sources.count} fuentes"
   end
 end

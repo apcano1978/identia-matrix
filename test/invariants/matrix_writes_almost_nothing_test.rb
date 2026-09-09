@@ -144,6 +144,33 @@ class MatrixWritesAlmostNothingTest < ActiveSupport::TestCase
     "project_documents#create",
     "retirements#create",
 
+    # ── Recortar el ámbito documental (F12 · B5) ────────────────────────────
+    #
+    # **La única escritura de matrix que BORRA filas**, y la tercera que escribe
+    # actualizando. Merece la conversación que esta lista existe para provocar, y
+    # es la más larga de las tres.
+    #
+    # Lo que borra es un **FILTRO, no historia**. `initiative_sources` no guarda
+    # nada que haya ocurrido: dice qué material entra en el ámbito de un
+    # evolutivo, y la ausencia de fila significa «todo lo disponible». Quitar una
+    # fila no borra el documento, no toca ningún artefacto ya publicado y **no
+    # rompe ninguna cita**: una cita resuelve contra la FUENTE y no contra el
+    # ámbito, que es el invariante 4. Lo citado ayer sigue resolviendo aunque hoy
+    # la fuente quede fuera del ámbito.
+    #
+    # La alternativa —acumular filas y marcarlas como «ya no»— se descartó: haría
+    # que el ámbito, que es un conjunto, se leyera reconstruyendo un historial, y
+    # ese historial no responde a ninguna pregunta que alguien vaya a hacer. Lo
+    # que sí se conserva es el `refs_count` de las filas que siguen:
+    # `Sources::Rescope` **diferencia en vez de reescribir** precisamente porque
+    # ese número no se puede recomputar.
+    #
+    # `create` y no `update` porque decidir qué lee un agente es un acto —y se
+    # puede volver a tomar—, no la edición de un campo. Y no lo acompaña ningún
+    # `destroy`: dejar el ámbito sin recortar se dice marcándolo todo, que es lo
+    # mismo que decir que no hay recorte.
+    "scopes#create",
+
     # ── El ÚNICO `update` del sistema (F9 · P2) ─────────────────────────────
     #
     # Y merece la conversación que esta lista existe para provocar. Se sopesó

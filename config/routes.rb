@@ -104,6 +104,12 @@ Rails.application.routes.draw do
       # evolutivo porque el ámbito documental es suyo; las fuentes, no.
       resources :sources, only: :index
 
+      # Recortar el ámbito (F12 · B5). `create` y singular: decidir qué entra es
+      # un acto que ocurre —y se puede volver a tomar—, no la edición de una
+      # fila. Lo que escribe está entero en `ScopesController`, y por qué se
+      # admite que BORRE filas, en la lista blanca.
+      resource :scope, only: :create
+
       # Poner a trabajar al agente que toca en la etapa actual (F9).
       #
       # `create` y no `update`: lanzar es un acto que ocurre una vez y deja
