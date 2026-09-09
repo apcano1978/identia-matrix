@@ -297,6 +297,63 @@ class OwnProjectTest < ApplicationSystemTestCase
     assert_no_text "Los agentes todavía no trabajan sobre proyectos propios"
   end
 
+  # ── F12 · B6 · la indexación se encola sola ───────────────────────────────
+
+  # ⚠ EL ENTREGABLE 4 DE LA FASE: «conectar un repositorio y ver que se indexa
+  # sin que nadie corra nada». Lo único que se corre a mano es el job, porque el
+  # adaptador de Active Job en test es el de Sidekiq — el worker hace lo mismo.
+  test "registrar un repositorio lo deja en cola, y leerlo lo cuenta" do
+    open_proyecto_de_prueba
+    build_repository_through_screen
+
+    assert_text "Se está leyendo para saber qué hay dentro"
+
+    visit project_path("proyecto-de-prueba")
+    assert_text "en cola de indexación"
+
+    Repositories::ProbeJob.perform_now(repo_de_prueba.id)
+    visit project_path("proyecto-de-prueba")
+
+    assert_no_text "en cola de indexación"
+    assert_text "ficheros"
+  end
+
+  # ⚠ Y ESTO ES LO QUE CIERRA P23. Nadie corre `matrix:index`: abrir el evolutivo
+  # encoló el anclaje, y el `pinned_sha` aparece solo.
+  test "y abrir un evolutivo ancla sus repositorios sin que nadie corra nada" do
+    initiative = own_initiative
+
+    assert initiative.initiative_repositories.sole.reload.pinned_sha.present?
+  end
+
+  # La otra mitad de P23, la que encolar no cierra: un repositorio que no se
+  # puede leer deja el evolutivo sin anclar, y entonces el agente **no trabaja**
+  # en vez de escribir un dossier sin haber visto una línea de código.
+  test "pero sin nada anclado no hay botón, y la pantalla dice por qué" do
+    initiative = own_initiative
+    initiative.initiative_repositories.update_all(
+      pinned_sha: nil, indexing_error: "sin origen legible")
+    place(initiative, :tank)
+
+    visit project_initiative_path("proyecto-de-prueba", initiative.slug)
+
+    assert_no_button "▶ poner a trabajar a TANK"
+    assert_text "TANK no puede trabajar todavía"
+    assert_text "identia-matrix · sin origen legible"
+  end
+
+  # El motivo también en la pantalla que existe para responder «¿qué puede leer
+  # un agente?»: ahí «sin anclar» a secas no decía nada accionable.
+  test "y la pantalla de fuentes dice por qué no está anclado" do
+    initiative = own_initiative
+    initiative.initiative_repositories.update_all(
+      pinned_sha: nil, indexing_error: "sin origen legible")
+
+    visit project_initiative_sources_path("proyecto-de-prueba", initiative.slug)
+
+    assert_text "sin origen legible"
+  end
+
   # ══ EL ENTREGABLE DE F11 ═══════════════════════════════════════════════════
   #
   # `identia-interno` es el proyecto propio de verdad: identia trabajando sobre
@@ -358,13 +415,16 @@ class OwnProjectTest < ApplicationSystemTestCase
     assert_current_path project_initiative_path("identia-interno", initiative.slug)
     assert_predicate initiative.reload, :at_tank?
 
-    # 4 · ANCLAR E INDEXAR, que es el paso que el runbook avisa que se olvida.
+    # 4 · ANCLAR E INDEXAR, que **ya no es un paso**: se encoló al abrir el
+    # evolutivo (F12 · B6). Lo único que hace falta aquí es correr el job, porque
+    # el adaptador de Active Job en test es el de Sidekiq y no se ejecuta en
+    # línea — es lo mismo que hace el worker.
     #
-    # ⚠ Sin él `pinned_sha` queda nulo, `Runtime::Request#repositories_of` —que
-    # solo manda los ANCLADOS— deja el material vacío y **TANK trabaja a ciegas
-    # sin que nada avise**. Que se encole solo es F12; hasta entonces es un paso
-    # a mano, y por eso está aquí y no escondido en un helper.
-    Repositories::Index.call(initiative: initiative, actor: "test")
+    # ⚠ Sin anclar, `Runtime::Request#repositories_of` —que solo manda los
+    # ANCLADOS— dejaba el material vacío y TANK trabajaba a ciegas sin que nada
+    # avisara. Eso era P23; desde B6 el agente se niega en vez de acertar
+    # plausible.
+    Repositories::IndexJob.perform_now(initiative.id)
 
     assert initiative.initiative_repositories.reload.all? { |link| link.pinned_sha.present? },
            "sin sha anclado no se puede citar código, y TANK no lo diría"
@@ -421,8 +481,14 @@ class OwnProjectTest < ApplicationSystemTestCase
       repository = Repository.create!(project: project, name: "identia-matrix",
                                       default_branch: "main")
 
-      Initiatives::Open.call(project: project, title: "Rediseño de la interfaz",
-                             repositories: [ repository ], actor: "test")
+      initiative = Initiatives::Open.call(project: project, title: "Rediseño de la interfaz",
+                                          repositories: [ repository ], actor: "test")
+      # La indexación se encola sola desde B6, pero el adaptador de Active Job en
+      # test es el de Sidekiq: se corre a mano, que es lo que hará el worker. Sin
+      # esto el evolutivo nace sin anclar y ningún agente puede trabajar — que es
+      # exactamente lo que B6 vino a impedir.
+      Repositories::IndexJob.perform_now(initiative.id)
+      initiative
     end
 
     # Sube un documento por la pantalla del proyecto, que es la única forma que

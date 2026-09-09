@@ -9,9 +9,17 @@
       <%= pluralize repository.initiatives.size, "evolutivo" %>
     </span>
   </div>
+  <%# El estado de indexación (F12 · B6): «en cola», los ficheros que se leyeron
+      o el motivo de que no se pudiera. Antes esto decía `head —` y nada más, y
+      un repositorio que matrix no puede leer se veía igual que uno recién
+      registrado. %>
+  <% state = repository_state(repository) %>
   <div class="mt-1.5 text-t105 text-terminal-fg-4">
     head <span class="text-antique-gold"><%= repository.head_sha || "—" %></span>
     · <%= repository.default_branch %>
+  </div>
+  <div class="mt-1 text-t105 <%= state.tone %>">
+    <%= state.glyph %> <%= state.label %>
   </div>
   <div class="mt-1 text-t105 text-terminal-muted">
     <% if last %>

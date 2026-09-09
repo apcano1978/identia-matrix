@@ -127,6 +127,42 @@ class Initiatives::OpenTest < ActiveSupport::TestCase
     assert_nil abrir.platform_project
   end
 
+  # ── La indexación se encola sola (F12 · B6) ───────────────────────────────
+
+  # ⚠ ESTO ES LO QUE CIERRA P23. Hasta aquí `Repositories::Index` la llamaba una
+  # sola cosa en todo el código: la tarea `matrix:index`, a mano. Sin ella
+  # `pinned_sha` queda nulo, el material que viaja al agente sale sin un solo
+  # repositorio, y TANK escribe su dossier sin haber visto una línea de código.
+  #
+  # No se comprueba con `assert_enqueued_with` —el adaptador de Active Job en
+  # test es el de Sidekiq, no el de pruebas— sino por el efecto: corrido el job,
+  # el evolutivo queda anclado sin que nadie haya escrito nada a mano.
+  test "abrir un evolutivo deja sus repositorios anclados, sin correr nada" do
+    initiative = abrir
+
+    assert_nil initiative.initiative_repositories.sole.pinned_sha,
+               "el anclaje es del job, no de la transacción"
+
+    Repositories::IndexJob.perform_now(initiative.id)
+
+    assert initiative.initiative_repositories.sole.reload.pinned_sha.present?
+  end
+
+  # ⚠ Y SE ENCOLA DESPUÉS DEL COMMIT. `enqueue_after_transaction_commit` es
+  # `false` en esta aplicación, así que un `perform_later` dentro de la
+  # transacción se encola de inmediato y Sidekiq puede coger el job antes de que
+  # la fila exista: un `RecordNotFound` que el `discard_on` se traga en silencio,
+  # dejando sin anclar justo lo que este cambio viene a arreglar.
+  test "y se encola cuando la fila ya existe, no antes" do
+    visto = nil
+
+    Repositories::IndexJob.stub(:perform_later, ->(id) { visto = Initiative.find_by(id: id) }) do
+      abrir
+    end
+
+    assert visto.present?, "el job se encoló contra un evolutivo que aún no existía"
+  end
+
   # ── El ámbito documental (F12 · B5) ───────────────────────────────────────
   #
   # La regla entera cabe en una frase: **se sella si lo marcado ≠ lo citable

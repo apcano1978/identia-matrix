@@ -25,6 +25,13 @@ module Agents
     # descarta en silencio, porque el trabajo lo está haciendo el otro.
     discard_on Agents::Run::AlreadyRunning
 
+    # Trabajar sin código anclado tampoco se reintenta: no es que ahora no se
+    # pueda, es que no se debe (F12 · B6). El controlador lo comprueba antes de
+    # encolar, así que llegar aquí es una carrera —alguien lanzó dos veces— o el
+    # recorrido de consola; en los dos casos el sitio de decirlo no es un
+    # reintento.
+    discard_on Agents::Run::Refused
+
     def perform(initiative_id, agent:, purpose:)
       initiative = Initiative.find_by(id: initiative_id)
       return if initiative.nil?

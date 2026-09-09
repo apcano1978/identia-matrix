@@ -22,7 +22,7 @@ class Agents::RunTest < ActiveSupport::TestCase
     # La interfaz, un relanzamiento manual y el reintento de un job pueden
     # solaparse. Una comprobación en Ruby tiene una ventana entre el `exists?` y
     # el `create`; el índice único parcial no la tiene.
-    initiative = place(build_initiative, :tank)
+    initiative = initiative_at_tank
     AgentRun.create!(initiative: initiative, agent: :tank, purpose: :context,
                      iteration: initiative.iteration, code: "run-vivo",
                      status: :running, started_at: Time.current)
@@ -44,13 +44,71 @@ class Agents::RunTest < ActiveSupport::TestCase
     end
   end
 
+  # ── F12 · B6 · nadie trabaja sin haber leído el código ───────────────────
+
+  # ⚠ LA MITAD DE P23 QUE ENCOLAR NO CIERRA. Indexar solo arregla el olvido; un
+  # `remote_url` ilegible sigue dejando el evolutivo sin anclar, y entonces TANK
+  # escribiría su dossier sin haber visto una línea de código. No falla: acierta
+  # plausible, que es peor.
+  test "sin ningun repositorio anclado, el agente se niega" do
+    initiative = place(build_initiative, :tank)
+
+    error = assert_raises(Agents::Run::Refused) do
+      Agents::Run.call(initiative: initiative, agent: :tank, purpose: :context)
+    end
+
+    assert_match "TANK", error.message
+    assert_match "ningún repositorio anclado", error.message
+  end
+
+  test "y no deja fila de ejecucion de algo que no va a ocurrir" do
+    initiative = place(build_initiative, :tank)
+
+    assert_no_difference -> { AgentRun.count } do
+      assert_raises(Agents::Run::Refused) do
+        Agents::Run.call(initiative: initiative, agent: :tank, purpose: :context)
+      end
+    end
+  end
+
+  # La excepción, y no es un permiso: es el orden del runbook. El acta va ANTES
+  # de indexar —camino C, paso 5 frente al 7— porque el ARQUITECTO entrevista a
+  # una persona. Es justo el momento en que no hay nada anclado todavía.
+  test "pero el ARQUITECTO trabaja igual: para eso va antes de indexar" do
+    initiative = place(build_initiative, :need)
+
+    assert_nothing_raised do
+      Agents::Run.call(initiative: initiative, agent: :arquitecto, purpose: :interview)
+    end
+  end
+
+  # Con uno anclado basta: un evolutivo multi-repo del que solo uno se pudo leer
+  # tiene material, y pararlo entero sería peor que trabajar con lo que hay.
+  test "y con un solo repositorio anclado ya se puede trabajar" do
+    assert_nothing_raised do
+      Agents::Run.call(initiative: initiative_at_tank, agent: :tank, purpose: :context)
+    end
+  end
+
+  # El motivo, con el del repositorio al lado: «sin origen legible» y «el origen
+  # no respondió» piden cosas distintas de quien lo lee.
+  test "el motivo nombra el repositorio y lo que le pasa" do
+    initiative = place(build_initiative, :tank)
+    repository = build_repository(client: initiative.platform_client, name: "booking-core")
+    InitiativeRepository.create!(initiative: initiative, repository: repository,
+                                 indexing_error: "sin origen legible")
+
+    assert_match "booking-core · sin origen legible",
+                 Agents::Run.blind_reason(initiative)
+  end
+
   # ── Criterio 8 · un fallo técnico no es un veredicto ─────────────────────
 
   test "un fallo del brain deja el run en failed y NO consume ciclo de QA" do
     # Que el brain responda 502 no es un ✕: es que la llamada no se pudo hacer.
     # Contarlo como veredicto acercaría el evolutivo a la escalada por una
     # avería de red, que es justo lo que protege el invariante 7.
-    initiative = place(build_initiative, :tank)
+    initiative = initiative_at_tank
     antes = initiative.qa_cycles_consumed
 
     Runtime.stub(:run, ->(_) { raise Runtime::Error, "el brain respondió 502" }) do
@@ -66,7 +124,7 @@ class Agents::RunTest < ActiveSupport::TestCase
   end
 
   test "un fallo no publica artefacto a medias" do
-    initiative = place(build_initiative, :tank)
+    initiative = initiative_at_tank
 
     Runtime.stub(:run, ->(_) { raise Runtime::Unreachable, "el brain no responde" }) do
       assert_raises(Runtime::Error) do
@@ -96,7 +154,7 @@ class Agents::RunTest < ActiveSupport::TestCase
   test "el coste se guarda en centimos y redondea al alza" do
     # Un agregado de muchas ejecuciones baratas no puede acabar diciendo que no
     # costaron nada.
-    initiative = place(build_initiative, :tank)
+    initiative = initiative_at_tank
     barata = { "input_tokens" => 10, "output_tokens" => 20, "cost_usd" => 0.0034 }
 
     Runtime.stub(:run, ->(_) { result_with(barata) }) do
@@ -107,6 +165,22 @@ class Agents::RunTest < ActiveSupport::TestCase
   end
 
   private
+    # ⚠ UN EVOLUTIVO EN TANK TIENE CÓDIGO ANCLADO, y desde F12 · B6 eso no es un
+    # detalle del montaje: es la condición para que TANK pueda trabajar. Sin
+    # `pinned_sha`, `Runtime::Request` mandaría `"repositories" => []` y el
+    # agente escribiría sin haber visto una línea de código — `Agents::Run` se
+    # niega, que es lo que este helper deja de tener que discutir en cada test.
+    def initiative_at_tank
+      initiative = place(build_initiative, :tank)
+      InitiativeRepository.create!(
+        initiative: initiative,
+        repository: build_repository(client: initiative.platform_client,
+                                     name: "booking-core"),
+        pinned_sha: "4f2a9c1")
+
+      initiative
+    end
+
     # El fixture de TANK cita `booking-core` y `owner-web`, y el modelo rechaza
     # una cita de código cuyo repositorio no existe. Que haga falta montarlos es
     # el invariante trabajando: no hay afirmación sobre código sin repositorio.

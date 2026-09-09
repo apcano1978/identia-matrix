@@ -20,6 +20,21 @@
     <p class="text-t10 text-terminal-fg-4">
       Esta etapa la mueve una persona, no un agente.
     </p>
+  <% elsif Agents::Run.blind?(initiative: initiative, agent: work[:agent]) %>
+    <%# ⚠ SIN CÓDIGO ANCLADO NO HAY BOTÓN (F12 · B6), y es la misma razón que
+        arriba: que no aparezca evita ofrecer algo que el sistema va a negar.
+
+        Sin `pinned_sha`, `Runtime::Request` manda `"repositories" => []` y el
+        agente escribiría sin haber visto una línea de código. No fallaría:
+        acertaría plausible, que es peor — es lo que P23 describía como «nada
+        avisa». El ARQUITECTO es la excepción y por eso no llega aquí: entrevista
+        a una persona, y el acta va antes de indexar. %>
+    <p class="text-t10 leading-[1.5] text-glyph-fail">
+      <%= work[:agent].upcase %> no puede trabajar todavía.
+    </p>
+    <p class="mt-1 text-t10 leading-[1.5] text-terminal-fg-4">
+      <%= Agents::Run.blind_reason(initiative) %>.
+    </p>
   <% else %>
     <%= button_to "▶ poner a trabajar a #{work[:agent].upcase}",
                   project_initiative_agent_run_path(@project, initiative),

@@ -25,8 +25,19 @@ class RepositoriesController < ApplicationController
     repository = project.repositories.new(repository_params)
 
     if repository.save
+      # ⚠ SE LEE SOLO, y no es un adelanto de la indexación (F12 · B6). Matrix
+      # **no tiene ningún `update`**: un `remote_url` mal escrito no se corrige,
+      # se registra otro repositorio. Descubrirlo aquí —con el formulario todavía
+      # a la vista— es la diferencia entre arreglarlo en un minuto y descubrirlo
+      # el día que TANK escriba a ciegas.
+      #
+      # No ancla nada: eso solo lo hace `Repositories::Index`, y aún no hay
+      # ningún evolutivo al que anclar.
+      Repositories::ProbeJob.perform_later(repository.id)
+
       redirect_to project_repository_path(project, repository), status: :see_other,
-                  notice: "Repositorio #{repository.name} registrado."
+                  notice: "Repositorio #{repository.name} registrado. " \
+                          "Se está leyendo para saber qué hay dentro."
     else
       redirect_to project_path(project), status: :see_other,
                   alert: "No se ha registrado: #{repository.errors.full_messages.to_sentence}."

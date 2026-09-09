@@ -18,6 +18,14 @@ class AgentRunsController < ApplicationController
     work = Pipeline::STAGE_WORK[@initiative.current_stage]
     return redirect_with(alert: no_work_message) if work.blank?
 
+    # ⚠ ANTES DE ENCOLAR (F12 · B6). `Agents::Run` se niega igual —es la guarda
+    # de verdad, y vale también para el recorrido de consola— pero eso ocurre
+    # dentro del job: sin esta comprobación, quien pulsa leería «TANK está
+    # trabajando» y el trabajo moriría en silencio treinta segundos después.
+    if Agents::Run.blind?(initiative: @initiative, agent: work[:agent])
+      return redirect_with(alert: blind_message(work))
+    end
+
     Agents::RunJob.perform_later(@initiative.id, **work.symbolize_keys)
 
     redirect_with(notice: "#{work[:agent].upcase} está trabajando en " \
@@ -31,6 +39,15 @@ class AgentRunsController < ApplicationController
     def no_work_message
       "En #{@initiative.current_stage.humanize} no trabaja ningún agente: " \
         "esta etapa la mueve una persona."
+    end
+
+    # Sin código anclado, un agente escribiría sin haber visto una línea de él.
+    # No falla: acierta plausible, que es peor — es lo que P23 describía.
+    def blind_message(work)
+      "#{work[:agent].upcase} no puede trabajar todavía: " \
+        "#{Agents::Run.blind_reason(@initiative)}. Se indexa solo al abrir el " \
+        "evolutivo; si sigue así, mira el motivo en fuentes o reindexa con " \
+        "matrix:index."
     end
 
     def redirect_with(**flash)

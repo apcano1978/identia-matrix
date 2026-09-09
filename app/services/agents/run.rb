@@ -36,10 +36,47 @@ module Agents
     }.freeze
 
     AlreadyRunning = Class.new(StandardError)
+    Refused = Class.new(StandardError)
+
+    # ⚠ QUIÉN PUEDE TRABAJAR SIN CÓDIGO ANCLADO (F12 · B6).
+    #
+    # Nadie salvo el ARQUITECTO, y la excepción no es un permiso: es el orden
+    # del runbook. El acta va ANTES de indexar —camino C, paso 5 frente al 7—
+    # porque el ARQUITECTO entrevista a una persona y no lee código. Ese es
+    # justo el momento en que un proyecto todavía no tiene nada anclado.
+    #
+    # Para los demás, `pinned_sha` nulo significa que `Runtime::Request`
+    # mandaría `"repositories" => []` y el agente escribiría **sin haber visto
+    # una línea de código**. No falla: acierta plausible, que es peor. Es lo que
+    # P23 describía como «nada avisa», y encolar la indexación sola no lo cerraba
+    # del todo: un `remote_url` ilegible sigue dejando el evolutivo sin anclar.
+    WITHOUT_CODE = %w[arquitecto].freeze
 
     Result = Data.define(:agent_run, :result, :artifact)
 
     def self.call(...) = new(...).call
+
+    # La misma pregunta que hace la pantalla para no ofrecer el botón y el
+    # controlador para no encolar el job. Una sola respuesta: si fueran tres,
+    # acabarían discrepando y la pantalla ofrecería lo que el dominio niega.
+    def self.blind?(initiative:, agent:)
+      return false if WITHOUT_CODE.include?(agent.to_s)
+
+      initiative.initiative_repositories.none?(&:pinned?)
+    end
+
+    # Por qué, con el motivo del repositorio al lado cuando lo hay: «sin origen
+    # legible» y «el origen no respondió» piden cosas distintas de quien lo lee.
+    def self.blind_reason(initiative)
+      motivos = initiative.initiative_repositories.includes(:repository).filter_map do |link|
+        razon = link.indexing_error.presence || link.repository.indexing_error.presence
+        "#{link.repository.name} · #{razon}" if razon
+      end
+
+      return "ningún repositorio anclado: todavía no se ha podido leer ninguno" if motivos.empty?
+
+      "ningún repositorio anclado · #{motivos.join(' · ')}"
+    end
 
     def initialize(initiative:, agent:, purpose:)
       @initiative = initiative
@@ -48,6 +85,8 @@ module Agents
     end
 
     def call
+      refuse_if_blind!
+
       run = start!
       result = Runtime.run(run)
 
@@ -67,6 +106,18 @@ module Agents
 
     private
       attr_reader :initiative, :agent, :purpose
+
+      # La guarda de verdad, y por eso está aquí y no solo en el controlador:
+      # por este punto pasan las tres formas de lanzar un agente —la interfaz, el
+      # job y el recorrido de consola—. Antes de `start!`, para no dejar una fila
+      # de ejecución de algo que no va a ocurrir.
+      def refuse_if_blind!
+        return unless Agents::Run.blind?(initiative: initiative, agent: agent)
+
+        raise Refused,
+              "#{agent.upcase} no puede trabajar en #{initiative.code}: " \
+              "#{Agents::Run.blind_reason(initiative)}"
+      end
 
       # `config` guarda la configuración EFECTIVA con la que corre esta
       # ejecución. Desde P2 los ajustes se pueden cambiar, y sin esto un

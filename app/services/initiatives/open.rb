@@ -11,6 +11,8 @@
 #   4. La entrada de etapa en `need` — sin ella `StageCache.derive` devuelve
 #      nulo y el evolutivo no tiene ni etapa ni glifo.
 #
+# Y una quinta cosa que NO va en la transacción: encolar la indexación (F12 · B6).
+#
 # El caché se DERIVA de la entrada, no se escribe a mano: el caché solo es
 # defendible mientras se pueda recomputar, y escribirlo aparte abre la puerta a
 # que empiece a discrepar.
@@ -55,6 +57,7 @@ class Initiatives::Open
       enter_need(initiative)
       refresh_cache(initiative)
       record_event(initiative)
+      queue_indexing(initiative)
 
       initiative
     end
@@ -183,6 +186,26 @@ class Initiatives::Open
     stage, status = StageCache.derive(initiative)
     initiative.update!(current_stage: stage, current_stage_status: status,
                        stage_changed_at: initiative.opened_at)
+  end
+
+  # ⚠ EL ANCLAJE SE ENCOLA SOLO (F12 · B6), y esto es lo que cierra P23. Hasta
+  # aquí lo llamaba únicamente `matrix:index`, a mano: sin ella `pinned_sha`
+  # queda nulo, el material que viaja al agente sale sin un solo repositorio, y
+  # TANK escribe su dossier sin haber visto una línea de código. No falla:
+  # acierta plausible.
+  #
+  # ⚠ **Después del commit, no dentro.** `enqueue_after_transaction_commit` es
+  # `false` en esta aplicación, así que un `perform_later` aquí dentro se encola
+  # de inmediato y Sidekiq puede coger el job antes de que la fila exista —un
+  # `RecordNotFound` que el `discard_on` se tragaría en silencio, dejando el
+  # evolutivo sin anclar justo lo que este cambio viene a arreglar.
+  #
+  # `after_all_transactions_commit` hace lo correcto en los dos casos: espera si
+  # hay transacción abierta y ejecuta ya si no la hay.
+  def queue_indexing(initiative)
+    ActiveRecord.after_all_transactions_commit do
+      Repositories::IndexJob.perform_later(initiative.id)
+    end
   end
 
   def record_event(initiative)

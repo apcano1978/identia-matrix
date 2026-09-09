@@ -43,7 +43,11 @@
         <%= link_to link.repository.name,
                     project_repository_path(@project, link.repository),
                     class: "text-terminal-fg" %>
-        <span class="text-antique-gold"><%= link.pinned_sha || "sin anclar" %></span>
+        <%# ⚠ Y POR QUÉ no está anclado, si no lo está (F12 · B6). «sin anclar»
+            a secas no decía nada accionable, y es justo el estado en el que un
+            agente trabajaría sin haber leído el código. %>
+        <% pinned = pinned_state(link) %>
+        <span class="<%= pinned.tone %>"><%= pinned.glyph %> <%= pinned.label %></span>
         <span class="text-terminal-fg-3"><%= indexed_files(link.repository) %></span>
         <%# Didáctico: es la forma exacta que hay que escribir para citarlo. %>
         <span class="text-terminal-fg-3"><%= citation_prefix(link.repository) %></span>

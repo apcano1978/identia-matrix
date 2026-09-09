@@ -15,12 +15,15 @@
       <h1 class="text-t27 font-sans font-semibold tracking-[.03em] text-terminal-fg">
         <%= @repository.name %>
       </h1>
+      <%# El estado de indexación va aquí y no como un `if files_count`: un
+          repositorio que matrix no puede leer se veía exactamente igual que uno
+          recién registrado —el segmento simplemente no salía— y esa es la mitad
+          silenciosa de P23. %>
+      <% state = repository_state(@repository) %>
       <span class="text-t105 text-terminal-fg-4">
         head <span class="text-antique-gold"><%= @repository.head_sha || "—" %></span>
         · <%= @repository.default_branch %>
-        <% if @repository.files_count %>
-          · <%= number_with_delimiter(@repository.files_count) %> ficheros
-        <% end %>
+        · <span class="<%= state.tone %>"><%= state.glyph %> <%= state.label %></span>
         · solo lectura
       </span>
     </div>

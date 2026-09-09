@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -351,6 +351,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_100000) do
     t.datetime "first_linked_at"
     t.datetime "indexed_at"
     t.integer "indexed_files_count"
+    t.string "indexing_error"
     t.bigint "initiative_id", null: false
     t.string "pinned_sha"
     t.bigint "repository_id", null: false
@@ -545,6 +546,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_100000) do
     t.string "default_branch", default: "main", null: false
     t.integer "files_count"
     t.string "head_sha"
+    t.string "indexing_error"
     t.datetime "last_synced_at"
     t.string "name", null: false
     t.bigint "project_id", null: false
