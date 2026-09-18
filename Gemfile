@@ -43,7 +43,7 @@ gem "sidekiq-cron", "~> 2.0"
 gem "redis", "~> 5.3"
 
 # Cliente HTTP contra identia-brain (agentes) e identia-platform (proyección).
-gem "faraday", "~> 2.9"
+gem "faraday", "~> 2.14"
 
 # Validación de los contratos JSON Schema de contracts/. Soporta draft 2020-12,
 # que es el que declaran nuestros esquemas.
